@@ -4,3 +4,47 @@
 📞 Connect With Us
 <div align="center"> <a href="https://github.com"> <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" /> </a> <a href="https://linkedin.com"> <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" /> </a> <a href="https://n8n.io"> <img src="https://img.shields.io/badge/n8n-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" /> </a> </div>
 <div align="center"> <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=18&duration=3000&pause=1000&color=FF6D5A&center=true&vCenter=true&width=435&lines=Made+with+%E2%9D%A4%EF%B8%8F+for+Modern+Dental+Care;Powered+by+n8n+and+OpenAI+AI;DentAI+%7C+Smart+Dental+Automation" /> <br /> <img src="https://api.dicebear.com/7.x/identicon/svg?seed=footer&backgroundColor=667eea&size=50" /> <br /> <sub>©  Clinic Nauli Dental Care Automation & Artificial Intelligence Systems @2026 
+<div align="center">
+
+# 🚀 Smart Dashboard & AI Chatbot System
+**Next.js • FastAPI • PostgreSQL • n8n • RAG AI**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=200&section=header&text=Automation%20&%20AI%20RAG&fontSize=50&animation=fadeIn" width="100%" />
+</p>
+
+</div>
+
+## 🛠️ Tech Stack & Flow
+
+Sistem ini mengintegrasikan Dashboard User yang responsif dengan automasi workflow dan chatbot cerdas berbasis RAG (Retrieval-Augmented Generation).
+
+### 📐 Arsitektur Sistem (Live Workflow)
+
+```mermaid
+graph TD
+    subgraph Frontend_Layer
+    A[User Dashboard] -->|Interact| B(Next.js App)
+    end
+
+    subgraph Backend_Layer
+    B -->|API Request| C{FastAPI Gateway}
+    C -->|Query/Store| D[(PostgreSQL / Neon)]
+    end
+
+    subgraph Automation_Layer
+    C -->|Trigger Event| E[n8n Workflow]
+    E -->|Notification| F{Channels}
+    F -->|Send| G[WhatsApp Reminder]
+    F -->|Send| H[Email Notification]
+    end
+
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style C fill:#00d1b2,stroke:#333,stroke-width:2px
+    style E fill:#ff6d5a,stroke:#333,stroke-width:2px
+    style G fill:#25D366,stroke:#333,stroke-width:2px
