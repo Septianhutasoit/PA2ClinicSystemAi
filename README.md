@@ -20,7 +20,7 @@
 
 </div>
 
-## 🛠️ Tech Stack & Flow
+## 🛠️ Tech Stack & WorkFlow
 
 Sistem ini mengintegrasikan Dashboard User yang responsif dengan automasi workflow dan chatbot cerdas berbasis RAG (Retrieval-Augmented Generation).
 
