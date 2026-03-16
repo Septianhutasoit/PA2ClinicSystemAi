@@ -37,7 +37,7 @@ graph TD
     C -->|Query/Store| D[(PostgreSQL / Neon)]
     end
 
-    subgraph Automation_Layer
+    subgraph Automation_Layer Workflow
     C -->|Trigger Event| E[n8n Workflow]
     E -->|Notification| F{Channels}
     F -->|Send| G[WhatsApp Reminder]
