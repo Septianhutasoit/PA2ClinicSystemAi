@@ -78,21 +78,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             const isActive = pathname === item.href;
                             return (
                                 <Link key={item.href} href={item.href} className="block group">
-                                    <div className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all relative ${isActive ? "bg-blue-50/50 text-blue-600 font-semibold" : "text-slate-500 hover:bg-slate-50"
+                                    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative ${
+                                        // Ubah text-slate-500 menjadi text-slate-900 agar warna teks aslinya hitam
+                                        isActive ? "bg-blue-50/50 text-blue-600 font-bold" : "text-slate-900 hover:bg-slate-50"
                                         }`}>
+                                        {/* Indikator biru */}
                                         {isActive && (
                                             <motion.div layoutId="activeNav" className="absolute left-0 w-1 h-5 bg-blue-600 rounded-r-full" />
                                         )}
 
-                                        {/* Colored Icon Container */}
+                                        {/* Ikon Container */}
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isActive ? item.bg : "bg-transparent group-hover:" + item.bg
                                             }`}>
-                                            <span className={isActive ? item.color : "text-slate-300 group-hover:" + item.color}>
+                                            <span className={isActive ? item.color : "text-slate-400 group-hover:" + item.color}>
                                                 {item.icon}
                                             </span>
                                         </div>
 
-                                        <span className="text-[13px]">{item.name}</span>
+                                        {/* TEKS MENU - Pastikan ini menggunakan font-semibold atau font-bold */}
+                                        <span className={`text-[13px] tracking-tight ${isActive ? "text-blue-600" : "text-slate-900"}`}>
+                                            {item.name}
+                                        </span>
                                     </div>
                                 </Link>
                             );
@@ -100,7 +106,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </nav>
 
                     <div className="p-4 border-t border-slate-100">
-                        <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-red-500 text-[13px] font-medium transition-colors">
+                        <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-red-700 text-[13px] font-medium transition-colors">
                             <LogOut size={16} /> Logout
                         </button>
                     </div>
