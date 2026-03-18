@@ -64,16 +64,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200">
                             <span className="font-black text-sm italic">K</span>
                         </div>
-                        <h1 className="text-lg font-bold tracking-tight text-slate-800">Klinik.AI</h1>
+                        <h1 className="text-lg font-bold tracking-tight text-slate-800">Clinic.AI</h1>
                     </div>
 
                     <div className="mx-4 mb-6 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-800 uppercase tracking-tight">Klinik Gigi Sehat</p>
-                        <p className="text-[10px] text-slate-400 truncate">Jl. Balige No. 12, Toba</p>
+                        <p className="text-[10px] font-bold text-slate-900 uppercase tracking-tight">Nauli Dental Care</p>
+                        <p className="text-[10px] text-slate-600 truncate italic">Jl. Balige No. 12, Toba</p>
                     </div>
 
                     <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-                        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.15em] px-3 mb-2">Main Menu</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] px-3 mb-2">Main Menu</p>
                         {navItems.map((item) => {
                             const isActive = pathname === item.href;
                             return (
