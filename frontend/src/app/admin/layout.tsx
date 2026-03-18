@@ -80,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 <Link key={item.href} href={item.href} className="block group">
                                     <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative ${
                                         // Ubah text-slate-500 menjadi text-slate-900 agar warna teks aslinya hitam
-                                        isActive ? "bg-blue-50/50 text-blue-600 font-bold" : "text-slate-900 hover:bg-slate-50"
+                                        isActive ? "bg-blue-50/50 text-blue-600 font-bold" : "text-slate-700 hover:bg-slate-50"
                                         }`}>
                                         {/* Indikator biru */}
                                         {isActive && (
