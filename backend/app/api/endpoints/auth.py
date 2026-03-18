@@ -5,7 +5,6 @@ from app.database.session import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, Token
 from app.core import security
-from pydantic import BaseModel, EmailStr
 
 router = APIRouter()
 
@@ -38,52 +37,24 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     return {"access_token": access_token, "token_type": "bearer"}
 
 # Tambahkan di bagian bawah auth.py
-# Schema bantuan untuk Reset Password
+from pydantic import BaseModel, EmailStr
+
+# 1. Definisikan Schema Request (Penting agar tidak 422 Error)
 class ResetPasswordRequest(BaseModel):
     email: EmailStr
     new_password: str
 
+# 2. Buat Endpoint-nya
 @router.post("/reset-password")
 def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
-    """
-    Fitur Reset Password:
-    Mencari email di Neon Cloud, jika ada maka update hashed_password.
-    """
-    # 1. Cari user
+    # Cari user berdasarkan email yang diinput di frontend
     user = db.query(User).filter(User.email == data.email).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="Email tidak terdaftar dalam sistem kami."
-        )
     
-    # 2. Update password dengan hashing baru (Bcrypt)
+    if not user:
+        raise HTTPException(status_code=404, detail="Email tidak ditemukan di database Neon")
+
+    # Hash password baru menggunakan security utility kita
     user.hashed_password = security.get_password_hash(data.new_password)
     
-    try:
-        db.commit()
-        return {"message": "Password berhasil diperbarui secara aman di database."}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Gagal menyimpan data ke database.")
-
-@router.get("/me", response_model=UserResponse)
-def get_current_user(db: Session = Depends(get_db), token: str = Depends(security.oauth2_scheme)):
-    """
-    Fitur 'Siapa Saya':
-    Digunakan frontend untuk mengambil data profil user yang sedang login menggunakan Token.
-    """
-    try:
-        # Decode token untuk ambil email
-        payload = security.jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=401, detail="Token tidak valid")
-    except Exception:
-        raise HTTPException(status_code=401, detail="Sesi berakhir, silakan login ulang")
-
-    user = db.query(User).filter(User.email == email).first()
-    if user is None:
-        raise HTTPException(status_code=404, detail="User tidak ditemukan")
-        
-    return user
+    db.commit() # Simpan ke Neon Cloud
+    return {"message": "Password berhasil diperbarui!"}
