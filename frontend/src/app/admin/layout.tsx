@@ -49,6 +49,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             alert("✅ AI Knowledge Updated!");
         } catch (err) { alert("❌ Sync Failed"); }
         finally { setIsSyncing(false); }
+    };
 
     const handleLogout = () => {
         if (confirm("Apakah Anda yakin ingin keluar dari sistem admin?")) {
