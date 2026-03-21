@@ -1,9 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import api from '@/services/api';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import Cookies from 'js-cookie';
 import {
     LayoutDashboard,
     Users2,
@@ -25,7 +26,19 @@ import {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [isSyncing, setIsSyncing] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isAuthorized, setIsAuthorized] = useState(false);
     const pathname = usePathname();
+    const router = useRouter();
+
+    // PROTEKSI RUTE: Cek token setiap kali halaman dimuat
+    useEffect(() => {
+        const token = localStorage.getItem('token') || Cookies.get('token');
+        if (!token) {
+            router.push('/login'); // Jika tidak ada token, usir ke login
+        } else {
+            setIsAuthorized(true); // Jika ada, izinkan tampilkan konten
+        }
+    }, [router]);
 
     const handleSyncAI = async () => {
         const confirmSync = confirm("Update Database AI?");
@@ -36,7 +49,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             alert("✅ AI Knowledge Updated!");
         } catch (err) { alert("❌ Sync Failed"); }
         finally { setIsSyncing(false); }
+
+    const handleLogout = () => {
+        if (confirm("Apakah Anda yakin ingin keluar dari sistem admin?")) {
+            localStorage.removeItem('token'); // Hapus jejak
+            Cookies.remove('token');
+            router.push('/login'); // Langsung pindah ke login
+        }
     };
+
+     if (!isAuthorized) return null; 
 
     // Navigasi dengan tambahan warna (bg & icon color)
     const navItems = [
@@ -106,9 +128,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </nav>
 
                     <div className="p-3 border-t border-slate-100">
-                        <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-red-700 text-[13px] font-medium transition-colors">
-                            <LogOut size={16} /> Logout
-                        </button>
+         <button 
+        onClick={handleLogout} // Tambahkan onClick di sini
+        className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-red-700 text-[13px] font-medium transition-colors group"
+         >
+        <LogOut size={16} className="group-hover:translate-x-1 transition-transform" /> 
+        <span className="font-bold">Logout</span>
+             </button>
                     </div>
                 </div>
             </aside>
@@ -153,17 +179,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         </button>
 
                         <div className="h-6 w-[1px] bg-slate-200 mx-1" />
-
-                        <div className="flex items-center gap-3 pl-2 group cursor-pointer">
+                        {/* Ganti bagian Profile Section kamu dengan ini agar bisa diklik */}
+                        <div className="flex items-center gap-3 pl-2 group cursor-pointer relative">
                             <div className="text-right hidden sm:block">
                                 <p className="text-[11px] font-bold text-slate-800 leading-none group-hover:text-blue-600 transition-colors">Admin Klinik</p>
-                                <p className="text-[9px] text-slate-400 font-medium mt-1 uppercase tracking-tighter">Super Admin</p>
+                                <p className="text-[9px] text-slate-400 font-medium mt-1 uppercase tracking-tighter italic">Verified Super Admin</p>
                             </div>
-                            <img
-                                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
-                                className="w-8 h-8 rounded-lg bg-blue-50 border border-slate-200 shadow-sm"
-                                alt="avatar"
-                            />
+
+                            <button onClick={handleLogout} className="relative transition-transform active:scale-90">
+                                <img
+                                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
+                                    className="w-8 h-8 rounded-lg bg-blue-50 border border-slate-200 shadow-sm"
+                                    alt="avatar"
+                                />
+                                {/* Indikator Online Kecil */}
+                                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></span>
+                            </button>
                         </div>
                     </div>
                 </header>
