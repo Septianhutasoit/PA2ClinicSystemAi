@@ -15,6 +15,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Clinic System API")
 
 # 5. SETUP CORS (Agar Frontend Next.js bisa memanggil API)
+app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: 'Manajemen Dokter', href: '/admin/doctors', icon: <UserRoundCog size={18} />, color: 'text-rose-600', bg: 'bg-rose-50' },
         { name: 'Manajemen Jadwal', href: '/admin/schedules', icon: <AlarmClockCheck size={18} />, color: 'text-amber-600', bg: 'bg-amber-50' },
         { name: 'Notifikasi n8n', href: '/admin/knowledge', icon: <BrainCircuit size={18} />, color: 'text-purple-600', bg: 'bg-purple-50' },
-        { name: 'Layanan', href: '/admin/service', icon: <Stethoscope size={18} />, color: 'text-cyan-600', bg: 'bg-cyan-50' },
+        { name: 'Tambah Layanan', href: '/admin/service', icon: <Stethoscope size={18} />, color: 'text-cyan-600', bg: 'bg-cyan-50' },
         { name: 'Pengaturan', href: '/admin/settings', icon: <Settings2 size={18} />, color: 'text-slate-600', bg: 'bg-slate-100' },
     ];
 
@@ -60,25 +60,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             `}>
                 <div className="flex flex-col h-full">
                     {/* Logo Section */}
-                    <div className="p-6 flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                    <div className="p-4 flex items-center gap-2">
+                        <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-md">
                             <span className="font-black text-sm italic">K</span>
                         </div>
-                        <h1 className="text-lg font-bold tracking-tight text-slate-800">Clinic.AI</h1>
+                        <h1 className="text-base font-black tracking-tighter text-slate-900">Klinik.AI</h1>
                     </div>
 
-                    <div className="mx-4 mb-6 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="mx-4 mb-4 p-2 bg-slate-50 rounded-xl border border-slate-100">
                         <p className="text-[10px] font-bold text-slate-900 uppercase tracking-tight">Nauli Dental Care</p>
                         <p className="text-[10px] text-slate-600 truncate italic">Jl. Balige No. 12, Toba</p>
                     </div>
 
                     <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] px-3 mb-2">Main Menu</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] px-3 mb-1">Main Menu</p>
                         {navItems.map((item) => {
                             const isActive = pathname === item.href;
                             return (
                                 <Link key={item.href} href={item.href} className="block group">
-                                    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative ${
+                                    <div className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all relative ${
                                         // Ubah text-slate-500 menjadi text-slate-900 agar warna teks aslinya hitam
                                         isActive ? "bg-blue-50/50 text-blue-600 font-bold" : "text-slate-700 hover:bg-slate-50"
                                         }`}>
@@ -88,7 +88,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         )}
 
                                         {/* Ikon Container */}
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isActive ? item.bg : "bg-transparent group-hover:" + item.bg
+                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isActive ? item.bg : "bg-transparent group-hover:" + item.bg
                                             }`}>
                                             <span className={isActive ? item.color : "text-slate-400 group-hover:" + item.color}>
                                                 {item.icon}
@@ -105,7 +105,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         })}
                     </nav>
 
-                    <div className="p-4 border-t border-slate-100">
+                    <div className="p-3 border-t border-slate-100">
                         <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-red-700 text-[13px] font-medium transition-colors">
                             <LogOut size={16} /> Logout
                         </button>
