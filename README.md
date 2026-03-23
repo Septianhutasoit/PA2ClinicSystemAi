@@ -24,7 +24,7 @@
 
 Sistem ini mengintegrasikan Dashboard User yang responsif dengan automasi workflow dan chatbot Ai cerdas berbasis RAG (Retrieval-Augmented Generation).
 
-### 📐 Arsitektur Sistem (Live Workflow)
+###  Arsitektur Sistem (Live Workflow)
 
 ```mermaid
 graph TD
