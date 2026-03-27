@@ -38,7 +38,7 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
         doctors = db.query(Doctor).all()
         services = db.query(Service).all()
 
-        knowledge_base = [
+        knowledge_base = [ 
             "Klinik Sehat Berlokasi di Jl. Merdeka No. 10, Balige. Jam Operasional: 08:00 - 21:00 (Senin - Jumat).",
             "Pendaftaran dapat dilakukan langsung di website atau melalui chatbot ini.",
             "Untuk informasi Lebih Lanjut, hubungi 0821 63526363 atau email ke info@klinik.com"
@@ -46,13 +46,13 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
         
         for d in doctors:
             knowledge_base.append(f"Dokter {d.name} adalah spesialis {d.specialty}. Jadwal: {d.schedule}.")
-        for s in services:
+        for s in services: 
             knowledge_base.append(f"Layanan {s.name}: {s.description}. Harga {s.price}.")
 
         # B. Ambil data dari Folder Docs (PDF)
         path_materi = '../docs'
         all_docs = []
-        if os.path.exists(path_materi):
+        if os.path.exists(path_materi): 
             # Membaca subfolder klinik_umum dan prosedur_medis
             loader = DirectoryLoader(path_materi, glob="**/*.pdf", loader_cls=PyPDFLoader)
             all_docs = loader.load()
