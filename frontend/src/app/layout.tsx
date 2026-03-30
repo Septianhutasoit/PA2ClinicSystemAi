@@ -10,23 +10,24 @@ const inter = Inter({ subsets: ["latin"] });
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
-    // Deteksi halaman
-    const isAdminPage = pathname.startsWith('/admin');
-    const isDashboardPage = pathname.startsWith('/dashboard'); // Jika masih dipakai
-    const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register');
+    // Deteksi halaman untuk menyembunyikan navbar/chatbot pasien
+    const isAdminPath = pathname.startsWith('/admin') || pathname.startsWith('/dashboard');
+    const isAuthPath = pathname.startsWith('/login') ||
+        pathname.startsWith('/register') ||
+        pathname.startsWith('/forgot-password');
 
     return (
         <html lang="en" className="scroll-smooth">
-            <body className={`${inter.className} antialiased selection:bg-blue-100`}>
+            <body className={`${inter.className} antialiased bg-white selection:bg-blue-100 text-slate-900`}>
 
-                {/* NAVBAR: Hanya untuk Pasien (Bukan Admin/Login) */}
-                {!isAdminPage && !isDashboardPage && !isAuthPage && <UserNavbar />}
+                {/* NAVBAR PASIEN: Hanya muncul jika bukan halaman Admin & bukan Login/Register */}
+                {!isAdminPath && !isAuthPath && <UserNavbar />}
 
-                {/* KONTEN: page.tsx (User) atau admin/page.tsx */}
+                {/* KONTEN UTAMA: Muncul di semua halaman */}
                 <main>{children}</main>
 
-                {/* CHATBOT: Hanya untuk Pasien */}
-                {!isAdminPage && !isDashboardPage && <Chatbot />}
+                {/* CHATBOT: Muncul hanya untuk Pasien (Jangan di Admin agar tidak menutupi tabel) */}
+                {!isAdminPath && <Chatbot />}
 
             </body>
         </html>
