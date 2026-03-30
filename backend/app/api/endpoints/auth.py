@@ -52,26 +52,33 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         "role": user.role  # <--- Ini sangat penting agar Frontend bisa redirect
     }
 
-# --- FITUR RESET PASSWORD ---
+# --- FITUR RESET PASSWORD (Harus Login) ---
 
 class ResetPasswordRequest(BaseModel):
-    email: EmailStr
     new_password: str
 
 @router.post("/reset-password")
-def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
-    # Cari user berdasarkan email
-    user = db.query(User).filter(User.email == data.email).first()
+def reset_password(
+    data: ResetPasswordRequest, 
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(security.get_current_user)
+):
+    # Ambil email dari token JWT (bukan dari input user)
+    user = db.query(User).filter(User.email == current_user["email"]).first()
     
     if not user:
-        raise HTTPException(status_code=404, detail="Email tidak terdaftar di sistem")
+        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+
+    # Validasi panjang password minimum
+    if len(data.new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password minimal 8 karakter")
 
     # Update Password (di-hash ulang)
     user.hashed_password = security.get_password_hash(data.new_password)
     
     try:
         db.commit()
-        return {"message": "Password berhasil diperbarui di database Neon Cloud!"}
+        return {"message": "Password berhasil diperbarui!"}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail="Gagal menyimpan perubahan ke database")

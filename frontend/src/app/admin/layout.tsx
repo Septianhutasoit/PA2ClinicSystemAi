@@ -30,13 +30,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const router = useRouter();
 
-    // PROTEKSI RUTE: Cek token setiap kali halaman dimuat
+    // PROTEKSI RUTE: Cek token DAN role setiap kali halaman dimuat
     useEffect(() => {
         const token = localStorage.getItem('token') || Cookies.get('token');
+        const role = localStorage.getItem('user_role') || Cookies.get('role');
+
         if (!token) {
             router.push('/login'); // Jika tidak ada token, usir ke login
+        } else if (role !== 'admin') {
+            alert('⛔ Akses ditolak: Anda bukan admin');
+            router.push('/login'); // Jika bukan admin, usir ke login
         } else {
-            setIsAuthorized(true); // Jika ada, izinkan tampilkan konten
+            setIsAuthorized(true); // Jika ada token DAN role admin, izinkan
         }
     }, [router]);
 
@@ -59,7 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
     };
 
-     if (!isAuthorized) return null; 
+    if (!isAuthorized) return null;
 
     // Navigasi dengan tambahan warna (bg & icon color)
     const navItems = [
@@ -129,13 +134,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </nav>
 
                     <div className="p-3 border-t border-slate-100">
-         <button 
-        onClick={handleLogout} // Tambahkan onClick di sini
-        className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-red-700 text-[13px] font-medium transition-colors group"
-         >
-        <LogOut size={16} className="group-hover:translate-x-1 transition-transform" /> 
-        <span className="font-bold">Logout</span>
-             </button>
+                        <button
+                            onClick={handleLogout} // Tambahkan onClick di sini
+                            className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-red-700 text-[13px] font-medium transition-colors group"
+                        >
+                            <LogOut size={16} className="group-hover:translate-x-1 transition-transform" />
+                            <span className="font-bold">Logout</span>
+                        </button>
                     </div>
                 </div>
             </aside>

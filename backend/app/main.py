@@ -11,14 +11,15 @@ from app.api.endpoints import auth, clinic, chatbot
 # 3. BUAT TABEL OTOMATIS DI DATABASE
 Base.metadata.create_all(bind=engine)
 
+from app.core.config import settings
+
 # 4. INISIALISASI FASTAPI
 app = FastAPI(title="Clinic System API")
 
-# 5. SETUP CORS (Agar Frontend Next.js bisa memanggil API)
-app = FastAPI()
+# 5. SETUP CORS (Batasi hanya frontend yang diizinkan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[settings.FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

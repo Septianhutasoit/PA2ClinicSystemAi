@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     COHERE_API_KEY: str
     PINECONE_API_KEY: str
     PINECONE_INDEX_NAME: str
+    SECRET_KEY: str = "CHANGE_THIS_SECRET_KEY_IN_PRODUCTION"
+    FRONTEND_URL: str = "http://localhost:3000"
 
     class Config:
         env_file = ".env"
