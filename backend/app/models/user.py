@@ -4,6 +4,8 @@ import enum
 
 class UserRole(str, enum.Enum):
     ADMIN = "admin"
+    DOCTOR = "doctor"
+    NURSE = "nurse"
     PATIENT = "patient"
 
 class User(Base):
