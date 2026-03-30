@@ -1,297 +1,223 @@
 'use client';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import api from '@/services/api';
-import { usePathname } from 'next/navigation';
-import { Menu, X, Bell, Search, ChevronDown, LogOut, Settings, User } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import Cookies from 'js-cookie';
+import {
+    LayoutDashboard,
+    Users2,
+    UserRoundCog,
+    CalendarCheck2,
+    BellRing,
+    BrainCircuit,
+    Stethoscope,
+    Search,
+    Plus,
+    LogOut,
+    Database,
+    Menu,
+    X,
+    Settings2,
+    AlarmClockCheck
+} from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [isSyncing, setIsSyncing] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [notifications, setNotifications] = useState(3);
+    const [isAuthorized, setIsAuthorized] = useState(false);
     const pathname = usePathname();
+    const router = useRouter();
 
-    // Close mobile menu on route change
+    // PROTEKSI RUTE: Cek token setiap kali halaman dimuat
     useEffect(() => {
-        setIsMobileMenuOpen(false);
-    }, [pathname]);
+        const token = localStorage.getItem('token') || Cookies.get('token');
+        if (!token) {
+            router.push('/login'); // Jika tidak ada token, usir ke login
+        } else {
+            setIsAuthorized(true); // Jika ada, izinkan tampilkan konten
+        }
+    }, [router]);
 
     const handleSyncAI = async () => {
-        const confirmSync = confirm("Perbarui database AI sekarang?");
+        const confirmSync = confirm("Update Database AI?");
         if (!confirmSync) return;
         setIsSyncing(true);
         try {
-            const res = await api.post('/chatbot/ingest');
-            alert(res.data.message);
-        } catch (err) {
-            alert("Gagal Sync!");
-        } finally {
-            setIsSyncing(false);
+            await api.post('/chatbot/ingest');
+            alert("✅ AI Knowledge Updated!");
+        } catch (err) { alert("❌ Sync Failed"); }
+        finally { setIsSyncing(false); }
+    };
+
+    const handleLogout = () => {
+        if (confirm("Apakah Anda yakin ingin keluar dari sistem admin?")) {
+            localStorage.removeItem('token'); // Hapus jejak
+            Cookies.remove('token');
+            router.push('/login'); // Langsung pindah ke login
         }
     };
 
+     if (!isAuthorized) return null; 
+
+    // Navigasi dengan tambahan warna (bg & icon color)
     const navItems = [
-        { name: 'Dashboard', href: '/admin', icon: '📊', description: 'Statistik & Analitik' },
-        { name: 'Pasien', href: '/admin/patients', icon: '👤', description: 'Data rekam medis' },
-        { name: 'Dokter', href: '/admin/doctors', icon: '👨‍⚕️', description: 'Manajemen dokter' },
-        { name: 'Jadwal Dokter', href: '/admin/schedules', icon: '⏳', description: 'Atur jam praktek' },
-        { name: 'Booking Konsultasi', href: '/admin/appointments', icon: '📅', description: 'Kelola pendaftaran', badge: 5 },
-        { name: 'Reminder Monitor', href: '/admin/reminders', icon: '📱', description: 'Status WhatsApp n8n' },
-        { name: 'Laporan', href: '/admin/reports', icon: '📈', description: 'Export PDF & Excel' },
+        { name: 'Dashboard', href: '/admin', icon: <LayoutDashboard size={18} />, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { name: 'Daftar Konsultasi', href: '/admin/appointments', icon: <CalendarCheck2 size={18} />, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+        { name: 'Daftar Pasien', href: '/admin/patients', icon: <Users2 size={18} />, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        { name: 'Manajemen Dokter', href: '/admin/doctors', icon: <UserRoundCog size={18} />, color: 'text-rose-600', bg: 'bg-rose-50' },
+        { name: 'Manajemen Jadwal', href: '/admin/schedules', icon: <AlarmClockCheck size={18} />, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { name: 'Notifikasi n8n', href: '/admin/knowledge', icon: <BrainCircuit size={18} />, color: 'text-purple-600', bg: 'bg-purple-50' },
+        { name: 'Tambah Layanan', href: '/admin/service', icon: <Stethoscope size={18} />, color: 'text-cyan-600', bg: 'bg-cyan-50' },
+        { name: 'Pengaturan', href: '/admin/settings', icon: <Settings2 size={18} />, color: 'text-slate-600', bg: 'bg-slate-100' },
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 font-sans">
-            {/* Mobile Header */}
-            <header className="lg:hidden fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-slate-200 z-30 px-4 py-3">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-xl font-black text-blue-600 tracking-tighter italic">KLINIK.AI</h1>
-                        <p className="text-[8px] font-bold text-slate-400 tracking-widest uppercase">Management Suite</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-full transition">
-                            <Bell size={20} />
-                            {notifications > 0 && (
-                                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs flex items-center justify-center rounded-full">
-                                    {notifications}
-                                </span>
-                            )}
-                        </button>
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition"
-                        >
-                            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                        </button>
-                    </div>
-                </div>
-            </header>
+        <div className="flex min-h-screen bg-[#F8F9FD] text-[#475569] font-sans overflow-hidden">
 
-            {/* Mobile Menu Overlay */}
-            {isMobileMenuOpen && (
-                <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setIsMobileMenuOpen(false)} />
-            )}
-
-            {/* Sidebar - Desktop & Mobile */}
+            {/* SIDEBAR */}
             <aside className={`
-                fixed top-0 left-0 h-full w-80 bg-white/90 backdrop-blur-xl border-r border-slate-200 
-                transform transition-transform duration-300 ease-in-out z-50
-                lg:translate-x-0 shadow-2xl lg:shadow-sm
+                fixed lg:relative z-50 w-64 h-screen bg-white border-r border-slate-200 transition-transform duration-300
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
             `}>
-                <div className="h-full flex flex-col">
-                    {/* Logo - Desktop */}
-                    <div className="hidden lg:block p-8 border-b border-slate-100">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-lg">
-                                🦷
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-black text-blue-600 tracking-tighter italic">KLINIK.AI</h1>
-                                <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Dental Care System</p>
-                            </div>
+                <div className="flex flex-col h-full">
+                    {/* Logo Section */}
+                    <div className="p-4 flex items-center gap-2">
+                        <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-md">
+                            <span className="font-black text-sm italic">K</span>
                         </div>
+                        <h1 className="text-base font-black tracking-tighter text-slate-900">Klinik.AI</h1>
                     </div>
 
-                    {/* User Profile */}
-                    <div className="p-6 border-b border-slate-100">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-2xl flex items-center justify-center text-white text-xl font-bold shadow-md">
-                                A
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="font-bold text-slate-800">Admin Klinik</h3>
-                                <p className="text-xs text-slate-500">admin@klinik.ai</p>
-                            </div>
-                            <button className="p-2 hover:bg-slate-100 rounded-lg transition">
-                                <Settings size={18} className="text-slate-500" />
-                            </button>
-                        </div>
+                    <div className="mx-4 mb-4 p-2 bg-slate-50 rounded-xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-900 uppercase tracking-tight">Nauli Dental Care</p>
+                        <p className="text-[10px] text-slate-600 truncate italic">Jl. Balige No. 12, Toba</p>
                     </div>
 
-                    {/* Search Bar */}
-                    <div className="px-6 py-4">
-                        <div className="relative">
-                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="text"
-                                placeholder="Cari menu..."
-                                className="w-full pl-9 pr-4 py-2.5 bg-slate-100 border-0 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                            />
-                        </div>
-                    </div>
+                    <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] px-3 mb-1">Main Menu</p>
+                        {navItems.map((item) => {
+                            const isActive = pathname === item.href;
+                            return (
+                                <Link key={item.href} href={item.href} className="block group">
+                                    <div className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all relative ${
+                                        // Ubah text-slate-500 menjadi text-slate-900 agar warna teks aslinya hitam
+                                        isActive ? "bg-blue-50/50 text-blue-600 font-bold" : "text-slate-700 hover:bg-slate-50"
+                                        }`}>
+                                        {/* Indikator biru */}
+                                        {isActive && (
+                                            <motion.div layoutId="activeNav" className="absolute left-0 w-1 h-5 bg-blue-600 rounded-r-full" />
+                                        )}
 
-                    {/* Navigation */}
-                    <nav className="flex-1 overflow-y-auto px-4 py-2">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase px-4 mb-4 tracking-wider">Main Menu</p>
-                        <div className="space-y-1">
-                            {navItems.map((item) => (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={`
-                                        flex items-center gap-4 px-4 py-3 rounded-xl transition-all relative group
-                                        ${pathname === item.href
-                                            ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-200"
-                                            : "text-slate-600 hover:bg-white hover:shadow-md"
-                                        }
-                                    `}
-                                >
-                                    <span className="text-xl">{item.icon}</span>
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-sm">{item.name}</p>
-                                        <p className={`text-[10px] ${pathname === item.href ? 'text-blue-100' : 'text-slate-400'}`}>
-                                            {item.description}
-                                        </p>
-                                    </div>
-                                    {item.badge && (
-                                        <span className="px-2 py-1 bg-red-500 text-white text-xs rounded-full">
-                                            {item.badge}
-                                        </span>
-                                    )}
-                                    {pathname !== item.href && (
-                                        <div className="absolute right-4 opacity-0 group-hover:opacity-100 transition">
-                                            <ChevronDown size={16} className="rotate-[-90deg]" />
+                                        {/* Ikon Container */}
+                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isActive ? item.bg : "bg-transparent group-hover:" + item.bg
+                                            }`}>
+                                            <span className={isActive ? item.color : "text-slate-400 group-hover:" + item.color}>
+                                                {item.icon}
+                                            </span>
                                         </div>
-                                    )}
-                                </Link>
-                            ))}
-                        </div>
 
-                        {/* AI Control Section */}
-                        <div className="mt-8 pt-6 border-t border-slate-100">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase px-4 mb-4 tracking-wider">AI Control</p>
-                            <button
-                                onClick={handleSyncAI}
-                                disabled={isSyncing}
-                                className={`
-                                    w-full flex items-center gap-4 px-4 py-4 rounded-xl font-semibold text-sm transition-all
-                                    ${isSyncing
-                                        ? "bg-slate-100 text-slate-400"
-                                        : "bg-gradient-to-r from-orange-50 to-amber-50 text-orange-600 hover:from-orange-100 hover:to-amber-100 border border-orange-200"
-                                    }
-                                `}
-                            >
-                                <div className={`
-                                    w-8 h-8 rounded-lg flex items-center justify-center text-lg
-                                    ${isSyncing ? 'bg-slate-200' : 'bg-orange-200'}
-                                `}>
-                                    {isSyncing ? "⏳" : "🤖"}
-                                </div>
-                                <div className="flex-1 text-left">
-                                    <p className="font-bold">{isSyncing ? "Syncing Database..." : "Sync AI Knowledge"}</p>
-                                    <p className="text-[10px] text-slate-500">Update pengetahuan AI terbaru</p>
-                                </div>
-                            </button>
-                        </div>
+                                        {/* TEKS MENU - Pastikan ini menggunakan font-semibold atau font-bold */}
+                                        <span className={`text-[13px] tracking-tight ${isActive ? "text-blue-600" : "text-slate-900"}`}>
+                                            {item.name}
+                                        </span>
+                                    </div>
+                                </Link>
+                            );
+                        })}
                     </nav>
 
-                    {/* Footer */}
-                    <div className="p-6 border-t border-slate-100">
-                        <Link
-                            href="/"
-                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition group"
-                        >
-                            <span className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center group-hover:bg-white">
-                                ←
-                            </span>
-                            <span>Kembali ke Website</span>
-                        </Link>
+                    <div className="p-3 border-t border-slate-100">
+         <button 
+        onClick={handleLogout} // Tambahkan onClick di sini
+        className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-red-700 text-[13px] font-medium transition-colors group"
+         >
+        <LogOut size={16} className="group-hover:translate-x-1 transition-transform" /> 
+        <span className="font-bold">Logout</span>
+             </button>
                     </div>
                 </div>
             </aside>
 
-            {/* Main Content */}
-            <main className={`
-                transition-all duration-300
-                lg:ml-80
-                ${isMobileMenuOpen ? 'lg:ml-80' : ''}
-            `}>
-                {/* Top Bar - Desktop */}
-                <div className="hidden lg:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 z-20">
-                    <div className="flex items-center justify-between px-8 py-4">
-                        <div className="flex items-center gap-4">
-                            <h2 className="text-lg font-semibold text-slate-800">
-                                {navItems.find(item => item.href === pathname)?.name || 'Dashboard'}
-                            </h2>
-                            <span className="text-xs text-slate-400">
-                                {new Date().toLocaleDateString('id-ID', {
-                                    weekday: 'long',
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                })}
-                            </span>
+            {/* MAIN CONTENT AREA */}
+            <main className="flex-1 flex flex-col min-w-0">
+                <header className="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-2 hover:bg-slate-100 rounded-lg text-slate-500">
+                            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                        </button>
+                        <h2 className="text-sm font-bold text-slate-800 hidden sm:block">
+                            {navItems.find(i => i.href === pathname)?.name || 'Dashboard'}
+                        </h2>
+
+                        <div className="relative ml-4 hidden md:block group">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="Search data..."
+                                className="pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-xs w-64 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all shadow-sm"
+                            />
                         </div>
+                    </div>
 
-                        <div className="flex items-center gap-3">
-                            {/* Notifications */}
-                            <button className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition">
-                                <Bell size={20} />
-                                {notifications > 0 && (
-                                    <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs flex items-center justify-center rounded-full">
-                                        {notifications}
-                                    </span>
-                                )}
-                            </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={handleSyncAI}
+                            disabled={isSyncing}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${isSyncing
+                                ? "bg-slate-100 text-slate-400 border-slate-200"
+                                : "bg-white text-blue-600 border-blue-200 hover:bg-blue-50"
+                                }`}
+                        >
+                            <Database size={14} className={isSyncing ? "animate-spin" : ""} />
+                            {isSyncing ? "Syncing..." : "Sync AI"}
+                        </button>
 
-                            {/* Profile Dropdown */}
-                            <div className="relative">
-                                <button
-                                    onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                    className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded-lg transition"
-                                >
-                                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                                        A
-                                    </div>
-                                    <ChevronDown size={16} className="text-slate-400" />
-                                </button>
+                        <button className="p-2 text-slate-400 hover:bg-slate-50 rounded-full relative transition-colors">
+                            <BellRing size={18} />
+                            <span className="absolute top-2 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full border border-white"></span>
+                        </button>
 
-                                {isProfileOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-2">
-                                        <button className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                                            <User size={16} /> Profile
-                                        </button>
-                                        <button className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                                            <Settings size={16} /> Settings
-                                        </button>
-                                        <hr className="my-2 border-slate-100" />
-                                        <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                            <LogOut size={16} /> Logout
-                                        </button>
-                                    </div>
-                                )}
+                        <div className="h-6 w-[1px] bg-slate-200 mx-1" />
+                        {/* Ganti bagian Profile Section kamu dengan ini agar bisa diklik */}
+                        <div className="flex items-center gap-3 pl-2 group cursor-pointer relative">
+                            <div className="text-right hidden sm:block">
+                                <p className="text-[11px] font-bold text-slate-800 leading-none group-hover:text-blue-600 transition-colors">Admin Klinik</p>
+                                <p className="text-[9px] text-slate-400 font-medium mt-1 uppercase tracking-tighter italic">Verified Super Admin</p>
                             </div>
+
+                            <button onClick={handleLogout} className="relative transition-transform active:scale-90">
+                                <img
+                                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
+                                    className="w-8 h-8 rounded-lg bg-blue-50 border border-slate-200 shadow-sm"
+                                    alt="avatar"
+                                />
+                                {/* Indikator Online Kecil */}
+                                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></span>
+                            </button>
                         </div>
                     </div>
-                </div>
+                </header>
 
-                {/* Content Area */}
-                <div className="p-4 lg:p-8">
-                    <div className="max-w-7xl mx-auto">
-                        {/* Mobile Date */}
-                        <div className="lg:hidden mb-4 text-xs text-slate-400">
-                            {new Date().toLocaleDateString('id-ID', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            })}
-                        </div>
-
-                        {children}
-                    </div>
+                <div className="flex-1 overflow-y-auto p-6 lg:p-10">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={pathname}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="max-w-7xl mx-auto"
+                        >
+                            {children}
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
             </main>
 
-            {/* Click outside to close profile dropdown */}
-            {isProfileOpen && (
-                <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setIsProfileOpen(false)}
-                />
+            {isMobileMenuOpen && (
+                <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />
             )}
         </div>
     );
