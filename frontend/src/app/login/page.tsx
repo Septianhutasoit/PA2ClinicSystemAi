@@ -5,7 +5,7 @@ import axios from 'axios';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
 import { motion } from 'framer-motion';
-import { Mail, Lock, LogIn, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, LogIn, Loader2, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -16,15 +16,16 @@ export default function LoginPage() {
     // Proteksi: Jika sudah login, jangan biarkan akses halaman login lagi
     useEffect(() => {
         const token = localStorage.getItem('token');
-        if (token) {
-            const role = localStorage.getItem('user_role');
-            if (role) redirectUser(role);
+        const role = localStorage.getItem('user_role');
+        if (token && role) {
+            redirectUser(role);
         }
     }, []);
 
-    // Fungsi pusat untuk pengalihan berdasarkan Role
+    // Fungsi pusat untuk pengalihan berdasarkan Role (Satu pintu)
     const redirectUser = (role: string) => {
-        switch (role.toLowerCase()) {
+        const lowerRole = role.toLowerCase();
+        switch (lowerRole) {
             case 'admin':
                 router.push('/admin');
                 break;
@@ -45,8 +46,9 @@ export default function LoginPage() {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+
         const params = new URLSearchParams();
-        params.append('username', email);
+        params.append('username', email); // FastAPI butuh 'username'
         params.append('password', password);
 
         try {
@@ -54,13 +56,15 @@ export default function LoginPage() {
 
             const { access_token, role } = res.data;
 
-            // Simpan Data dengan rapi
+            console.log("Role yang diterima dari server:", role);
+
+            // 1. Simpan Data Keamanan
             localStorage.setItem('token', access_token);
-            localStorage.setItem('user_role', role); // Simpan role untuk pengecekan cepat
+            localStorage.setItem('user_role', role);
             Cookies.set('token', access_token, { expires: 1 });
             Cookies.set('role', role, { expires: 1 });
 
-            // Pengalihan otomatis sesuai role dari database (bukan dari email)
+            // 2. Jalankan Pengalihan (Cukup panggil fungsi ini saja)
             redirectUser(role);
 
         } catch (err: any) {
@@ -93,7 +97,6 @@ export default function LoginPage() {
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-5">
-                    {/* Alamat Email */}
                     <div className="space-y-1.5 group">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email Terdaftar</label>
                         <div className="relative">
@@ -107,7 +110,6 @@ export default function LoginPage() {
                         </div>
                     </div>
 
-                    {/* Kata Sandi */}
                     <div className="space-y-1.5 group">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Kata Sandi</label>
                         <div className="relative">
@@ -126,7 +128,6 @@ export default function LoginPage() {
                         </div>
                     </div>
 
-                    {/* Button Login */}
                     <button
                         disabled={isLoading}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black shadow-xl shadow-blue-100 uppercase tracking-widest text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 group"
