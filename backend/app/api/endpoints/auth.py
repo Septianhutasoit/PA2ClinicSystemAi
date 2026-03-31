@@ -19,17 +19,19 @@ class ResetPasswordRequest(BaseModel):
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
     email_lower = user_in.email.lower().strip()
     
-    # Cek duplikasi email
+    # Cek apakah email sudah ada
     user_exists = db.query(User).filter(User.email == email_lower).first()
     if user_exists:
-        raise HTTPException(status_code=400, detail="Email sudah terdaftar.")
+        raise HTTPException(status_code=400, detail="Email sudah digunakan")
     
+    # Buat User Baru
     new_user = User(
         email=email_lower,
         full_name=user_in.full_name,
         hashed_password=security.get_password_hash(user_in.password),
-        role="patient" 
+        role="patient"  # <--- Role diatur otomatis di sini
     )
+    
     db.add(new_user)
     db.commit()
     db.refresh(new_user)

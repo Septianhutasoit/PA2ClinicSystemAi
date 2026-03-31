@@ -55,3 +55,7 @@ def delete_doctor(doctor_id: int, db: Session = Depends(get_db)):
     db.delete(doc)
     db.commit()
     return {"message": "Dokter berhasil dihapus"}
+
+@router.get("/services", response_model=List[schemas.ServiceResponse])
+def read_services(db: Session = Depends(get_db)):
+    return crud.get_services(db)
