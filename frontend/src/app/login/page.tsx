@@ -122,7 +122,7 @@ export default function LoginPage() {
                             />
                         </div>
                         <div className="flex justify-end pr-2">
-                            <Link href="/forgot-password" px-1 className="text-[10px] font-black text-slate-400 hover:text-blue-600 uppercase tracking-widest transition-colors">
+                            <Link href="/forgot-password" className="px-1 text-[10px] font-black text-slate-400 hover:text-blue-600 uppercase tracking-widest transition-colors">
                                 Masalah Login? Lupa Password
                             </Link>
                         </div>
