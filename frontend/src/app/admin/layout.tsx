@@ -38,7 +38,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         if (!token) {
             router.push('/login');
         } else if (role?.toLowerCase() !== 'admin') {
-            alert("Akses Ditolak: Area ini khusus untuk Administrator.");
+            alert("Akses Ditolak: Area ini khusus untuk Administrator. Role Anda: " + role);
             router.push('/'); // Lempar ke landing page jika bukan admin
         } else {
             setIsAuthorized(true);
