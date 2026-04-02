@@ -4,7 +4,6 @@
 <div align="center"> <a href="https://github.com"> <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" /> </a> <a href="https://linkedin.com"> <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" /> </a> <a href="https://n8n.io"> <img src="https://img.shields.io/badge/n8n-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" /> </a> </div>
 <div align="center"> <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=18&duration=3000&pause=1000&color=FF6D5A&center=true&vCenter=true&width=435&lines=Made+with+%E2%9D%A4%EF%B8%8F+for+Modern+Dental+Care;Powered+by+n8n+and+OpenAI;DentAI+%7C+Smart+Dental+Automation" /> <br /> <img src="https://api.dicebear.com/7.x/identicon/svg?seed=footer&backgroundColor=667eea&size=50" /> <br /> <sub>©  Clinic Nauli Dental Care Automation & Artificial Intelligence Systems | SoftwareEngineer | ComputerEngineering | @NauliDentalCare2026 
 <div align="center">
-
 # 🚀 Smart Dashboard & AI Chatbot System
 **Next.js • FastAPI • NeonCloudPostgreSQL • n8n • RAG AI**
 
@@ -32,7 +31,6 @@ graph TD
     B -->|API Request| C{FastAPI Gateway}
     C -->|Query/Store| D[(PostgreSQL / Neon)]
     end
-
     subgraph Automation_Layer Workflow
     C -->|Trigger Event| E[n8n Workflow]
     E -->|Notification| F{Channels}
