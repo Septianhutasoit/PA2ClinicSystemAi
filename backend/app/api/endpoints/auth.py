@@ -1,28 +1,32 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, EmailStr
+
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, Token
 from app.core import security
-from pydantic import BaseModel, EmailStr
 
 router = APIRouter()
 
 @router.post("/register", response_model=UserResponse)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
-    # Cek apakah email sudah terdaftar
-    user_exists = db.query(User).filter(User.email == user_in.email).first()
+    email_lower = user_in.email.lower().strip()
+    
+    # Cek apakah email sudah ada
+    user_exists = db.query(User).filter(User.email == email_lower).first()
     if user_exists:
         raise HTTPException(status_code=400, detail="Email sudah digunakan")
     
-    # Simpan user baru
+    # Buat User Baru
     new_user = User(
-        email=user_in.email,
+        email=email_lower,
         full_name=user_in.full_name,
         hashed_password=security.get_password_hash(user_in.password),
-        role="patient" # Default pendaftar web adalah pasien
+        role="patient"
     )
+    
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -30,26 +34,27 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # 1. Cari user di Neon Cloud
-    user = db.query(User).filter(User.email == form_data.username).first()
+    email_input = form_data.username.lower().strip()
     
-    # 2. Validasi Password
+    # Cari User
+    user = db.query(User).filter(User.email == email_input).first()
+    
+    # Validasi User & Password
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Email atau password salah"
+            detail="Email atau password salah."
         )
     
-    # 3. Buat Token (Role dimasukkan ke dalam Payload JWT)
+    # Buat Token
     access_token = security.create_access_token(
         data={"sub": user.email, "role": user.role}
     )
     
-    # 4. MODIFIKASI PENTING: Kirim role secara eksplisit ke Frontend
     return {
         "access_token": access_token, 
         "token_type": "bearer",
-        "role": user.role  # <--- Ini sangat penting agar Frontend bisa redirect
+        "role": user.role
     }
 
 # --- FITUR RESET PASSWORD (Harus Login) ---
@@ -73,24 +78,28 @@ def reset_password(
     if len(data.new_password) < 8:
         raise HTTPException(status_code=400, detail="Password minimal 8 karakter")
 
-    # Update Password (di-hash ulang)
+    # Update Password ke Hash Baru
     user.hashed_password = security.get_password_hash(data.new_password)
     
     try:
         db.commit()
         return {"message": "Password berhasil diperbarui!"}
-    except Exception as e:
+    except Exception:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Gagal menyimpan perubahan ke database")
+        raise HTTPException(status_code=500, detail="Gagal menyimpan ke database.")
 
-# --- FITUR TAMBAHAN: GET ME ---
 @router.get("/me", response_model=UserResponse)
 def get_me(db: Session = Depends(get_db), token: str = Depends(security.oauth2_scheme)):
-    """Endpoint untuk mengambil data profil user yang sedang login"""
     try:
-        payload = security.jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
+        from jose import jwt
+        payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
         email: str = payload.get("sub")
+        if email is None:
+            raise HTTPException(status_code=401, detail="Token tidak valid")
+            
         user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User tidak ditemukan")
         return user
-    except:
-        raise HTTPException(status_code=401, detail="Sesi tidak valid")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Sesi berakhir, silakan login ulang.")
