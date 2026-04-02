@@ -17,7 +17,6 @@
 <p align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=200&section=header&text=Automation%20&%20AI%20RAG&fontSize=50&animation=fadeIn" width="100%" />
 </p>
-
 </div>
 
 ## 🛠️ Tech Stack & WorkFlow
