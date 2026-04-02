@@ -1,23 +1,63 @@
-🦷 DentalAI: Dental Clinic Automation & Artificial Intelligence Systems
-<p align="center"> <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=28&duration=3000&pause=500&color=FF6D5A&center=true&vCenter=true&width=435&lines=DentAI;AI+Dental+Clinic;n8n+Automation" alt="Typing SVG" /> </p><p align="center"> <img src="https://api.dicebear.com/7.x/bottts/svg?seed=tooth&backgroundColor=FF6D5A&radius=50&scale=90" width="150" /> <img src="https://api.dicebear.com/7.x/bottts/svg?seed=n8n&backgroundColor=4A90E2&radius=50&scale=90" width="150" /> <img src="https://api.dicebear.com/7.x/bottts/svg?seed=ai&backgroundColor=764ba2&radius=50&scale=90" width="150" /> </p><p align="center"> <img src="https://img.shields.io/badge/Workflow-n8n-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" /> <img  src="https://img.shields.io/badge/Status-Production--Ready-brightgreen?style=for-the-badge" /> </p>
-📞 Connect With Us
-<div align="center"> <a href="https://github.com"> <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" /> </a> <a href="https://linkedin.com"> <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" /> </a> <a href="https://n8n.io"> <img src="https://img.shields.io/badge/n8n-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" /> </a> </div>
-<div align="center"> <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=18&duration=3000&pause=1000&color=FF6D5A&center=true&vCenter=true&width=435&lines=Made+with+%E2%9D%A4%EF%B8%8F+for+Modern+Dental+Care;Powered+by+n8n+and+OpenAI;DentAI+%7C+Smart+Dental+Automation" /> <br /> <img src="https://api.dicebear.com/7.x/identicon/svg?seed=footer&backgroundColor=667eea&size=50" /> <br /> <sub>©  Clinic Nauli Dental Care Automation & Artificial Intelligence Systems | SoftwareEngineer | ComputerEngineering | @NauliDentalCare2026 
-<div align="center">
-# 🚀 Smart Dashboard & AI Chatbot System
-**Next.js • FastAPI • NeonCloudPostgreSQL • n8n • RAG AI**
-
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
-[![NeonCloud/PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=00d2ff&height=250&section=header&text=DentalAI%20Systems&fontSize=70&animation=fadeIn" width="100%" />
+</p>
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=200&section=header&text=Automation%20&%20AI%20RAG&fontSize=50&animation=fadeIn" width="100%" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=24&duration=3000&pause=500&color=00D2FF&center=true&vCenter=true&width=500&lines=Clinic+Automation+System;AI-Powered+Dental+Care;RAG+Implementation+with+n8n" alt="Typing SVG" />
 </p>
-</div>
+
+---
+
+### 🚀 Overview
+**DentalAI** adalah sistem otomasi klinik modern yang mengintegrasikan **Artificial Intelligence (RAG)** dan alur kerja **n8n** untuk meningkatkan efisiensi operasional di **Nauli Dental Care**.
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/n8n-FF6D5A?style=for-the-badge&logo=n8n&logoColor=white" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+</p>
+
+---
+
+### 🛠️ Core Tech Stack & Systems
+| Category | Technology |
+| :--- | :--- |
+| **Frontend** | Next.js, Tailwind CSS, Shadcn UI |
+| **Backend** | FastAPI (Python), Neon Cloud PostgreSQL |
+| **Automation** | n8n Workflow Engine |
+| **Intelligence** | RAG AI, OpenAI, LangChain |
+| **Deployment** | Docker, Vercel |
+
+---
+
+### 📞 Connect With Developer
+<p align="left">
+  <a href="https://portofolio-puce-phi.vercel.app/" target="_blank">
+    <img src="https://cdn.simpleicons.org/googlechrome/4285F4" width="30" title="Portfolio" />
+  </a>
+  &nbsp;
+  <a href="https://www.linkedin.com/in/septian-a-hutasoit/" target="_blank">
+    <img src="https://cdn.simpleicons.org/linkedin/0077B5" width="30" title="LinkedIn" />
+  </a>
+  &nbsp;
+  <a href="https://www.instagram.com/tianhts_/" target="_blank">
+    <img src="https://cdn.simpleicons.org/instagram/E1306C" width="30" title="Instagram" />
+  </a>
+  &nbsp;
+  <a href="mailto:septianhutasoit@example.com">
+    <img src="https://cdn.simpleicons.org/gmail/EA4335" width="30" title="Email Me" />
+  </a>
+</p>
+
+---
+
+<p align="center">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=16&duration=3000&pause=1000&color=777777&center=true&vCenter=true&width=435&lines=Powered+by+Nauli+Dental+Care+Automation;Smart+Modern+Dental+Care+2026" />
+  <br />
+  <sub>© 2024-2026 Clinic Nauli Dental Care | Built by Septian Hutasoit</sub>
+</p>
 
 ## 🛠️ Tech Stack & WorkFlow
 Sistem ini mengintegrasikan Dashboard User yang responsif dengan automasi workflow dan chatbot Ai cerdas berbasis RAG (Retrieval-Augmented Generation).
