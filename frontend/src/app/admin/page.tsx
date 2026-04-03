@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/services/api';
 import { motion } from 'framer-motion';
-import { Activity, Users, Calendar, MessageSquare, ArrowUpRight, CheckCircle2, Zap } from 'lucide-react';
+import { Activity, Users, Calendar,  ArrowUpRight, CheckCircle2, Zap } from 'lucide-react';
 
 export default function AdminDashboard() {
     const [statsData, setStatsData] = useState({

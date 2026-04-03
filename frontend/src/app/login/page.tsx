@@ -39,13 +39,18 @@ export default function LoginPage() {
 
     // 2. Proteksi: Cek sesi saat halaman dimuat
     useEffect(() => {
-        const token = localStorage.getItem('token') || Cookies.get('token');
-        const role = localStorage.getItem('user_role') || Cookies.get('role');
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('user_role');
 
         if (token && role) {
-            redirectUser(role); // Langsung panggil fungsi redirect
+            // Pindahkan logika redirect langsung ke sini atau panggil fungsinya
+            const lowerRole = role.toLowerCase();
+            if (lowerRole === 'admin') router.push('/admin');
+            else if (lowerRole === 'doctor') router.push('/doctor/dashboard');
+            else if (lowerRole === 'nurse') router.push('/nurse/dashboard');
+            else router.push('/patient/dashboard');
         }
-    }, []);
+    }, [router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
