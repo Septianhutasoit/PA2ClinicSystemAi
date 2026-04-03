@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }, [pathname, router]); // Cek ulang setiap ganti rute
 
     const handleSyncAI = async () => {
-        const confirmSync = confirm("Perbarui database pengetahuan AI sekarang?");
+        const confirmSync = confirm("Perbarui database pengetahuan AI sekarang? Ini mungkin memakan waktu beberapa detik.");
         if (!confirmSync) return;
         setIsSyncing(true);
         try {
@@ -76,8 +76,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: 'Daftar Pasien', href: '/admin/patients', icon: <Users2 size={18} />, color: 'text-emerald-600', bg: 'bg-emerald-50' },
         { name: 'Manajemen Dokter', href: '/admin/doctors', icon: <UserRoundCog size={18} />, color: 'text-rose-600', bg: 'bg-rose-50' },
         { name: 'Manajemen Jadwal', href: '/admin/schedules', icon: <AlarmClockCheck size={18} />, color: 'text-amber-600', bg: 'bg-amber-50' },
-        { name: 'Notifikasi n8n', href: '/admin/knowledge', icon: <BrainCircuit size={18} />, color: 'text-purple-600', bg: 'bg-purple-50' },
-        { name: 'Layanan Klinik', href: '/admin/service', icon: <Stethoscope size={18} />, color: 'text-cyan-600', bg: 'bg-cyan-50' },
+        { name: 'AI Knowledge', href: '/admin/knowledge', icon: <BrainCircuit size={18} />, color: 'text-purple-600', bg: 'bg-purple-50' },
+        { name: 'Layanan Klinik', href: '/admin/services', icon: <Stethoscope size={18} />, color: 'text-cyan-600', bg: 'bg-cyan-50' },
         { name: 'Pengaturan', href: '/admin/settings', icon: <Settings2 size={18} />, color: 'text-slate-600', bg: 'bg-slate-100' },
     ];
 

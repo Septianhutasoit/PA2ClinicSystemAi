@@ -3,15 +3,29 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import List, Dict
+from pathlib import Path
+
+# Service & Database
 from app.services.rag_service import ChatbotService
 from app.database.session import get_db
 from app.models.clinic import Doctor, Service
 from app.core.config import settings
+
+# AI & LangChain
 from langchain_cohere import CohereEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader
 
 router = APIRouter()
+
+# --- PENENTUAN PATH ABSOLUT (ANTI GAGAL) ---
+# Mengambil lokasi file ini sekarang
+current_file = Path(__file__).resolve()
+# 1. endpoints -> 2. api -> 3. app -> 4. backend -> 5. clinic-system (ROOT)
+ROOT_DIR = current_file.parents[4]
+PATH_MATERI = ROOT_DIR / "docs"
+
+print(f"🔍 KLINIK.AI DEBUG: Folder Docs terdeteksi di: {PATH_MATERI}")
 
 # Inisialisasi service chatbot
 chatbot_service = ChatbotService() 
@@ -34,67 +48,73 @@ async def chat_with_bot(request: ChatRequest):
 @router.post("/ingest")
 async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
     try:
-        # A. Ambil data dari Database
+        # A. Pastikan folder docs ada
+        if not PATH_MATERI.exists():
+            print(f"❌ ERROR: Folder {PATH_MATERI} tidak ditemukan!")
+            raise HTTPException(status_code=404, detail="Folder 'docs' tidak ditemukan di root proyek.")
+
+        print(f"🚀 Memulai sinkronisasi AI...")
+        
+        # B. Ambil data dari Database
         doctors = db.query(Doctor).all()
         services = db.query(Service).all()
 
-        knowledge_base = [ 
-            "Klinik Sehat Berlokasi di Jl. Merdeka No. 10, Balige. Jam Operasional: 08:00 - 21:00 (Senin - Jumat).",
-            "Pendaftaran dapat dilakukan langsung di website atau melalui chatbot ini.",
-            "Untuk informasi Lebih Lanjut, hubungi 0821 63526363 atau email ke info@klinik.com"
+        knowledge_texts = [ 
+            "Klinik Nauli Dental Care berlokasi di Balige, Toba. Jam Operasional: 08:00 - 21:00.",
+            "Pendaftaran dapat dilakukan melalui website atau chatbot KlinikAI."
         ]
         
         for d in doctors:
-            knowledge_base.append(f"Dokter {d.name} adalah spesialis {d.specialty}. Jadwal: {d.schedule}.")
+            knowledge_texts.append(f"Dokter {d.name} spesialis {d.specialty}. Jadwal: {d.schedule}.")
         for s in services: 
-            knowledge_base.append(f"Layanan {s.name}: {s.description}. Harga {s.price}.")
+            knowledge_texts.append(f"Layanan {s.name}: {s.description}. Harga {s.price}.")
 
-        # B. Ambil data dari Folder Docs (PDF)
-        path_materi = '../docs'
-        all_docs = []
-        if os.path.exists(path_materi): 
-            # Membaca subfolder klinik_umum dan prosedur_medis
-            loader = DirectoryLoader(path_materi, glob="**/*.pdf", loader_cls=PyPDFLoader)
-            all_docs = loader.load()
+        # C. Ambil data dari Folder Docs (PDF)
+        # Menggunakan loader yang menyisir semua subfolder di dalam docs/
+        loader = DirectoryLoader(str(PATH_MATERI), glob="**/*.pdf", loader_cls=PyPDFLoader)
+        pdf_docs = loader.load()
+        print(f"✅ Berhasil memuat {len(pdf_docs)} halaman dari file PDF.")
 
-        # C. Proses Penggabungan & Kirim ke Pinecone
+        # D. Setup AI & Upload ke Pinecone
         os.environ["COHERE_API_KEY"] = settings.COHERE_API_KEY
+        os.environ["PINECONE_API_KEY"] = settings.PINECONE_API_KEY
         embeddings = CohereEmbeddings(model="embed-multilingual-v3.0")
         
-        # Ingest teks dari Database
+        # Ingest teks dari Database (Menghapus data lama dan mengisi yang baru)
         vectorstore = PineconeVectorStore.from_texts(
-            texts=knowledge_base,
+            texts=knowledge_texts,
             embedding=embeddings,
-            index_name=settings.PINECONE_INDEX_NAME,
-            pinecone_api_key=settings.PINECONE_API_KEY
+            index_name=settings.PINECONE_INDEX_NAME
         )
         
-        # Ingest teks dari PDF (jika ada)
-        if all_docs:
-            vectorstore.add_documents(all_docs)
+        # Tambahkan data dari PDF ke dalam index yang sama
+        if pdf_docs:
+            vectorstore.add_documents(pdf_docs)
 
-        return {"message": "✅ Sukses! AI telah mempelajari data Database dan folder Docs."}
+        return {"message": "✅ Sukses! KlinikAI telah mempelajari database dan folder PDF terbaru."}
 
     except Exception as e:
         print(f"DEBUG ERROR SYNC: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Sync Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-# 3. Endpoint untuk List File (DIPISAH, TIDAK BOLEH DI DALAM FUNGSI LAIN)
+# 3. Endpoint untuk List File (DIPERBAIKI)
 @router.get("/knowledge-files")
-def list_knowledge_files():
-    path_materi = '../docs'
-    folders = ['klinik_umum', 'prosedur_medis']
-    files_info = []
+async def list_knowledge_files():
+    try:
+        files_info = []
+        if not PATH_MATERI.exists():
+            print(f"⚠️ Warning: Folder {PATH_MATERI} tidak ditemukan.")
+            return []
 
-    if not os.path.exists(path_materi):
+        # Mencari semua file PDF di folder docs dan subfoldernya
+        for path in PATH_MATERI.rglob("*.pdf"):
+            files_info.append({
+                "name": path.name,
+                "category": path.parent.name if path.parent.name != "docs" else "Utama"
+            })
+            
+        print(f"📂 Berhasil mendata {len(files_info)} file PDF.")
+        return files_info
+    except Exception as e:
+        print(f"DEBUG ERROR LIST FILES: {str(e)}")
         return []
-
-    for folder in folders:
-        full_path = os.path.join(path_materi, folder)
-        if os.path.exists(full_path):
-            files = os.listdir(full_path)
-            for f in files:
-                if f.endswith('.pdf'):
-                    files_info.append({"name": f, "category": folder})
-    
-    return files_info
