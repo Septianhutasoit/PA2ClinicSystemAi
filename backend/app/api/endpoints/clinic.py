@@ -59,3 +59,11 @@ def delete_doctor(doctor_id: int, db: Session = Depends(get_db)):
 @router.get("/services", response_model=List[schemas.ServiceResponse])
 def read_services(db: Session = Depends(get_db)):
     return crud.get_services(db)
+
+@router.post("/appointments", response_model=schemas.AppointmentResponse)
+def create_appointment(data: schemas.AppointmentCreate, db: Session = Depends(get_db)):
+    new_appo = Appointment(**data.model_dump())
+    db.add(new_appo)
+    db.commit()
+    db.refresh(new_appo)
+    return new_appo
