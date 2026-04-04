@@ -1,34 +1,81 @@
-from fastapi import APIRouter, Depends, HTTPException,  Body
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime # Perbaikan import
+from datetime import datetime
 from app.database.session import get_db
 from app.crud import clinic as crud
 from app.schemas import clinic as schemas
 from app.models.appointment import Appointment 
-from app.models.clinic import Doctor, Services
-from app.models.user import User # Pasien kita simpan di tabel User dengan role patient
+from app.models.clinic import Doctor, Service # Pastikan ini 'Service' bukan 'Services'
+from app.models.user import User
 
 router = APIRouter()
 
-# --- ENDPOINT STATISTIK DASHBOARD ---
+# --- 1. ENDPOINT PENDAFTARAN (SOLUSI ERROR 405 DI USER) ---
+# --- 1. ENDPOINT UNTUK MENAMPILKAN LIST DI ADMIN (DITAMBAHKAN) ---
+@router.get("/appointments", response_model=List[schemas.AppointmentResponse])
+def get_all_appointments(db: Session = Depends(get_db)):
+    """
+    Fungsi ini WAJIB ada agar tabel di halaman Admin tidak Error 405.
+    Mengambil semua data janji temu dari yang terbaru.
+    """
+    return db.query(Appointment).order_by(Appointment.appointment_date.desc()).all()
+
+
+# --- 2. ENDPOINT PENDAFTARAN (UNTUK USER) ---
+@router.post("/appointments", response_model=schemas.AppointmentResponse)
+def create_appointment(data: schemas.AppointmentCreate, db: Session = Depends(get_db)):
+    try:
+        new_appo = Appointment(
+            patient_name=data.patient_name,
+            patient_phone=data.patient_phone,
+            doctor_name=data.doctor_name,
+            appointment_date=data.appointment_date,
+            status="pending"
+        )
+        db.add(new_appo)
+        db.commit()
+        db.refresh(new_appo)
+        return new_appo
+    except Exception as e:
+        db.rollback()
+        print(f"ERROR POST: {str(e)}")
+        raise HTTPException(status_code=500, detail="Gagal membuat janji temu")
+
+
+# --- 3. ENDPOINT UPDATE STATUS & DATA (UNTUK ADMIN) ---
+@router.patch("/appointments/{app_id}")
+def update_appointment_status(app_id: int, payload: dict = Body(...), db: Session = Depends(get_db)):
+    appointment = db.query(Appointment).filter(Appointment.id == app_id).first()
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Data tidak ditemukan")
+
+    # Update status atau data lainnya jika dikirim dari modal edit
+    if "status" in payload:
+        appointment.status = payload["status"]
+    if "patient_name" in payload:
+        appointment.patient_name = payload["patient_name"]
+    if "patient_phone" in payload:
+        appointment.patient_phone = payload["patient_phone"]
+    
+    try:
+        db.commit()
+        return {"message": "Berhasil diperbarui"}
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Gagal update database")
+
+
+# --- 4. ENDPOINT STATISTIK (DASHBOARD) ---
 @router.get("/stats/summary")
 def get_admin_stats(db: Session = Depends(get_db)):
     try:
-        # 1. Hitung total staff dokter
         total_doctors = db.query(Doctor).count()
-        
-        # 2. Hitung total riwayat janji temu
         total_appointments = db.query(Appointment).count()
-        
-        # 3. Hitung user dengan role pasien
         total_patients = db.query(User).filter(User.role == "patient").count()
         
-        # 4. Hitung khusus booking untuk HARI INI
         today = datetime.now().date()
-        today_bookings = db.query(Appointment).filter(
-            Appointment.appointment_date >= today
-        ).count()
+        today_bookings = db.query(Appointment).filter(Appointment.appointment_date >= today).count()
         
         return {
             "total_doctors": total_doctors,
@@ -38,14 +85,12 @@ def get_admin_stats(db: Session = Depends(get_db)):
             "reminder_success_rate": "98%" 
         }
     except Exception as e:
-        # Log error asli ke terminal agar admin/dev bisa baca
-        print(f"CRASH PADA STATS: {str(e)}") 
-        raise HTTPException(status_code=500, detail="Gagal mengambil ringkasan data")
+        raise HTTPException(status_code=500, detail=str(e))
 
-# --- ENDPOINT LAINNYA (TETAP DIJAGA) ---
+# --- 4. ENDPOINT DOCTORS & SERVICES ---
 @router.get("/doctors", response_model=List[schemas.DoctorResponse])
 def read_doctors(db: Session = Depends(get_db)):
-    return crud.get_doctors(db)
+    return db.query(Doctor).all()
 
 @router.post("/doctors", response_model=schemas.DoctorResponse)
 def add_doctor(data: schemas.DoctorBase, db: Session = Depends(get_db)):
@@ -58,33 +103,7 @@ def add_doctor(data: schemas.DoctorBase, db: Session = Depends(get_db)):
 @router.delete("/doctors/{doctor_id}")
 def delete_doctor(doctor_id: int, db: Session = Depends(get_db)):
     doc = db.query(Doctor).filter(Doctor.id == doctor_id).first()
-    if not doc:
-        raise HTTPException(status_code=404, detail="Dokter tidak ditemukan")
-    db.delete(doc)
-    db.commit()
-    return {"message": "Dokter berhasil dihapus"}
-
-@router.get("/services", response_model=List[schemas.ServiceResponse])
-def read_services(db: Session = Depends(get_db)):
-    return crud.get_services(db)
-
-# backend/app/api/endpoints/clinic.py
-@router.patch("/appointments/{app_id}")
-def update_appointment_status(app_id: int, payload: dict = Body(...), db: Session = Depends(get_db)):
-    # 1. Cari data janji temu
-    appointment = db.query(Appointment).filter(Appointment.id == app_id).first()
-    
-    if not appointment:
-        raise HTTPException(status_code=404, detail="Data janji temu tidak ditemukan")
-
-    # 2. Update status (misal dari 'pending' ke 'confirmed')
-    new_status = payload.get("status")
-    if new_status:
-        appointment.status = new_status
-    
-    try:
+    if doc:
+        db.delete(doc)
         db.commit()
-        return {"message": f"Berhasil! Status diperbarui ke {new_status}"}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Gagal menyimpan ke database cloud")
+    return {"message": "Dihapus"}
