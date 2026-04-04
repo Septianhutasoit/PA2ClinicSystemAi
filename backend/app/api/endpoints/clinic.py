@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException,  Body
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime # Perbaikan import
@@ -6,7 +6,7 @@ from app.database.session import get_db
 from app.crud import clinic as crud
 from app.schemas import clinic as schemas
 from app.models.appointment import Appointment 
-from app.models.clinic import Doctor, Service
+from app.models.clinic import Doctor, Services
 from app.models.user import User # Pasien kita simpan di tabel User dengan role patient
 
 router = APIRouter()
@@ -15,14 +15,20 @@ router = APIRouter()
 @router.get("/stats/summary")
 def get_admin_stats(db: Session = Depends(get_db)):
     try:
+        # 1. Hitung total staff dokter
         total_doctors = db.query(Doctor).count()
+        
+        # 2. Hitung total riwayat janji temu
         total_appointments = db.query(Appointment).count()
-        # Hitung user yang rolenya 'patient'
+        
+        # 3. Hitung user dengan role pasien
         total_patients = db.query(User).filter(User.role == "patient").count()
         
-        # Hitung booking khusus hari ini
+        # 4. Hitung khusus booking untuk HARI INI
         today = datetime.now().date()
-        today_bookings = db.query(Appointment).filter(Appointment.appointment_date >= today).count()
+        today_bookings = db.query(Appointment).filter(
+            Appointment.appointment_date >= today
+        ).count()
         
         return {
             "total_doctors": total_doctors,
@@ -32,7 +38,9 @@ def get_admin_stats(db: Session = Depends(get_db)):
             "reminder_success_rate": "98%" 
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Log error asli ke terminal agar admin/dev bisa baca
+        print(f"CRASH PADA STATS: {str(e)}") 
+        raise HTTPException(status_code=500, detail="Gagal mengambil ringkasan data")
 
 # --- ENDPOINT LAINNYA (TETAP DIJAGA) ---
 @router.get("/doctors", response_model=List[schemas.DoctorResponse])
@@ -62,9 +70,21 @@ def read_services(db: Session = Depends(get_db)):
 
 # backend/app/api/endpoints/clinic.py
 @router.patch("/appointments/{app_id}")
-def update_appointment_status(app_id: int, data: dict, db: Session = Depends(get_db)):
-    appo = db.query(Appointment).filter(Appointment.id == app_id).first()
-    if not appo: raise HTTPException(status_code=404)
-    appo.status = data.get("status")
-    db.commit()
-    return {"message": "Status updated"}
+def update_appointment_status(app_id: int, payload: dict = Body(...), db: Session = Depends(get_db)):
+    # 1. Cari data janji temu
+    appointment = db.query(Appointment).filter(Appointment.id == app_id).first()
+    
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Data janji temu tidak ditemukan")
+
+    # 2. Update status (misal dari 'pending' ke 'confirmed')
+    new_status = payload.get("status")
+    if new_status:
+        appointment.status = new_status
+    
+    try:
+        db.commit()
+        return {"message": f"Berhasil! Status diperbarui ke {new_status}"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Gagal menyimpan ke database cloud")
