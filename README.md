@@ -47,25 +47,6 @@
 <br />
 <br />
 
-<!-- SOCIAL MEDIA / CONNECT -->
-<div align="center">
-  <p><b>📞 Connect With Us</b></p>
-  <a href="https://portofolio-puce-phi.vercel.app/" target="_blank">
-    <img src="https://cdn.simpleicons.org/googlechrome/4285F4" width="30" title="Portfolio" />
-  </a>
-  &nbsp;&nbsp;
-  <a href="https://www.linkedin.com/in/septian-a-hutasoit/" target="_blank">
-    <img src="https://cdn.simpleicons.org/linkedin/0077B5" width="30" title="LinkedIn" />
-  </a>
-  &nbsp;&nbsp;
-  <a href="https://www.instagram.com/tianhts_/" target="_blank">
-    <img src="https://cdn.simpleicons.org/instagram/E1306C" width="30" title="Instagram" />
-  </a>
-  &nbsp;&nbsp;
-  <a href="mailto:email-kamu@gmail.com">
-    <img src="https://cdn.simpleicons.org/gmail/EA4335" width="30" title="Email" />
-  </a>
-</div>
 
 <br />
 
