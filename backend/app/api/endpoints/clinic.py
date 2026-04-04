@@ -60,10 +60,11 @@ def delete_doctor(doctor_id: int, db: Session = Depends(get_db)):
 def read_services(db: Session = Depends(get_db)):
     return crud.get_services(db)
 
-@router.post("/appointments", response_model=schemas.AppointmentResponse)
-def create_appointment(data: schemas.AppointmentCreate, db: Session = Depends(get_db)):
-    new_appo = Appointment(**data.model_dump())
-    db.add(new_appo)
+# backend/app/api/endpoints/clinic.py
+@router.patch("/appointments/{app_id}")
+def update_appointment_status(app_id: int, data: dict, db: Session = Depends(get_db)):
+    appo = db.query(Appointment).filter(Appointment.id == app_id).first()
+    if not appo: raise HTTPException(status_code=404)
+    appo.status = data.get("status")
     db.commit()
-    db.refresh(new_appo)
-    return new_appo
+    return {"message": "Status updated"}

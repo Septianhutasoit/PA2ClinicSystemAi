@@ -42,10 +42,17 @@ export default function LoginPage() {
         const token = localStorage.getItem('token') || Cookies.get('token');
         const role = localStorage.getItem('user_role') || Cookies.get('role');
 
+        // DEBUG: Cek di Console apa yang dibaca browser
+        console.log("Sesi saat ini:", { token: !!token, role: role });
+
         if (token && role) {
-            redirectUser(role); // Cukup panggil fungsi ini, tidak perlu if/else manual lagi
+            // Hanya redirect jika kita memang ingin auto-login
+            // Jika ingin ganti akun, user harus klik Logout dulu
+            const lowerRole = role.toLowerCase();
+            if (lowerRole === 'admin') router.push('/admin');
+            else if (lowerRole === 'patient') router.push('/patient/dashboard');
         }
-    }, [redirectUser]);
+    }, [router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
