@@ -9,7 +9,6 @@
 </p>
 
 <br />
-
 <!-- AVATAR BOTS (Diberi jarak antar gambar) -->
 <p align="center">
   <img src="https://api.dicebear.com/7.x/bottts/svg?seed=tooth&backgroundColor=FF6D5A&radius=50&scale=90" width="120" />
