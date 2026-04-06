@@ -1,9 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 import api from '@/services/api';
+import ConfirmModal from '@/components/ConfirmModal';
 import { User, Phone, ShieldCheck, Calendar, Activity, MapPin, Star, Clock } from 'lucide-react';
 
 export default function PatientDashboard() {
+    const [isLogoutOpen, setIsLogoutOpen] = useState(false);
     const [doctors, setDoctors] = useState([]);
     const [formData, setFormData] = useState({ patient_name: '', patient_phone: '', doctor_name: '', appointment_date: '' });
     const [status, setStatus] = useState({ type: '', msg: '' });
@@ -21,6 +23,8 @@ export default function PatientDashboard() {
             setFormData({ ...formData, doctor_name: '', appointment_date: '' });
         } catch (err) { setStatus({ type: 'error', msg: '❌ Gagal mendaftar.' }); }
     };
+
+    
 
     return (
         <div className="space-y-8">
