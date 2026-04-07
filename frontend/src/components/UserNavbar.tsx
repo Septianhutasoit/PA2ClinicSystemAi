@@ -2,86 +2,102 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Activity, Menu, X, ArrowRight, User } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import Cookies from 'js-cookie';
 
 export default function UserNavbar() {
     const pathname = usePathname();
     const [isScrolled, setIsScrolled] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 20);
         window.addEventListener('scroll', handleScroll);
-
-        // Cek login status
-        const token = Cookies.get('token');
-        setIsLoggedIn(!!token);
-
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const navLinks = [
-        { name: 'Home', href: '/' },
-        { name: 'Doctors', href: '#doctors' },
-        { name: 'Services', href: '#services' },
-        { name: 'About', href: '#about' },
-    ];
+    // HILANGKAN NAVBAR DI HALAMAN WELCOME
+    if (pathname === '/') {
+        return null;
+    }
 
     return (
-        <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${isScrolled ? 'bg-white/80 backdrop-blur-md border-b border-slate-100 py-3 shadow-sm' : 'bg-transparent py-6'
-            }`}>
-            <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+        <motion.nav
+            initial={{ y: -100 }}
+            animate={{ y: 0 }}
+            transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+            className={`fixed top-0 w-full z-50 transition-all duration-500 ${isScrolled
+                    ? 'bg-white/90 backdrop-blur-xl border-b border-slate-100 py-3 shadow-lg'
+                    : 'bg-white/80 backdrop-blur-md py-5'
+                }`}
+        >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-center items-center">
 
-                {/* LOGO */}
-                <Link href="/" className="flex items-center gap-2 group">
-                    <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black italic shadow-lg shadow-blue-200 group-hover:rotate-6 transition-transform">
-                        K
-                    </div>
-                    <span className="text-xl font-black tracking-tighter text-slate-900 leading-none">
-                        Klinik.<span className="text-blue-600">AI</span>
-                    </span>
-                </Link>
-
-                {/* NAV LINKS (Desktop) */}
-                <div className="hidden md:flex items-center gap-8">
-                    {navLinks.map((link) => (
-                        <Link
-                            key={link.name}
-                            href={link.href}
-                            className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-blue-600 transition-colors"
+                    {/* LOGO ONLY - Tanpa Menu Navigasi */}
+                    <Link href="/" className="group">
+                        <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="flex items-center gap-3"
                         >
-                            {link.name}
-                        </Link>
-                    ))}
-                </div>
-
-                {/* AUTH BUTTONS */}
-                <div className="flex items-center gap-4">
-                    {isLoggedIn ? (
-                        <Link
-                            href="/admin"
-                            className="bg-slate-900 text-white px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg flex items-center gap-2"
-                        >
-                            <User size={14} /> My Dashboard
-                        </Link>
-                    ) : (
-                        <div className="flex items-center gap-2">
-                            <Link href="/login" className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 px-4 transition-colors">
-                                Login
-                            </Link>
-                            <Link
-                                href="/register"
-                                className="bg-blue-600 text-white px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 group"
+                            {/* Logo Container dengan Animasi */}
+                            <motion.div
+                                animate={{
+                                    rotate: [0, 5, -5, 0],
+                                }}
+                                transition={{
+                                    duration: 0.5,
+                                    delay: 0.3,
+                                }}
+                                className="relative"
                             >
-                                Get Started <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                        </div>
-                    )}
-                </div>
+                                <div className="w-11 h-11 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200 group-hover:shadow-xl transition-all">
+                                    <Sparkles size={22} className="text-white" strokeWidth={2} />
+                                </div>
+                                <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ delay: 0.5 }}
+                                    className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white"
+                                />
+                            </motion.div>
 
+                            {/* Text Logo */}
+                            <motion.div
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.2 }}
+                                className="flex flex-col leading-tight"
+                            >
+                                <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-800">
+                                    Nauli<span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Dental</span>
+                                </span>
+                                <span className="text-[8px] sm:text-[9px] font-semibold text-slate-400 tracking-wider">
+                                    KLINIK GIGI MODERN
+                                </span>
+                            </motion.div>
+
+                            {/* Decorative Line */}
+                            <motion.div
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{ delay: 0.4 }}
+                                className="hidden lg:block w-px h-8 bg-gradient-to-b from-transparent via-slate-300 to-transparent mx-2"
+                            />
+                        </motion.div>
+                    </Link>
+
+                </div>
             </div>
-        </nav>
+
+            {/* Bottom Gradient Border saat scroll */}
+            {isScrolled && (
+                <motion.div
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500 to-transparent"
+                />
+            )}
+        </motion.nav>
     );
 }
