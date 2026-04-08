@@ -1,15 +1,18 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional, List, Any
 
 # --- 1. Schema untuk Dokter ---
-class DoctorBase(BaseModel): # <--- WAJIB ADA UNTUK INPUT DATA
+class DoctorBase(BaseModel):
     name: str
     specialty: str
-    schedule: str
+    photo_url: Optional[str] = None
+    role: Optional[str] = "doctor"
+    schedules: Optional[List[Any]] = None  # Gunakan List[Any] agar bisa menerima format JSON array
 
-class DoctorResponse(DoctorBase): # Menambah ID untuk output data
+class DoctorResponse(DoctorBase):
     id: int
-    class Config: 
+    class Config:
         from_attributes = True
 
 # --- 2. Schema untuk Layanan ---

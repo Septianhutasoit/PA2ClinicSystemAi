@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
@@ -6,23 +6,104 @@ from app.database.session import get_db
 from app.crud import clinic as crud
 from app.schemas import clinic as schemas
 from app.models.appointment import Appointment 
-from app.models.clinic import Doctor, Service # Pastikan ini 'Service' bukan 'Services'
+from app.models.clinic import Doctor, Service # Pastikan model ini sudah sinkron
 from app.models.user import User
+import shutil
+import os
 
 router = APIRouter()
 
-# --- 1. ENDPOINT PENDAFTARAN (SOLUSI ERROR 405 DI USER) ---
-# --- 1. ENDPOINT UNTUK MENAMPILKAN LIST DI ADMIN (DITAMBAHKAN) ---
+# ==========================================
+# 1. MANAJEMEN DOKTER & STAFF (ADMIN)
+# ==========================================
+
+@router.get("/doctors", response_model=List[schemas.DoctorResponse])
+def read_doctors(db: Session = Depends(get_db)):
+    return db.query(Doctor).all()
+
+@router.post("/doctors", response_model=schemas.DoctorResponse)
+def add_doctor(data: schemas.DoctorBase, db: Session = Depends(get_db)):
+    # Membuat staff baru (Bisa role doctor atau nurse)
+    new_doc = Doctor(**data.model_dump())
+    db.add(new_doc)
+    db.commit()
+    db.refresh(new_doc)
+    return new_doc
+
+# SOLUSI EDIT: Tambahkan endpoint PATCH agar fitur Edit di Frontend berfungsi
+@router.patch("/doctors/{doc_id}")
+def update_doctor(doc_id: int, payload: dict = Body(...), db: Session = Depends(get_db)):
+    doc = db.query(Doctor).filter(Doctor.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Staff tidak ditemukan")
+    
+    # Update field secara dinamis
+    for key, value in payload.items():
+        if hasattr(doc, key):
+            setattr(doc, key, value)
+    
+    db.commit()
+    return {"message": "Data staff berhasil diperbarui"}
+
+@router.delete("/doctors/{doctor_id}")
+def delete_doctor(doctor_id: int, db: Session = Depends(get_db)):
+    doc = db.query(Doctor).filter(Doctor.id == doctor_id).first()
+    if doc:
+        db.delete(doc)
+        db.commit()
+    return {"message": "Staff berhasil dihapus"}
+
+
+@router.post("/upload-photo")
+async def upload_photo(file: UploadFile = File(...)):
+    try:
+        # 1. Buat folder jika belum ada
+        if not os.path.exists("uploads"):
+            os.makedirs("uploads")
+
+        # 2. Simpan file ke folder uploads
+        file_path = os.path.join("uploads", file.filename)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        return {"url": f"http://127.0.0.1:8000/uploads/{file.filename}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal upload: {str(e)}")
+
+# ==========================================
+# 2. MANAJEMEN LAYANAN KLINIK
+# ==========================================
+
+@router.get("/services", response_model=List[schemas.ServiceResponse])
+def read_services(db: Session = Depends(get_db)):
+    return db.query(Service).all()
+
+# TAMBAHKAN INI: Agar admin bisa input layanan baru
+@router.post("/services", response_model=schemas.ServiceResponse)
+def add_service(data: schemas.ServiceBase, db: Session = Depends(get_db)):
+    new_service = Service(**data.model_dump())
+    db.add(new_service)
+    db.commit()
+    db.refresh(new_service)
+    return new_service
+
+@router.delete("/services/{service_id}")
+def delete_service(service_id: int, db: Session = Depends(get_db)):
+    item = db.query(Service).filter(Service.id == service_id).first()
+    if item:
+        db.delete(item)
+        db.commit()
+    return {"message": "Layanan dihapus"}
+
+# ==========================================
+# 3. RESERVASI JANJI TEMU (PATIENT & ADMIN)
+# ==========================================
+
 @router.get("/appointments", response_model=List[schemas.AppointmentResponse])
 def get_all_appointments(db: Session = Depends(get_db)):
-    """
-    Fungsi ini WAJIB ada agar tabel di halaman Admin tidak Error 405.
-    Mengambil semua data janji temu dari yang terbaru.
-    """
+    # Mengambil semua data untuk tabel Admin
     return db.query(Appointment).order_by(Appointment.appointment_date.desc()).all()
 
-
-# --- 2. ENDPOINT PENDAFTARAN (UNTUK USER) ---
 @router.post("/appointments", response_model=schemas.AppointmentResponse)
 def create_appointment(data: schemas.AppointmentCreate, db: Session = Depends(get_db)):
     try:
@@ -39,34 +120,27 @@ def create_appointment(data: schemas.AppointmentCreate, db: Session = Depends(ge
         return new_appo
     except Exception as e:
         db.rollback()
-        print(f"ERROR POST: {str(e)}")
-        raise HTTPException(status_code=500, detail="Gagal membuat janji temu")
+        raise HTTPException(status_code=500, detail="Gagal mendaftar")
 
-
-# --- 3. ENDPOINT UPDATE STATUS & DATA (UNTUK ADMIN) ---
 @router.patch("/appointments/{app_id}")
 def update_appointment_status(app_id: int, payload: dict = Body(...), db: Session = Depends(get_db)):
     appointment = db.query(Appointment).filter(Appointment.id == app_id).first()
     if not appointment:
-        raise HTTPException(status_code=404, detail="Data tidak ditemukan")
+        raise HTTPException(status_code=404)
 
-    # Update status atau data lainnya jika dikirim dari modal edit
-    if "status" in payload:
-        appointment.status = payload["status"]
-    if "patient_name" in payload:
-        appointment.patient_name = payload["patient_name"]
-    if "patient_phone" in payload:
-        appointment.patient_phone = payload["patient_phone"]
+    # Bisa update status, nama, atau telp (untuk fitur Edit Pasien)
+    for key, value in payload.items():
+        if hasattr(appointment, key):
+            setattr(appointment, key, value)
     
-    try:
-        db.commit()
-        return {"message": "Berhasil diperbarui"}
-    except Exception:
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Gagal update database")
+    db.commit()
+    return {"message": "Update Berhasil"}
 
 
-# --- 4. ENDPOINT STATISTIK (DASHBOARD) ---
+# ==========================================
+# 4. STATISTIK DASHBOARD
+# ==========================================
+
 @router.get("/stats/summary")
 def get_admin_stats(db: Session = Depends(get_db)):
     try:
@@ -85,25 +159,4 @@ def get_admin_stats(db: Session = Depends(get_db)):
             "reminder_success_rate": "98%" 
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# --- 4. ENDPOINT DOCTORS & SERVICES ---
-@router.get("/doctors", response_model=List[schemas.DoctorResponse])
-def read_doctors(db: Session = Depends(get_db)):
-    return db.query(Doctor).all()
-
-@router.post("/doctors", response_model=schemas.DoctorResponse)
-def add_doctor(data: schemas.DoctorBase, db: Session = Depends(get_db)):
-    new_doc = Doctor(**data.model_dump())
-    db.add(new_doc)
-    db.commit()
-    db.refresh(new_doc)
-    return new_doc
-
-@router.delete("/doctors/{doctor_id}")
-def delete_doctor(doctor_id: int, db: Session = Depends(get_db)):
-    doc = db.query(Doctor).filter(Doctor.id == doctor_id).first()
-    if doc:
-        db.delete(doc)
-        db.commit()
-    return {"message": "Dihapus"}
+        raise HTTPException(status_code=500, detail="Server Error")
