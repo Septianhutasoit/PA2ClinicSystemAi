@@ -17,6 +17,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
     const [logoError, setLogoError] = useState(false);
 
     // 1. PROTEKSI ROLE PASIEN
@@ -30,6 +31,15 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
             setIsAuthorized(true);
         }
     }, [router, pathname]);
+
+    // 2. SCROLL EFFECT
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const handleLogout = () => {
         if (confirm("Keluar dari Portal Pasien?")) {
@@ -54,22 +64,33 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 font-sans">
 
-            {/* --- MODERN TOP NAVBAR --- */}
-            <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
+            {/* --- GLASSMORPHISM NAVBAR --- */}
+            <motion.nav
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+                className={`fixed top-0 w-full z-50 transition-all duration-500 ${isScrolled
+                        ? 'bg-white/95 backdrop-blur-xl border-b border-slate-100/50 shadow-lg'
+                        : 'bg-white/10 backdrop-blur-md border-b border-white/20'
+                    }`}
+            >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="h-16 flex justify-between items-center gap-4">
 
-                        {/* Brand Section with Logo Image */}
+                        {/* Brand Section with Logo */}
                         <Link href="/patient/dashboard" className="flex items-center gap-3 group">
                             <motion.div
                                 whileHover={{ scale: 1.05, rotate: 0 }}
                                 whileTap={{ scale: 0.95 }}
                                 className="relative"
                             >
-                                <div className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-200">
+                                <div className={`w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shadow-lg transition-all duration-300 ${isScrolled
+                                        ? 'bg-gradient-to-br from-indigo-500 to-blue-600 shadow-indigo-200'
+                                        : 'bg-gradient-to-br from-indigo-600 to-blue-700 shadow-indigo-300'
+                                    }`}>
                                     {!logoError ? (
                                         <Image
-                                            src="/images/logo1.png"  // pastikan nama file sesuai
+                                            src="/images/logo1.png"
                                             alt="Nauli Dental Logo"
                                             width={40}
                                             height={40}
@@ -78,7 +99,6 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                             onError={() => setLogoError(true)}
                                         />
                                     ) : (
-                                        // Fallback jika gambar error - sudah dibuat rounded
                                         <div className="w-full h-full rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center">
                                             <span className="text-white font-bold text-xl">N</span>
                                         </div>
@@ -87,15 +107,19 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                 <motion.div
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
-                                    className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white"
+                                    className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white shadow-sm"
                                 />
                             </motion.div>
 
                             <div className="flex flex-col leading-tight">
-                                <span className="text-lg font-black tracking-tight text-slate-800">
+                                <span className={`text-lg font-black tracking-tight transition-colors duration-300 ${isScrolled ? 'text-slate-800' : 'text-white'
+                                    }`}>
                                     Nauli<span className="bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent"> Dental</span>
                                 </span>
-                                <span className="text-[10px] font-semibold text-slate-400 tracking-wider">PATIENT PORTAL</span>
+                                <span className={`text-[10px] font-semibold tracking-wider transition-colors duration-300 ${isScrolled ? 'text-slate-400' : 'text-white/70'
+                                    }`}>
+                                    PATIENT PORTAL
+                                </span>
                             </div>
                         </Link>
 
@@ -110,18 +134,25 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                             whileTap={{ scale: 0.95 }}
                                             className={`relative px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-200 flex items-center gap-2 cursor-pointer
                                                 ${isActive
-                                                    ? 'text-indigo-600 bg-indigo-50/80'
-                                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                                    ? isScrolled
+                                                        ? 'text-indigo-600 bg-indigo-50/80'
+                                                        : 'text-white bg-white/20'
+                                                    : isScrolled
+                                                        ? 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                                        : 'text-white/80 hover:bg-white/10 hover:text-white'
                                                 }`}
                                         >
-                                            <span className={`${isActive ? 'text-indigo-600' : 'text-slate-400'}`}>
+                                            <span className={`${isActive ? (isScrolled ? 'text-indigo-600' : 'text-white') : (isScrolled ? 'text-slate-400' : 'text-white/60')}`}>
                                                 {item.icon}
                                             </span>
                                             <span>{item.name}</span>
                                             {isActive && (
                                                 <motion.div
                                                     layoutId="activeNav"
-                                                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-600 to-blue-500 rounded-full mx-2"
+                                                    className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full mx-2 ${isScrolled
+                                                            ? 'bg-gradient-to-r from-indigo-600 to-blue-500'
+                                                            : 'bg-gradient-to-r from-white to-indigo-200'
+                                                        }`}
                                                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
                                                 />
                                             )}
@@ -137,7 +168,10 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="relative p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-all duration-200"
+                                className={`relative p-2 rounded-full transition-all duration-200 ${isScrolled
+                                        ? 'text-slate-500 hover:bg-slate-100'
+                                        : 'text-white/80 hover:bg-white/10'
+                                    }`}
                             >
                                 <Bell size={20} />
                                 <motion.span
@@ -147,7 +181,8 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                 />
                             </motion.button>
 
-                            <div className="h-6 w-px bg-slate-200 hidden sm:block" />
+                            <div className={`h-6 w-px transition-colors duration-300 ${isScrolled ? 'bg-slate-200' : 'bg-white/20'
+                                } hidden sm:block`} />
 
                             {/* Profile Dropdown */}
                             <div className="relative">
@@ -155,22 +190,32 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                    className="flex items-center gap-3 p-1 pl-3 bg-gradient-to-r from-slate-50 to-white border border-slate-200 rounded-full hover:border-indigo-300 transition-all duration-200 shadow-sm"
+                                    className={`flex items-center gap-3 p-1 pl-3 rounded-full transition-all duration-200 shadow-sm ${isScrolled
+                                            ? 'bg-gradient-to-r from-slate-50 to-white border border-slate-200 hover:border-indigo-300'
+                                            : 'bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20'
+                                        }`}
                                 >
                                     <div className="text-right hidden sm:block leading-tight">
-                                        <p className="text-[11px] font-bold text-slate-700">Septian Adi</p>
+                                        <p className={`text-[11px] font-bold transition-colors duration-300 ${isScrolled ? 'text-slate-700' : 'text-white'
+                                            }`}>
+                                            Septian Adi
+                                        </p>
                                         <p className="text-[9px] font-semibold text-indigo-600 flex items-center gap-1">
                                             <Sparkles size={10} className="fill-indigo-200" />
                                             Member Gold
                                         </p>
                                     </div>
                                     <div className="relative">
-                                        <div className="w-9 h-9 rounded-full ring-2 ring-indigo-100 overflow-hidden bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center">
+                                        <div className={`w-9 h-9 rounded-full ring-2 overflow-hidden flex items-center justify-center transition-all duration-300 ${isScrolled
+                                                ? 'ring-indigo-100 bg-gradient-to-br from-indigo-500 to-blue-500'
+                                                : 'ring-white/30 bg-gradient-to-br from-indigo-600 to-blue-600'
+                                            }`}>
                                             <span className="text-white font-bold text-sm">SA</span>
                                         </div>
                                         <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />
                                     </div>
-                                    <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
+                                    <ChevronDown size={14} className={`transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''} ${isScrolled ? 'text-slate-400' : 'text-white/60'
+                                        }`} />
                                 </motion.button>
 
                                 <AnimatePresence>
@@ -226,7 +271,10 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                             <motion.button
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                                className={`md:hidden p-2 rounded-lg transition-all ${isScrolled
+                                        ? 'text-slate-600 hover:bg-slate-100'
+                                        : 'text-white hover:bg-white/10'
+                                    }`}
                             >
                                 {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
                             </motion.button>
@@ -242,7 +290,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.3 }}
-                            className="md:hidden bg-white/95 backdrop-blur-xl border-t border-slate-100"
+                            className="md:hidden bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-lg"
                         >
                             <div className="px-4 py-3 space-y-1">
                                 {navItems.map((item, idx) => {
@@ -281,7 +329,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </nav>
+            </motion.nav>
 
             {/* Backdrop for dropdowns */}
             {isProfileOpen && (
