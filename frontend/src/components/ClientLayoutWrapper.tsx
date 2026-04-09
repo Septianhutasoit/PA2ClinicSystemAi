@@ -5,22 +5,23 @@ import Chatbot from "@/components/Chatbot";
 export default function ClientLayoutWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
-    // Logika deteksi halaman
-    const isAdminPath = pathname.startsWith('/admin') || pathname.startsWith('/dashboard') || pathname.startsWith('/patient');
+    // 1. Tentukan halaman mana saja yang dianggap "Sisi Pasien/User"
+    // Chatbot hanya akan muncul jika user berada di Beranda (/) atau folder /patient
+    const isUserPage = pathname === '/' || pathname.startsWith('/patient');
+
+    // 2. Tentukan halaman Auth (Login/Register) untuk jaga-jaga
     const isAuthPath = pathname.startsWith('/login') ||
         pathname.startsWith('/register') ||
         pathname.startsWith('/forgot-password');
 
     return (
         <>
-            {/* HAPUS UserNavbar - Tidak digunakan lagi */}
-            {/* {!isAdminPath && !isAuthPath && <UserNavbar />} */}
-
-            {/* Konten Halaman */}
+            {/* Konten Halaman Utama (Admin, Pasien, atau Login) */}
             <main>{children}</main>
 
-            {/* Tampilkan Chatbot jika bukan halaman Admin */}
-            {!isAdminPath && <Chatbot />}
+            {/* 3. TAMPILKAN CHATBOT HANYA UNTUK USER/PASIEN */}
+            {/* Kita hilangkan kemunculannya di Admin dan di halaman Login/Register */}
+            {isUserPage && !isAuthPath && <Chatbot />}
         </>
     );
 }

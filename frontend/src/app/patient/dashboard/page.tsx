@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     ShieldCheck, Sparkles, ArrowRight, Calendar,
     Clock, Star, Heart, Activity, Phone, User,
-    Stethoscope, CheckCircle, ChevronLeft, ChevronRight
+    Stethoscope, CheckCircle
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
@@ -53,9 +53,6 @@ export default function WelcomePage() {
         }
     };
 
-    const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % bgImages.length);
-    const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + bgImages.length) % bgImages.length);
-
     const features = [
         { icon: <Calendar size={22} />, title: 'Booking Mudah', desc: 'Pilih jadwal & dokter favorit online 24/7' },
         { icon: <Star size={22} />, title: 'Dokter Ahli', desc: 'Tim dokter gigi spesialis berpengalaman' },
@@ -65,17 +62,17 @@ export default function WelcomePage() {
 
     return (
         <div className="min-h-screen bg-white">
-            {/* Hero Section - Fullscreen dengan Background Slider (TANPA NAVBAR) */}
-            <div className="relative h-screen w-full flex flex-col items-center justify-center px-6">
-                {/* Background Slider */}
+            {/* Hero Section - Fullscreen dengan Background Slider */}
+            <div className="relative h-screen w-full flex flex-col items-start justify-center px-6 sm:px-10 lg:px-20">
+                {/* Background Slider - TANPA TOMBOL NAVIGASI */}
                 <div className="absolute inset-0 w-full h-full overflow-hidden">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={currentSlide}
-                            initial={{ opacity: 0, scale: 1.1 }}
-                            animate={{ opacity: 1, scale: 1 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            transition={{ duration: 1.2 }}
+                            transition={{ duration: 1, ease: "easeInOut" }}
                             className="absolute inset-0 w-full h-full"
                             style={{
                                 backgroundImage: `url(${bgImages[currentSlide]})`,
@@ -88,21 +85,7 @@ export default function WelcomePage() {
                         </motion.div>
                     </AnimatePresence>
 
-                    {/* Tombol Navigasi Slider */}
-                    <button
-                        onClick={prevSlide}
-                        className="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all"
-                    >
-                        <ChevronLeft size={20} />
-                    </button>
-                    <button
-                        onClick={nextSlide}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all"
-                    >
-                        <ChevronRight size={20} />
-                    </button>
-
-                    {/* Slide Indicators */}
+                    {/* Slide Indicators - TETAP ADA */}
                     <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
                         {bgImages.map((_, idx) => (
                             <button
@@ -122,19 +105,19 @@ export default function WelcomePage() {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="text-center max-w-4xl mx-auto relative z-10"
+                    className="text-left max-w-2xl relative z-10"
                 >
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.2 }}
-                        className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-5 py-2 rounded-full mb-6"
+                        className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full mb-5"
                     >
-                        <Sparkles size={14} className="text-yellow-400" />
-                        <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white">Nauli Dental AI</span>
+                        <Sparkles size={12} className="text-yellow-400" />
+                        <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white">Nauli Dental AI</span>
                     </motion.div>
 
-                    <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-[1.1] mb-6">
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tighter leading-[1.2] mb-4">
                         Senyum Sehat,
                         <br />
                         <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
@@ -142,44 +125,13 @@ export default function WelcomePage() {
                         </span>
                     </h1>
 
-                    <p className="text-white/90 text-lg lg:text-xl max-w-2xl mx-auto mb-10">
-                        Sistem manajemen klinik gigi modern dengan teknologi AI untuk pengalaman perawatan yang lebih nyaman dan efisien.
+                    <p className="text-white/80 text-sm sm:text-base lg:text-lg max-w-lg mb-8">
+                        Sistem manajemen klinik gigi modern dengan teknologi AI Automation untuk pengalaman perawatan yang lebih nyaman dan efisien.
                     </p>
-
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link href="/register">
-                            <button className="group bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 py-3 rounded-full text-base font-bold shadow-2xl shadow-blue-500/25 hover:shadow-xl transition-all flex items-center gap-2">
-                                Daftar Sekarang
-                                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                            </button>
-                        </Link>
-                        <Link href="/login">
-                            <button className="bg-white/20 backdrop-blur-md border border-white/30 text-white px-8 py-3 rounded-full text-base font-bold hover:bg-white/30 transition-all">
-                                Masuk
-                            </button>
-                        </Link>
-                    </div>
-                </motion.div>
-
-                {/* Scroll Indicator */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 1 }}
-                    className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10"
-                >
-                    <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">Scroll Down</span>
-                    <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
-                        <motion.div
-                            animate={{ y: [0, 15, 0] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                            className="w-1.5 h-3 bg-white/50 rounded-full mt-2"
-                        />
-                    </div>
                 </motion.div>
             </div>
 
-            {/* Features Section */}
+            {/* Features Section - SAMA SEPERTI SEBELUMNYA */}
             <div className="py-20 px-6">
                 <div className="max-w-7xl mx-auto">
                     <motion.div
@@ -218,7 +170,7 @@ export default function WelcomePage() {
                 </div>
             </div>
 
-            {/* Tentang Section */}
+            {/* Tentang Section - SAMA SEPERTI SEBELUMNYA */}
             <div className="py-20 px-6 bg-slate-50">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -257,7 +209,7 @@ export default function WelcomePage() {
                 </div>
             </div>
 
-            {/* Booking Section */}
+            {/* Booking Section - SAMA SEPERTI SEBELUMNYA */}
             <div className="py-20 px-6">
                 <div className="max-w-4xl mx-auto">
                     <motion.div
@@ -353,16 +305,17 @@ export default function WelcomePage() {
                                     initial={{ opacity: 0, y: -10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     className={`text-center text-sm font-medium py-3 rounded-xl ${status.type === 'success'
-                                            ? 'text-green-600 bg-green-50'
-                                            : status.type === 'error'
-                                                ? 'text-red-600 bg-red-50'
-                                                : 'text-indigo-600 bg-indigo-50'
+                                        ? 'text-green-600 bg-green-50'
+                                        : status.type === 'error'
+                                            ? 'text-red-600 bg-red-50'
+                                            : 'text-indigo-600 bg-indigo-50'
                                         }`}
                                 >
                                     {status.msg}
                                 </motion.p>
                             )}
                         </form>
+
                         <div className="mt-6 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
                             <span className="flex items-center gap-1"><ShieldCheck size={12} /> Data Terenkripsi</span>
                             <span className="w-1 h-1 rounded-full bg-slate-300" />
