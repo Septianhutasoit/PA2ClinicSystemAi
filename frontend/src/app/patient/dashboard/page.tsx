@@ -24,9 +24,9 @@ export default function WelcomePage() {
 
     // Background images array
     const bgImages = [
-        '/images/bg/dental-bg-1.jpg',
-        '/images/bg/dental-bg-2.jpg',
-        '/images/bg/dental-bg-3.jpg',
+        '/images/bg/dental-bg-1.png',
+        '/images/bg/dental-bg-2.png',
+        '/images/bg/dental-bg-3.png',
     ];
 
     // Auto slide background
