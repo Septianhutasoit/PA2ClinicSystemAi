@@ -363,7 +363,6 @@ export default function WelcomePage() {
                                 </motion.p>
                             )}
                         </form>
-
                         <div className="mt-6 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
                             <span className="flex items-center gap-1"><ShieldCheck size={12} /> Data Terenkripsi</span>
                             <span className="w-1 h-1 rounded-full bg-slate-300" />
