@@ -1,18 +1,16 @@
 'use client';
-import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    ShieldCheck, Sparkles, ArrowRight, UserPlus, LogIn,
-    Calendar, Clock, Star, Heart, Smile, ChevronRight,
-    Activity, ChevronLeft, Menu, X, Phone, User, Stethoscope
+    ShieldCheck, Sparkles, ArrowRight, Calendar,
+    Clock, Star, Heart, Activity, Phone, User,
+    Stethoscope, CheckCircle, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
+import Link from 'next/link';
 
 export default function WelcomePage() {
     const [currentSlide, setCurrentSlide] = useState(0);
-    const [isScrolled, setIsScrolled] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [doctors, setDoctors] = useState([]);
     const [formData, setFormData] = useState({
         patient_name: '',
@@ -22,7 +20,6 @@ export default function WelcomePage() {
     });
     const [status, setStatus] = useState({ type: '', msg: '' });
 
-    // Background images array
     const bgImages = [
         '/images/bg/dental-bg-1.png',
         '/images/bg/dental-bg-2.png',
@@ -33,26 +30,14 @@ export default function WelcomePage() {
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % bgImages.length);
-        }, 6000);
+        }, 5000);
         return () => clearInterval(interval);
     }, [bgImages.length]);
-
-    // Scroll effect
-    useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 50);
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     // Fetch doctors
     useEffect(() => {
         api.get('/clinic/doctors').then(res => setDoctors(res.data)).catch(() => { });
     }, []);
-
-    const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % bgImages.length);
-    const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + bgImages.length) % bgImages.length);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,304 +53,341 @@ export default function WelcomePage() {
         }
     };
 
-    const navLinks = [
-        { name: 'Beranda', href: '#home' },
-        { name: 'Layanan', href: '#services' },
-        { name: 'Dokter', href: '#doctors' },
-        { name: 'Tentang', href: '#about' },
+    const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % bgImages.length);
+    const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + bgImages.length) % bgImages.length);
+
+    const features = [
+        { icon: <Calendar size={22} />, title: 'Booking Mudah', desc: 'Pilih jadwal & dokter favorit online 24/7' },
+        { icon: <Star size={22} />, title: 'Dokter Ahli', desc: 'Tim dokter gigi spesialis berpengalaman' },
+        { icon: <Activity size={22} />, title: 'Teknologi Modern', desc: 'Peralatan canggih untuk perawatan terbaik' },
+        { icon: <Heart size={22} />, title: 'Perawatan Nyaman', desc: 'Prosedur minim rasa dengan hasil maksimal' },
     ];
 
     return (
-        <div className="min-h-screen relative">
+        <div className="min-h-screen bg-white">
+            {/* Hero Section - Fullscreen dengan Background Slider (TANPA NAVBAR) */}
+            <div className="relative h-screen w-full flex flex-col items-center justify-center px-6">
+                {/* Background Slider */}
+                <div className="absolute inset-0 w-full h-full overflow-hidden">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={currentSlide}
+                            initial={{ opacity: 0, scale: 1.1 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 1.2 }}
+                            className="absolute inset-0 w-full h-full"
+                            style={{
+                                backgroundImage: `url(${bgImages[currentSlide]})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                backgroundRepeat: 'no-repeat',
+                            }}
+                        >
+                            <div className="absolute inset-0 bg-black/50" />
+                        </motion.div>
+                    </AnimatePresence>
 
-            {/* Background Slider Fullscreen */}
-            <div className="fixed inset-0 w-full h-full -z-10">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={currentSlide}
-                        initial={{ opacity: 0, scale: 1.1 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 1.5, ease: "easeOut" }}
-                        className="absolute inset-0 w-full h-full"
-                        style={{
-                            backgroundImage: `url(${bgImages[currentSlide]})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat',
-                        }}
+                    {/* Tombol Navigasi Slider */}
+                    <button
+                        onClick={prevSlide}
+                        className="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all"
                     >
-                        <div className={`absolute inset-0 transition-all duration-700 ${isScrolled
-                                ? 'bg-gradient-to-b from-slate-900/95 via-indigo-900/90 to-slate-900/95'
-                                : 'bg-gradient-to-b from-slate-900/80 via-indigo-900/70 to-slate-900/80'
-                            }`} />
-                    </motion.div>
-                </AnimatePresence>
+                        <ChevronLeft size={20} />
+                    </button>
+                    <button
+                        onClick={nextSlide}
+                        className="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all"
+                    >
+                        <ChevronRight size={20} />
+                    </button>
 
-                {/* Slide Controls */}
-                <button
-                    onClick={prevSlide}
-                    className="absolute left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all"
-                >
-                    <ChevronLeft size={20} />
-                </button>
-                <button
-                    onClick={nextSlide}
-                    className="absolute right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-all"
-                >
-                    <ChevronRight size={20} />
-                </button>
-
-                {/* Slide Indicators */}
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-2">
-                    {bgImages.map((_, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => setCurrentSlide(idx)}
-                            className={`transition-all duration-300 rounded-full ${currentSlide === idx
-                                    ? 'w-8 h-1.5 bg-white'
-                                    : 'w-1.5 h-1.5 bg-white/40 hover:bg-white/70'
-                                }`}
-                        />
-                    ))}
-                </div>
-            </div>
-
-            {/* Navbar dengan efek blur */}
-            <motion.nav
-                initial={{ y: -100 }}
-                animate={{ y: 0 }}
-                transition={{ duration: 0.5 }}
-                className={`fixed top-0 w-full z-40 transition-all duration-500 ${isScrolled
-                        ? 'bg-white/10 backdrop-blur-xl border-b border-white/10 py-3'
-                        : 'bg-transparent py-5'
-                    }`}
-            >
-                <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-                    <Link href="/" className="flex items-center gap-2 group">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                            <Sparkles size={16} className="text-white" />
-                        </div>
-                        <span className="text-lg font-black tracking-tighter text-white">
-                            Nauli<span className="text-blue-400">Dental</span>
-                        </span>
-                    </Link>
-
-                    <div className="hidden lg:flex items-center gap-6">
-                        {navLinks.map((link) => (
-                            <Link
-                                key={link.name}
-                                href={link.href}
-                                className="text-[12px] font-medium text-white/70 hover:text-white transition-colors"
-                            >
-                                {link.name}
-                            </Link>
+                    {/* Slide Indicators */}
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                        {bgImages.map((_, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => setCurrentSlide(idx)}
+                                className={`transition-all duration-300 rounded-full ${currentSlide === idx
+                                        ? 'w-8 h-1.5 bg-white'
+                                        : 'w-1.5 h-1.5 bg-white/40 hover:bg-white/70'
+                                    }`}
+                            />
                         ))}
                     </div>
+                </div>
 
-                    <div className="flex items-center gap-3">
-                        <Link href="/login">
-                            <button className="text-white/80 hover:text-white text-xs font-medium transition-colors">
-                                Login
+                {/* Hero Content */}
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                    className="text-center max-w-4xl mx-auto relative z-10"
+                >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-5 py-2 rounded-full mb-6"
+                    >
+                        <Sparkles size={14} className="text-yellow-400" />
+                        <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white">Nauli Dental AI</span>
+                    </motion.div>
+
+                    <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-[1.1] mb-6">
+                        Senyum Sehat,
+                        <br />
+                        <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                            Masa Depan Cerah
+                        </span>
+                    </h1>
+
+                    <p className="text-white/90 text-lg lg:text-xl max-w-2xl mx-auto mb-10">
+                        Sistem manajemen klinik gigi modern dengan teknologi AI untuk pengalaman perawatan yang lebih nyaman dan efisien.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <Link href="/register">
+                            <button className="group bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-8 py-3 rounded-full text-base font-bold shadow-2xl shadow-blue-500/25 hover:shadow-xl transition-all flex items-center gap-2">
+                                Daftar Sekarang
+                                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                             </button>
                         </Link>
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="lg:hidden p-2 text-white hover:bg-white/10 rounded-lg transition-all"
-                        >
-                            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-                        </button>
-                    </div>
-                </div>
-
-                <AnimatePresence>
-                    {isMobileMenuOpen && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="lg:hidden bg-white/10 backdrop-blur-xl border-t border-white/10 mt-3"
-                        >
-                            <div className="px-6 py-3 space-y-1">
-                                {navLinks.map((link) => (
-                                    <Link
-                                        key={link.name}
-                                        href={link.href}
-                                        onClick={() => setIsMobileMenuOpen(false)}
-                                        className="block py-2 text-white/80 hover:text-white transition-colors text-sm"
-                                    >
-                                        {link.name}
-                                    </Link>
-                                ))}
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </motion.nav>
-
-            {/* Hero Section dengan Form Booking */}
-            <div className="relative z-10 min-h-screen flex items-center justify-center px-6 pt-20">
-                <div className="max-w-6xl mx-auto w-full">
-
-                    {/* Left Side - Info Text */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="text-center lg:text-left mb-8 lg:mb-0"
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-1.5 rounded-full mb-4"
-                        >
-                            <Sparkles size={12} className="text-blue-400" />
-                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/90">Nauli Dental AI</span>
-                        </motion.div>
-
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-[1.1] mb-4">
-                            Senyum Sehat,
-                            <br />
-                            <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                                Masa Depan Cerah
-                            </span>
-                        </h1>
-
-                        <p className="text-white/70 text-base max-w-lg mx-auto lg:mx-0">
-                            Sistem manajemen klinik gigi modern dengan teknologi AI untuk pengalaman perawatan yang lebih nyaman dan efisien.
-                        </p>
-                    </motion.div>
-
-                    {/* Right Side - Form Booking */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl max-w-md mx-auto lg:mx-0 lg:ml-auto"
-                    >
-                        <div className="flex items-center gap-2 mb-5">
-                            <Calendar size={18} className="text-blue-400" />
-                            <h3 className="text-white font-bold text-sm uppercase tracking-wider">Pendaftaran Online</h3>
-                        </div>
-
-                        <form onSubmit={handleSubmit} className="space-y-3">
-                            <div className="relative">
-                                <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="text"
-                                    placeholder="Nama Lengkap"
-                                    className="w-full pl-9 pr-3 py-2.5 bg-white/90 backdrop-blur-sm rounded-xl border border-white/20 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    value={formData.patient_name}
-                                    onChange={e => setFormData({ ...formData, patient_name: e.target.value })}
-                                    required
-                                />
-                            </div>
-
-                            <div className="relative">
-                                <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="text"
-                                    placeholder="WhatsApp (08...)"
-                                    className="w-full pl-9 pr-3 py-2.5 bg-white/90 backdrop-blur-sm rounded-xl border border-white/20 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    value={formData.patient_phone}
-                                    onChange={e => setFormData({ ...formData, patient_phone: e.target.value })}
-                                    required
-                                />
-                            </div>
-
-                            <div className="relative">
-                                <Stethoscope size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
-                                <select
-                                    className="w-full pl-9 pr-3 py-2.5 bg-white/90 backdrop-blur-sm rounded-xl border border-white/20 text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    value={formData.doctor_name}
-                                    onChange={e => setFormData({ ...formData, doctor_name: e.target.value })}
-                                    required
-                                >
-                                    <option value="">-- Pilih Dokter --</option>
-                                    {doctors.map((d: any) => <option key={d.id} value={d.name}>{d.name} ({d.specialty})</option>)}
-                                </select>
-                            </div>
-
-                            <div className="relative">
-                                <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input
-                                    type="datetime-local"
-                                    className="w-full pl-9 pr-3 py-2.5 bg-white/90 backdrop-blur-sm rounded-xl border border-white/20 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                    value={formData.appointment_date}
-                                    onChange={e => setFormData({ ...formData, appointment_date: e.target.value })}
-                                    required
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg hover:shadow-xl transition-all"
-                            >
-                                Buat Janji Temu
+                        <Link href="/login">
+                            <button className="bg-white/20 backdrop-blur-md border border-white/30 text-white px-8 py-3 rounded-full text-base font-bold hover:bg-white/30 transition-all">
+                                Masuk
                             </button>
-
-                            {status.msg && (
-                                <p className={`text-center text-[10px] font-bold py-1 rounded-lg ${status.type === 'success' ? 'text-green-400' :
-                                        status.type === 'error' ? 'text-red-400' : 'text-blue-400'
-                                    }`}>
-                                    {status.msg}
-                                </p>
-                            )}
-                        </form>
-
-                        {/* Info Tambahan */}
-                        <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-center gap-3 text-[10px] text-white/50">
-                            <span className="flex items-center gap-1"><ShieldCheck size={10} /> Data Terenkripsi</span>
-                            <span className="w-1 h-1 rounded-full bg-white/30" />
-                            <span className="flex items-center gap-1"><Heart size={10} /> Gratis Konsultasi</span>
-                        </div>
-                    </motion.div>
-                </div>
+                        </Link>
+                    </div>
+                </motion.div>
 
                 {/* Scroll Indicator */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.8 }}
-                    className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
+                    transition={{ delay: 1 }}
+                    className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10"
                 >
-                    <span className="text-[8px] font-bold text-white/40 uppercase tracking-wider">Scroll</span>
-                    <div className="w-5 h-8 border border-white/20 rounded-full flex justify-center">
+                    <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">Scroll Down</span>
+                    <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
                         <motion.div
-                            animate={{ y: [0, 12, 0] }}
+                            animate={{ y: [0, 15, 0] }}
                             transition={{ duration: 1.5, repeat: Infinity }}
-                            className="w-1 h-2 bg-white/30 rounded-full mt-2"
+                            className="w-1.5 h-3 bg-white/50 rounded-full mt-2"
                         />
                     </div>
                 </motion.div>
             </div>
 
-            {/* Content Section Below */}
-            <div className="relative z-10 bg-white rounded-t-3xl mt-10 px-6 py-12">
+            {/* Features Section */}
+            <div className="py-20 px-6">
                 <div className="max-w-7xl mx-auto">
-                    <div className="grid md:grid-cols-3 gap-6">
-                        {[
-                            { icon: <Calendar size={20} />, title: 'Booking Mudah', desc: 'Pilih jadwal & dokter favorit online 24/7' },
-                            { icon: <Star size={20} />, title: 'Dokter Ahli', desc: 'Tim dokter gigi spesialis berpengalaman' },
-                            { icon: <Activity size={20} />, title: 'Teknologi Modern', desc: 'Peralatan canggih untuk perawatan terbaik' },
-                        ].map((item, idx) => (
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                        viewport={{ once: true }}
+                        className="text-center mb-12"
+                    >
+                        <h2 className="text-3xl md:text-4xl font-black text-slate-800 mb-4">
+                            Layanan Unggulan Kami
+                        </h2>
+                        <p className="text-slate-500 max-w-2xl mx-auto">
+                            Kami menyediakan layanan dental terbaik dengan teknologi modern dan tim dokter berpengalaman
+                        </p>
+                    </motion.div>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {features.map((item, idx) => (
                             <motion.div
                                 key={idx}
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 30 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.1 }}
                                 viewport={{ once: true }}
-                                className="text-center p-5"
+                                className="bg-gradient-to-br from-slate-50 to-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all border border-slate-100 group"
                             >
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white mx-auto mb-3">
+                                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform">
                                     {item.icon}
                                 </div>
-                                <h3 className="text-sm font-black text-slate-800 mb-1">{item.title}</h3>
-                                <p className="text-xs text-slate-500">{item.desc}</p>
+                                <h3 className="text-lg font-black text-slate-800 mb-2">{item.title}</h3>
+                                <p className="text-sm text-slate-500">{item.desc}</p>
                             </motion.div>
                         ))}
                     </div>
+                </div>
+            </div>
+
+            {/* Tentang Section */}
+            <div className="py-20 px-6 bg-slate-50">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                        <motion.div
+                            initial={{ opacity: 0, x: -30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6 }}
+                            viewport={{ once: true }}
+                        >
+                            <div className="inline-flex items-center gap-2 bg-indigo-100 px-4 py-2 rounded-full mb-4">
+                                <Heart size={14} className="text-indigo-600" />
+                                <span className="text-[10px] font-bold text-indigo-600">Tentang Kami</span>
+                            </div>
+                            <h2 className="text-3xl md:text-4xl font-black text-slate-800 mb-4">
+                                Klinik Gigi Modern dengan Teknologi AI
+                            </h2>
+                            <p className="text-slate-500 mb-4 leading-relaxed">
+                                Nauli Dental hadir sebagai solusi kesehatan gigi modern yang menggabungkan teknologi AI dengan pelayanan profesional. Kami berkomitmen memberikan pengalaman perawatan gigi yang nyaman, cepat, dan terjangkau.
+                            </p>
+                            <p className="text-slate-500 leading-relaxed">
+                                Dengan tim dokter spesialis berpengalaman dan peralatan canggih, kami siap membantu Anda mendapatkan senyum sehat dan percaya diri.
+                            </p>
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, x: 30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6 }}
+                            viewport={{ once: true }}
+                            className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white text-center"
+                        >
+                            <ShieldCheck size={48} className="mx-auto mb-4 text-white/80" />
+                            <h3 className="text-2xl font-bold mb-2">Terpercaya & Profesional</h3>
+                            <p className="text-white/80">Lebih dari 1000+ pasien telah mempercayakan senyum mereka kepada kami</p>
+                        </motion.div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Booking Section */}
+            <div className="py-20 px-6">
+                <div className="max-w-4xl mx-auto">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                        viewport={{ once: true }}
+                        className="text-center mb-10"
+                    >
+                        <div className="inline-flex items-center gap-2 bg-indigo-100 px-4 py-2 rounded-full mb-4">
+                            <Calendar size={16} className="text-indigo-600" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Booking Online</span>
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-black text-slate-800 mb-4">
+                            Buat Janji Temu Sekarang
+                        </h2>
+                        <p className="text-slate-500 max-w-2xl mx-auto">
+                            Isi formulir di bawah ini untuk melakukan reservasi. Kami akan menghubungi Anda untuk konfirmasi.
+                        </p>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                        viewport={{ once: true }}
+                        className="bg-white rounded-3xl shadow-2xl p-8 md:p-10 border border-slate-100"
+                    >
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div className="grid md:grid-cols-2 gap-5">
+                                <div className="relative">
+                                    <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Nama Lengkap"
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                        value={formData.patient_name}
+                                        onChange={e => setFormData({ ...formData, patient_name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="relative">
+                                    <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Nomor WhatsApp"
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                        value={formData.patient_phone}
+                                        onChange={e => setFormData({ ...formData, patient_phone: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-5">
+                                <div className="relative">
+                                    <Stethoscope size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+                                    <select
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                        value={formData.doctor_name}
+                                        onChange={e => setFormData({ ...formData, doctor_name: e.target.value })}
+                                        required
+                                    >
+                                        <option value="">-- Pilih Dokter Spesialis --</option>
+                                        {doctors.map((d: any) => (
+                                            <option key={d.id} value={d.name}>
+                                                {d.name} - {d.specialty}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="relative">
+                                    <Clock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="datetime-local"
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                        value={formData.appointment_date}
+                                        onChange={e => setFormData({ ...formData, appointment_date: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-4 rounded-xl font-bold text-sm uppercase tracking-wider shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                                {status.type === 'loading' ? 'Memproses...' : 'Konfirmasi Janji Temu'}
+                            </button>
+
+                            {status.msg && (
+                                <motion.p
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className={`text-center text-sm font-medium py-3 rounded-xl ${status.type === 'success'
+                                            ? 'text-green-600 bg-green-50'
+                                            : status.type === 'error'
+                                                ? 'text-red-600 bg-red-50'
+                                                : 'text-indigo-600 bg-indigo-50'
+                                        }`}
+                                >
+                                    {status.msg}
+                                </motion.p>
+                            )}
+                        </form>
+
+                        <div className="mt-6 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
+                            <span className="flex items-center gap-1"><ShieldCheck size={12} /> Data Terenkripsi</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-300" />
+                            <span className="flex items-center gap-1"><Heart size={12} /> Gratis Konsultasi Awal</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-300" />
+                            <span className="flex items-center gap-1"><CheckCircle size={12} /> Konfirmasi Cepat</span>
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-slate-900 py-10 px-6">
+                <div className="max-w-7xl mx-auto text-center">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                        <Sparkles size={20} className="text-blue-400" />
+                        <span className="text-white font-black text-lg">Nauli<span className="text-blue-400">Dental</span></span>
+                    </div>
+                    <p className="text-slate-400 text-sm mb-4">
+                        Klinik Gigi Modern dengan Teknologi AI • Profesional • Terpercaya
+                    </p>
+                    <p className="text-slate-500 text-xs">
+                        © 2024 Nauli Dental Care. All rights reserved.
+                    </p>
                 </div>
             </div>
         </div>
