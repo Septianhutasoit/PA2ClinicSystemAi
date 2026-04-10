@@ -9,6 +9,9 @@ class DoctorBase(BaseModel):
     photo_url: Optional[str] = None
     role: Optional[str] = "doctor"
     schedules: Optional[List[Any]] = None  # Gunakan List[Any] agar bisa menerima format JSON array
+    phone: Optional[str] = ""
+    email: Optional[str] = ""
+    experience: Optional[str] = ""
 
 class DoctorResponse(DoctorBase):
     id: int

@@ -77,10 +77,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
 
     return (
-        <div className="flex min-h-screen bg-[#F4F7FE] text-[#1E293B] font-sans overflow-hidden">
+        <div className="flex min-h-screen bg-[#F4F7FE] text-[#1E293B] font-sans">
 
             {/* --- SIDEBAR (DIPERTAJAM & DIRAPATKAN) --- */}
-            <aside className={`fixed lg:relative z-50 w-60 h-screen bg-white border-r border-blue-50/50 shadow-sm transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+            <aside className={`fixed lg:sticky lg:top-0 z-50 w-60 h-screen bg-white border-r border-blue-50/50 shadow-sm transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
                 <div className="flex flex-col h-full">
                     {/* Logo - Lebih Rapat */}
                     <div className="p-5 flex items-center gap-2.5">
@@ -123,9 +123,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </aside>
 
             {/* --- MAIN CONTENT (KANAN) --- */}
-            <main className="flex-1 flex flex-col min-w-0">
+            <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
                 {/* Header (Glassmorphism Modern) */}
-                <header className="h-14 bg-white/80 backdrop-blur-md border-b border-blue-50/50 px-6 flex items-center justify-between sticky top-0 z-40">
+                <header className="h-14 bg-white/80 backdrop-blur-md border-b border-blue-50/50 px-6 flex items-center justify-between sticky top-0 z-40 shrink-0">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-2 bg-blue-50 rounded-lg text-blue-600"><Menu size={18} /></button>
                         <h2 className="text-[12px] font-black text-slate-800 tracking-widest leading-none uppercase italic border-l-2 border-blue-600 pl-3">
@@ -160,7 +160,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </header>
 
                 {/* Konten dengan Animasi Blur Premium */}
-                <div className="flex-1 overflow-y-auto p-6 lg:p-10">
+                <div className="flex-1 p-6 lg:p-10">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={pathname}

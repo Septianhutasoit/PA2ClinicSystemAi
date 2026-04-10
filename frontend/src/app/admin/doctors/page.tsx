@@ -6,15 +6,18 @@ import {
     UserPlus, Trash2, Edit3, Save, X,
     UserCog, Camera, Upload, CheckCircle2,
     Search, Stethoscope, BriefcaseMedical, Loader2,
-    MapPin, Clock, CalendarDays
+    MapPin, Clock, CalendarDays, Sparkles, ShieldCheck,
+    Phone, Mail, ChevronRight
 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ManageDoctors() {
     const [doctors, setDoctors] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false); // State untuk loading tombol simpan
+    const [isSaving, setIsSaving] = useState(false);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -24,10 +27,18 @@ export default function ManageDoctors() {
         specialty: '',
         photo_url: '',
         role: 'doctor',
+        phone: '',
+        email: '',
+        experience: '',
         schedules: [{ day: 'Senin', time: '08:00 - 16:00', loc: 'Nauli Balige' }]
     });
 
-    // --- LOGIKA JADWAL DYNAMIS ---
+    // Filter doctors based on search
+    const filteredDoctors = doctors.filter(doc =>
+        doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        doc.specialty.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     const addScheduleRow = () => {
         setFormData({
             ...formData,
@@ -46,7 +57,6 @@ export default function ManageDoctors() {
         setFormData({ ...formData, schedules: updatedSchedules });
     };
 
-    // --- FETCH DATA ---
     useEffect(() => { fetchDoctors(); }, []);
 
     const fetchDoctors = async () => {
@@ -65,7 +75,6 @@ export default function ManageDoctors() {
         }
     };
 
-    // --- LOGIKA SIMPAN (POST/PATCH) ---
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name || !formData.specialty) return alert("Nama dan Spesialisasi wajib diisi!");
@@ -74,7 +83,6 @@ export default function ManageDoctors() {
         try {
             let finalPhotoUrl = formData.photo_url;
 
-            // 1. Proses Upload Foto jika ada file baru
             if (selectedFile) {
                 const uploadData = new FormData();
                 uploadData.append('file', selectedFile);
@@ -84,7 +92,6 @@ export default function ManageDoctors() {
                 finalPhotoUrl = resUpload.data.url;
             }
 
-            // 2. Siapkan data (Pastikan nama field 'schedules' plural sesuai Backend)
             const dataToSave = {
                 ...formData,
                 photo_url: finalPhotoUrl,
@@ -102,8 +109,10 @@ export default function ManageDoctors() {
             resetForm();
             fetchDoctors();
         } catch (err: any) {
-            console.error("Error Detail:", err.response?.data);
-            alert("❌ Gagal: " + (err.response?.data?.detail || "Koneksi Bermasalah"));
+            // Gunakan log ini agar pesan error asli dari terminal Python muncul di browser
+            console.error("DEBUG ERROR LENGKAP:", err);
+            const detail = err.response?.data?.detail;
+            alert("❌ Gagal Simpan: " + (typeof detail === 'string' ? detail : "Cek terminal Backend (Uvicorn)"));
         } finally {
             setIsSaving(false);
         }
@@ -112,6 +121,9 @@ export default function ManageDoctors() {
     const handleEdit = (doc: any) => {
         setFormData({
             ...doc,
+            phone: doc.phone || '',
+            email: doc.email || '',
+            experience: doc.experience || '',
             schedules: doc.schedules || []
         });
         setPreviewUrl(doc.photo_url);
@@ -127,7 +139,16 @@ export default function ManageDoctors() {
     };
 
     const resetForm = () => {
-        setFormData({ name: '', specialty: '', photo_url: '', role: 'doctor', schedules: [{ day: 'Senin', time: '08:00 - 16:00', loc: 'Nauli Balige' }] });
+        setFormData({
+            name: '',
+            specialty: '',
+            photo_url: '',
+            role: 'doctor',
+            phone: '',
+            email: '',
+            experience: '',
+            schedules: [{ day: 'Senin', time: '08:00 - 16:00', loc: 'Nauli Balige' }]
+        });
         setSelectedFile(null);
         setPreviewUrl(null);
         setEditingId(null);
@@ -135,80 +156,216 @@ export default function ManageDoctors() {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 pb-20">
-            {/* --- HEADER --- */}
-            <div className="flex justify-between items-center bg-white p-6 rounded-[2.5rem] border border-blue-50 shadow-sm">
+        <div className="space-y-8 pb-20">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200"><UserCog size={24} /></div>
+                    <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                        <Stethoscope size={28} />
+                    </div>
                     <div>
-                        <h1 className="text-xl font-black text-slate-900 tracking-tight italic uppercase">Staff Directory</h1>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-1 italic">Authorized Personnel Only</p>
+                        <h1 className="text-2xl font-black text-slate-800 tracking-tight">
+                            Medical Team
+                        </h1>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                            Kelola data dokter dan staff medis
+                        </p>
                     </div>
                 </div>
-                <button onClick={() => setIsFormOpen(true)} className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black shadow-xl shadow-blue-100 hover:scale-105 active:scale-95 transition-all">
-                    <UserPlus size={16} /> REGISTER NEW STAFF
+                <button
+                    onClick={() => setIsFormOpen(true)}
+                    className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-lg shadow-emerald-200 hover:scale-105 active:scale-95 transition-all duration-200"
+                >
+                    <UserPlus size={18} /> Tambah Staff
                 </button>
             </div>
 
-            {/* --- FORM MODAL --- */}
+            {/* Search Bar */}
+            <div className="relative">
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                    type="text"
+                    placeholder="Cari dokter atau spesialisasi..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                />
+            </div>
+
+            {/* FORM MODAL - MODERN */}
             <AnimatePresence>
                 {isFormOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm">
-                        <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white w-full max-w-2xl rounded-[3rem] p-10 shadow-2xl relative max-h-[90vh] overflow-y-auto border border-blue-50">
-                            <button onClick={resetForm} className="absolute top-8 right-8 text-slate-300 hover:text-red-500 transition-colors"><X size={28} /></button>
-                            <h2 className="text-2xl font-black text-slate-900 mb-8 uppercase italic">{editingId ? 'Edit Profile Staff' : 'Registrasi Staff Baru'}</h2>
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl relative max-h-[90vh] overflow-y-auto"
+                        >
+                            <div className="sticky top-0 bg-white border-b border-slate-100 px-8 py-6 flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-800">
+                                        {editingId ? 'Edit Staff Medis' : 'Tambah Staff Baru'}
+                                    </h2>
+                                    <p className="text-xs text-slate-400 mt-0.5">
+                                        Isi informasi lengkap staff medis
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={resetForm}
+                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
 
-                            <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <form onSubmit={handleSave} className="p-8 space-y-6">
                                 {/* Upload Foto */}
-                                <div className="md:col-span-2 flex flex-col items-center justify-center p-8 bg-blue-50/50 rounded-[2.5rem] border-2 border-dashed border-blue-200 group relative">
-                                    {previewUrl ? (
-                                        <div className="relative group">
-                                            <img src={previewUrl} className="w-32 h-32 rounded-3xl object-cover shadow-xl border-4 border-white" alt="preview" />
-                                            <button type="button" onClick={() => { setSelectedFile(null); setPreviewUrl(null); }} className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"><X size={14} /></button>
+                                <div className="flex flex-col items-center">
+                                    <div className="relative group cursor-pointer">
+                                        <div className="w-28 h-28 rounded-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center shadow-md">
+                                            {previewUrl ? (
+                                                <img src={previewUrl} className="w-full h-full object-cover" alt="preview" />
+                                            ) : (
+                                                <Camera size={32} className="text-slate-400" />
+                                            )}
                                         </div>
-                                    ) : (
-                                        <Camera size={40} className="text-blue-300" />
-                                    )}
-                                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-4 italic">Klik untuk Upload Foto Lokal</p>
-                                    <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Nama Lengkap</label>
-                                    <input type="text" className="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold text-sm focus:ring-2 focus:ring-blue-600 outline-none" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Tipe Jabatan</label>
-                                    <select className="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold text-sm appearance-none cursor-pointer" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })}>
-                                        <option value="doctor">🩺 Dokter Spesialis</option>
-                                        <option value="nurse">🚑 Perawat / Staff Medis</option>
-                                    </select>
-                                </div>
-
-                                <div className="md:col-span-2 space-y-1.5">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase ml-2 tracking-widest">Spesialisasi</label>
-                                    <input type="text" className="w-full p-4 bg-slate-50 rounded-2xl border-none font-bold text-sm focus:ring-2 focus:ring-blue-600 outline-none" value={formData.specialty} onChange={e => setFormData({ ...formData, specialty: e.target.value })} required />
-                                </div>
-
-                                {/* Bagian Input Jadwal */}
-                                <div className="md:col-span-2 space-y-4 border-t border-slate-100 pt-6 mt-4">
-                                    <div className="flex justify-between items-center">
-                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Detail Jadwal Praktek</h4>
-                                        <button type="button" onClick={addScheduleRow} className="text-[9px] font-black bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-all">+ TAMBAH BARIS</button>
+                                        <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                            <Upload size={20} className="text-white" />
+                                        </div>
+                                        <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer rounded-full" />
                                     </div>
-                                    {(formData.schedules || []).map((sch, index) => (
-                                        <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-slate-50/50 p-4 rounded-3xl border border-slate-100 relative group">
-                                            <input type="text" placeholder="Hari" className="bg-white p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-blue-600 shadow-sm" value={sch.day} onChange={(e) => updateScheduleValue(index, 'day', e.target.value)} />
-                                            <input type="text" placeholder="Jam" className="bg-white p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-blue-600 shadow-sm" value={sch.time} onChange={(e) => updateScheduleValue(index, 'time', e.target.value)} />
-                                            <input type="text" placeholder="Lokasi" className="bg-white p-3 rounded-xl text-xs font-bold border-none outline-none focus:ring-2 focus:ring-blue-600 shadow-sm" value={sch.loc} onChange={(e) => updateScheduleValue(index, 'loc', e.target.value)} />
-                                            <button type="button" onClick={() => removeScheduleRow(index)} className="p-3 text-red-400 hover:text-red-600 transition-colors flex items-center justify-center"><Trash2 size={18} /></button>
-                                        </div>
-                                    ))}
+                                    <p className="text-[10px] text-slate-400 mt-2">Klik untuk upload foto</p>
                                 </div>
 
-                                <button disabled={isSaving} className="md:col-span-2 w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:bg-blue-600 transition-all flex items-center justify-center gap-3 mt-6">
-                                    {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} {editingId ? 'UPDATE DATA STAFF' : 'SAVE TO DATABASE'}
+                                <div className="grid md:grid-cols-2 gap-5">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-600">Nama Lengkap</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Dr. John Doe"
+                                            className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                                            value={formData.name}
+                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-600">Tipe Jabatan</label>
+                                        <select
+                                            className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                                            value={formData.role}
+                                            onChange={e => setFormData({ ...formData, role: e.target.value })}
+                                        >
+                                            <option value="doctor">🩺 Dokter Spesialis</option>
+                                            <option value="nurse">🚑 Perawat / Staff Medis</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-600">Spesialisasi</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Spesialis Gigi Anak"
+                                            className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                                            value={formData.specialty}
+                                            onChange={e => setFormData({ ...formData, specialty: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-600">Pengalaman (Tahun)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="5+ tahun"
+                                            className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                                            value={formData.experience}
+                                            onChange={e => setFormData({ ...formData, experience: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-600">Nomor Telepon</label>
+                                        <input
+                                            type="text"
+                                            placeholder="+62 812 3456 7890"
+                                            className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                                            value={formData.phone}
+                                            onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-600">Email</label>
+                                        <input
+                                            type="email"
+                                            placeholder="doctor@nauli.com"
+                                            className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                                            value={formData.email}
+                                            onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Jadwal Section */}
+                                <div className="border-t border-slate-100 pt-5">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                            <CalendarDays size={16} /> Jadwal Praktek
+                                        </h4>
+                                        <button
+                                            type="button"
+                                            onClick={addScheduleRow}
+                                            className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                                        >
+                                            + Tambah Jadwal
+                                        </button>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        {(formData.schedules || []).map((sch, index) => (
+                                            <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Hari"
+                                                    className="bg-white px-3 py-2 rounded-lg text-sm border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                                                    value={sch.day}
+                                                    onChange={(e) => updateScheduleValue(index, 'day', e.target.value)}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Jam"
+                                                    className="bg-white px-3 py-2 rounded-lg text-sm border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                                                    value={sch.time}
+                                                    onChange={(e) => updateScheduleValue(index, 'time', e.target.value)}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Lokasi"
+                                                    className="bg-white px-3 py-2 rounded-lg text-sm border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                                                    value={sch.loc}
+                                                    onChange={(e) => updateScheduleValue(index, 'loc', e.target.value)}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeScheduleRow(index)}
+                                                    className="text-red-400 hover:text-red-600 transition-colors p-2"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button
+                                    disabled={isSaving}
+                                    className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-4 rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                                >
+                                    {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                                    {editingId ? 'Update Data Staff' : 'Simpan Staff'}
                                 </button>
                             </form>
                         </motion.div>
@@ -216,47 +373,102 @@ export default function ManageDoctors() {
                 )}
             </AnimatePresence>
 
-            {/* --- TABEL STAFF (CLEAN) --- */}
-            <div className="bg-white rounded-[2.5rem] border border-blue-50 shadow-sm overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                    <thead className="bg-blue-50/50">
-                        <tr>
-                            <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-blue-100">Personnel Info</th>
-                            <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-blue-100 text-center">Status Role</th>
-                            <th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-blue-100 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-blue-50/50">
-                        {isLoading ? <tr><td colSpan={3} className="p-20 text-center"><Loader2 className="animate-spin mx-auto text-blue-600" /></td></tr> :
-                            doctors.map((d: any) => (
-                                <tr key={d.id} className="hover:bg-blue-50/20 transition-all group">
-                                    <td className="p-5">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-14 h-14 rounded-2xl bg-white border border-blue-100 overflow-hidden shadow-sm flex-shrink-0">
-                                                <img src={d.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${d.name}`} className="w-full h-full object-cover" alt="avatar" />
-                                            </div>
-                                            <div>
-                                                <p className="font-black text-slate-900 text-sm italic tracking-tight">{d.name}</p>
-                                                <p className="text-[10px] font-black text-blue-500 uppercase flex items-center gap-1"><Stethoscope size={10} /> {d.specialty}</p>
-                                            </div>
+            {/* Doctors Grid - Modern Card Layout */}
+            {isLoading ? (
+                <div className="flex justify-center py-20">
+                    <Loader2 className="animate-spin text-emerald-500" size={40} />
+                </div>
+            ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredDoctors.map((doctor: any, idx: number) => (
+                        <motion.div
+                            key={doctor.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                            className="group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
+                        >
+                            {/* Card Header with Photo */}
+                            <div className="relative h-32 bg-gradient-to-r from-emerald-500 to-teal-600">
+                                <div className="absolute -bottom-10 left-6">
+                                    <div className="w-24 h-24 rounded-2xl overflow-hidden border-4 border-white shadow-lg bg-white">
+                                        <img
+                                            src={doctor.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${doctor.name}`}
+                                            className="w-full h-full object-cover"
+                                            alt={doctor.name}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="absolute top-4 right-4">
+                                    <span className={`px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${doctor.role === 'doctor'
+                                            ? 'bg-white/20 text-white backdrop-blur-sm'
+                                            : 'bg-white/20 text-white backdrop-blur-sm'
+                                        }`}>
+                                        {doctor.role === 'doctor' ? 'Dokter' : 'Staff Medis'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Card Body */}
+                            <div className="pt-14 pb-5 px-6">
+                                <h3 className="text-lg font-bold text-slate-800">{doctor.name}</h3>
+                                <p className="text-sm text-emerald-600 font-semibold mt-0.5">{doctor.specialty}</p>
+
+                                {doctor.experience && (
+                                    <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                                        <BriefcaseMedical size={12} /> {doctor.experience} tahun pengalaman
+                                    </p>
+                                )}
+
+                                {/* Schedule Preview */}
+                                {doctor.schedules && doctor.schedules.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-slate-100">
+                                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Jadwal Praktek</p>
+                                        <div className="space-y-1.5">
+                                            {doctor.schedules.slice(0, 2).map((schedule: any, sIdx: number) => (
+                                                <div key={sIdx} className="flex items-center gap-2 text-xs text-slate-600">
+                                                    <Clock size={12} className="text-slate-400" />
+                                                    <span>{schedule.day}, {schedule.time}</span>
+                                                </div>
+                                            ))}
+                                            {doctor.schedules.length > 2 && (
+                                                <p className="text-[10px] text-slate-400">+{doctor.schedules.length - 2} jadwal lainnya</p>
+                                            )}
                                         </div>
-                                    </td>
-                                    <td className="p-5 text-center">
-                                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${d.role === 'doctor' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
-                                            {d.role === 'doctor' ? 'Specialist' : 'Medical Staff'}
-                                        </span>
-                                    </td>
-                                    <td className="p-5 text-right">
-                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button onClick={() => handleEdit(d)} className="p-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"><Edit3 size={18} /></button>
-                                            <button onClick={() => handleDelete(d.id)} className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"><Trash2 size={18} /></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                    </tbody>
-                </table>
-            </div>
+                                    </div>
+                                )}
+
+                                {/* Action Buttons */}
+                                <div className="flex items-center gap-2 mt-5 pt-3">
+                                    <button
+                                        onClick={() => handleEdit(doctor)}
+                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-xs font-semibold hover:bg-emerald-50 hover:text-emerald-600 transition-all"
+                                    >
+                                        <Edit3 size={14} /> Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(doctor.id)}
+                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 text-red-500 rounded-xl text-xs font-semibold hover:bg-red-50 transition-all"
+                                    >
+                                        <Trash2 size={14} /> Hapus
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+
+            {/* Empty State */}
+            {!isLoading && filteredDoctors.length === 0 && (
+                <div className="text-center py-20">
+                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Stethoscope size={32} className="text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-600">Belum ada data staff</h3>
+                    <p className="text-sm text-slate-400 mt-1">Klik tombol "Tambah Staff" untuk menambahkan</p>
+                </div>
+            )}
         </div>
     );
 }

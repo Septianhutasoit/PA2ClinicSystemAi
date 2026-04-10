@@ -9,8 +9,10 @@ class Doctor(Base):
     specialty = Column(String)
     photo_url = Column(String, nullable=True)
     role = Column(String, default="doctor")
-    # Menggunakan JSONB agar efisien dalam penyimpanan data jadwal terstruktur di Neon Cloud
-    schedules = Column(JSONB, nullable=True) 
+    schedules = Column(JSONB, nullable=True)
+    phone = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    experience = Column(String, nullable=True)
 
 class Service(Base):
     __tablename__ = "services"
