@@ -87,6 +87,19 @@ def add_service(data: schemas.ServiceBase, db: Session = Depends(get_db)):
     db.refresh(new_service)
     return new_service
 
+@router.pacth("/services/{service_id}")
+def delete_service(service_id: int, payload:  dict, db: Session = Depends(get_db)):
+    item = db.query(Service).filter(Service.id == service_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Layanan tidak ditemukan")
+    
+    for key, value in payload.items():
+        if hasattr(item, key):
+            setattr(item, key, value)
+    
+    db.commit()
+    return {"message": "Layanan berhasil diperbarui"}
+
 @router.delete("/services/{service_id}")
 def delete_service(service_id: int, db: Session = Depends(get_db)):
     item = db.query(Service).filter(Service.id == service_id).first()
