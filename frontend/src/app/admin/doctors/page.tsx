@@ -7,7 +7,7 @@ import {
     UserCog, Camera, Upload, CheckCircle2,
     Search, Stethoscope, BriefcaseMedical, Loader2,
     MapPin, Clock, CalendarDays, Sparkles, ShieldCheck,
-    Phone, Mail, ChevronRight
+    Phone, Mail, ChevronRight, Eye
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -16,6 +16,8 @@ export default function ManageDoctors() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -109,7 +111,6 @@ export default function ManageDoctors() {
             resetForm();
             fetchDoctors();
         } catch (err: any) {
-            // Gunakan log ini agar pesan error asli dari terminal Python muncul di browser
             console.error("DEBUG ERROR LENGKAP:", err);
             const detail = err.response?.data?.detail;
             alert("❌ Gagal Simpan: " + (typeof detail === 'string' ? detail : "Cek terminal Backend (Uvicorn)"));
@@ -118,7 +119,8 @@ export default function ManageDoctors() {
         }
     };
 
-    const handleEdit = (doc: any) => {
+    const handleEdit = (doc: any, e: React.MouseEvent) => {
+        e.stopPropagation(); // Mencegah card click terbuka saat klik edit
         setFormData({
             ...doc,
             phone: doc.phone || '',
@@ -131,7 +133,13 @@ export default function ManageDoctors() {
         setIsFormOpen(true);
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDetail = (doc: any) => {
+        setSelectedDoctor(doc);
+        setIsDetailOpen(true);
+    };
+
+    const handleDelete = async (id: number, e: React.MouseEvent) => {
+        e.stopPropagation(); // Mencegah card click terbuka saat klik hapus
         if (confirm('Hapus staff ini secara permanen dari sistem?')) {
             await api.delete(`/clinic/doctors/${id}`);
             fetchDoctors();
@@ -156,25 +164,20 @@ export default function ManageDoctors() {
     };
 
     return (
-        <div className="space-y-8 pb-20">
+        <div className="space-y-6 pb-20">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-                        <Stethoscope size={28} />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-black text-slate-800 tracking-tight">
-                            Medical Team
-                        </h1>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                            Kelola data dokter dan staff medis
-                        </p>
-                    </div>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+                        Medical Team
+                    </h1>
+                    <p className="text-sm text-slate-400 mt-0.5">
+                        Kelola data dokter dan staff medis
+                    </p>
                 </div>
                 <button
                     onClick={() => setIsFormOpen(true)}
-                    className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-lg shadow-emerald-200 hover:scale-105 active:scale-95 transition-all duration-200"
+                    className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-md hover:bg-emerald-700 transition-all duration-200"
                 >
                     <UserPlus size={18} /> Tambah Staff
                 </button>
@@ -188,11 +191,192 @@ export default function ManageDoctors() {
                     placeholder="Cari dokter atau spesialisasi..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                    className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                 />
             </div>
 
-            {/* FORM MODAL - MODERN */}
+            {/* Doctors Grid - Card seperti referensi */}
+            {isLoading ? (
+                <div className="flex justify-center py-20">
+                    <Loader2 className="animate-spin text-emerald-500" size={40} />
+                </div>
+            ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                    {filteredDoctors.map((doctor: any, idx: number) => (
+                        <motion.div
+                            key={doctor.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.05 }}
+                            onClick={() => handleDetail(doctor)}
+                            className="bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+                        >
+                            {/* Foto Dokter - Lebih Tinggi (aspect 4/3) */}
+                            <div className="aspect-[4/3] w-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+                                <img
+                                    src={doctor.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${doctor.name}`}
+                                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                                    alt={doctor.name}
+                                />
+                            </div>
+
+                            {/* Info Dokter */}
+                            <div className="p-4">
+                                <h3 className="text-base font-bold text-slate-800">{doctor.name}</h3>
+                                <p className="text-xs text-emerald-600 font-medium mt-0.5">{doctor.specialty}</p>
+
+                                {/* Info tambahan */}
+                                <div className="mt-3 space-y-1.5">
+                                    {doctor.experience && (
+                                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                                            <BriefcaseMedical size={12} className="text-slate-400" />
+                                            <span>{doctor.experience} tahun</span>
+                                        </div>
+                                    )}
+                                    {doctor.schedules && doctor.schedules.length > 0 && (
+                                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                                            <CalendarDays size={12} className="text-slate-400" />
+                                            <span className="truncate">{doctor.schedules[0]?.day}, {doctor.schedules[0]?.time}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Tombol Edit & Hapus */}
+                                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-100">
+                                    <button
+                                        onClick={(e) => handleEdit(doctor, e)}
+                                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-50 text-slate-600 rounded-lg text-xs font-medium hover:bg-emerald-50 hover:text-emerald-600 transition-all"
+                                    >
+                                        <Edit3 size={12} /> Edit
+                                    </button>
+                                    <button
+                                        onClick={(e) => handleDelete(doctor.id, e)}
+                                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-50 text-red-500 rounded-lg text-xs font-medium hover:bg-red-50 transition-all"
+                                    >
+                                        <Trash2 size={12} /> Hapus
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+
+            {/* Empty State */}
+            {!isLoading && filteredDoctors.length === 0 && (
+                <div className="text-center py-20">
+                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Stethoscope size={32} className="text-slate-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-600">Belum ada data staff</h3>
+                    <p className="text-sm text-slate-400 mt-1">Klik tombol "Tambah Staff" untuk menambahkan</p>
+                </div>
+            )}
+            {/* DETAIL MODAL - Fullscreen blur yang rapi */}
+            <AnimatePresence>
+                {isDetailOpen && selectedDoctor && (
+                    <div
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                        onClick={() => setIsDetailOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="bg-white w-[90%] max-w-md rounded-2xl shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Foto Header - Persegi Panjang */}
+                            <div className="relative h-56 w-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+                                <img
+                                    src={selectedDoctor.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedDoctor.name}`}
+                                    className="w-full h-full object-cover"
+                                    alt={selectedDoctor.name}
+                                />
+                                <button
+                                    onClick={() => setIsDetailOpen(false)}
+                                    className="absolute top-4 right-4 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-all"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            {/* Body Detail */}
+                            <div className="p-6">
+                                <h2 className="text-xl font-bold text-slate-800">{selectedDoctor.name}</h2>
+                                <p className="text-sm text-emerald-600 font-medium mt-0.5">{selectedDoctor.specialty}</p>
+
+                                <div className="mt-5 space-y-3">
+                                    <div className="flex items-center gap-3 text-sm">
+                                        <UserCog size={16} className="text-slate-400" />
+                                        <span className="text-slate-600">{selectedDoctor.role === 'doctor' ? 'Dokter Spesialis' : 'Staff Medis'}</span>
+                                    </div>
+
+                                    {selectedDoctor.experience && (
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <BriefcaseMedical size={16} className="text-slate-400" />
+                                            <span className="text-slate-600">{selectedDoctor.experience} tahun pengalaman</span>
+                                        </div>
+                                    )}
+
+                                    {selectedDoctor.phone && (
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <Phone size={16} className="text-slate-400" />
+                                            <span className="text-slate-600">{selectedDoctor.phone}</span>
+                                        </div>
+                                    )}
+
+                                    {selectedDoctor.email && (
+                                        <div className="flex items-center gap-3 text-sm">
+                                            <Mail size={16} className="text-slate-400" />
+                                            <span className="text-slate-600">{selectedDoctor.email}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Jadwal Lengkap */}
+                                {selectedDoctor.schedules && selectedDoctor.schedules.length > 0 && (
+                                    <div className="mt-5 pt-4 border-t border-slate-100">
+                                        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                            <CalendarDays size={14} /> Jadwal Praktek
+                                        </h4>
+                                        <div className="space-y-2">
+                                            {selectedDoctor.schedules.map((schedule: any, idx: number) => (
+                                                <div key={idx} className="flex items-center gap-2 text-sm text-slate-600">
+                                                    <Clock size={14} className="text-slate-400" />
+                                                    <span><span className="font-medium">{schedule.day}</span>, {schedule.time}</span>
+                                                    <span className="text-xs text-slate-400">- {schedule.loc}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex gap-3 mt-6 pt-3">
+                                    <button
+                                        onClick={() => {
+                                            setIsDetailOpen(false);
+                                            handleEdit(selectedDoctor, new MouseEvent('click') as any);
+                                        }}
+                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
+                                    >
+                                        <Edit3 size={16} /> Edit Staff
+                                    </button>
+                                    <button
+                                        onClick={() => setIsDetailOpen(false)}
+                                        className="flex-1 flex items-center justify-center px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-all"
+                                    >
+                                        Tutup
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* FORM MODAL (tetap sama) */}
             <AnimatePresence>
                 {isFormOpen && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
@@ -223,19 +407,19 @@ export default function ManageDoctors() {
                                 {/* Upload Foto */}
                                 <div className="flex flex-col items-center">
                                     <div className="relative group cursor-pointer">
-                                        <div className="w-28 h-28 rounded-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center shadow-md">
+                                        <div className="w-32 h-32 rounded-xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center shadow-md">
                                             {previewUrl ? (
                                                 <img src={previewUrl} className="w-full h-full object-cover" alt="preview" />
                                             ) : (
                                                 <Camera size={32} className="text-slate-400" />
                                             )}
                                         </div>
-                                        <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                        <div className="absolute inset-0 rounded-xl bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                                             <Upload size={20} className="text-white" />
                                         </div>
-                                        <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer rounded-full" />
+                                        <input type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 opacity-0 cursor-pointer rounded-xl" />
                                     </div>
-                                    <p className="text-[10px] text-slate-400 mt-2">Klik untuk upload foto</p>
+                                    <p className="text-[10px] text-slate-400 mt-2">Klik untuk upload foto (persegi panjang)</p>
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-5">
@@ -372,103 +556,6 @@ export default function ManageDoctors() {
                     </div>
                 )}
             </AnimatePresence>
-
-            {/* Doctors Grid - Modern Card Layout */}
-            {isLoading ? (
-                <div className="flex justify-center py-20">
-                    <Loader2 className="animate-spin text-emerald-500" size={40} />
-                </div>
-            ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredDoctors.map((doctor: any, idx: number) => (
-                        <motion.div
-                            key={doctor.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.05 }}
-                            className="group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
-                        >
-                            {/* Card Header with Photo */}
-                            <div className="relative h-32 bg-gradient-to-r from-emerald-500 to-teal-600">
-                                <div className="absolute -bottom-10 left-6">
-                                    <div className="w-24 h-24 rounded-2xl overflow-hidden border-4 border-white shadow-lg bg-white">
-                                        <img
-                                            src={doctor.photo_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${doctor.name}`}
-                                            className="w-full h-full object-cover"
-                                            alt={doctor.name}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="absolute top-4 right-4">
-                                    <span className={`px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${doctor.role === 'doctor'
-                                            ? 'bg-white/20 text-white backdrop-blur-sm'
-                                            : 'bg-white/20 text-white backdrop-blur-sm'
-                                        }`}>
-                                        {doctor.role === 'doctor' ? 'Dokter' : 'Staff Medis'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Card Body */}
-                            <div className="pt-14 pb-5 px-6">
-                                <h3 className="text-lg font-bold text-slate-800">{doctor.name}</h3>
-                                <p className="text-sm text-emerald-600 font-semibold mt-0.5">{doctor.specialty}</p>
-
-                                {doctor.experience && (
-                                    <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                                        <BriefcaseMedical size={12} /> {doctor.experience} tahun pengalaman
-                                    </p>
-                                )}
-
-                                {/* Schedule Preview */}
-                                {doctor.schedules && doctor.schedules.length > 0 && (
-                                    <div className="mt-4 pt-4 border-t border-slate-100">
-                                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Jadwal Praktek</p>
-                                        <div className="space-y-1.5">
-                                            {doctor.schedules.slice(0, 2).map((schedule: any, sIdx: number) => (
-                                                <div key={sIdx} className="flex items-center gap-2 text-xs text-slate-600">
-                                                    <Clock size={12} className="text-slate-400" />
-                                                    <span>{schedule.day}, {schedule.time}</span>
-                                                </div>
-                                            ))}
-                                            {doctor.schedules.length > 2 && (
-                                                <p className="text-[10px] text-slate-400">+{doctor.schedules.length - 2} jadwal lainnya</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Action Buttons */}
-                                <div className="flex items-center gap-2 mt-5 pt-3">
-                                    <button
-                                        onClick={() => handleEdit(doctor)}
-                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-xs font-semibold hover:bg-emerald-50 hover:text-emerald-600 transition-all"
-                                    >
-                                        <Edit3 size={14} /> Edit
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(doctor.id)}
-                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 text-red-500 rounded-xl text-xs font-semibold hover:bg-red-50 transition-all"
-                                    >
-                                        <Trash2 size={14} /> Hapus
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            )}
-
-            {/* Empty State */}
-            {!isLoading && filteredDoctors.length === 0 && (
-                <div className="text-center py-20">
-                    <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Stethoscope size={32} className="text-slate-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-600">Belum ada data staff</h3>
-                    <p className="text-sm text-slate-400 mt-1">Klik tombol "Tambah Staff" untuk menambahkan</p>
-                </div>
-            )}
         </div>
     );
 }
