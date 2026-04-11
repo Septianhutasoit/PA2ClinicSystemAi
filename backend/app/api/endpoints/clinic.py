@@ -87,7 +87,7 @@ def add_service(data: schemas.ServiceBase, db: Session = Depends(get_db)):
     db.refresh(new_service)
     return new_service
 
-@router.pacth("/services/{service_id}")
+@router.patch("/services/{service_id}")
 def delete_service(service_id: int, payload:  dict, db: Session = Depends(get_db)):
     item = db.query(Service).filter(Service.id == service_id).first()
     if not item:
