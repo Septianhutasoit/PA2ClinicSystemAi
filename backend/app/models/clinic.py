@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB  # PENTING: JSONB harus diimpor dari dialek postgresql
 from app.database.session import Base
 
 class Doctor(Base):
@@ -6,7 +7,12 @@ class Doctor(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     specialty = Column(String)
-    schedule = Column(String)
+    photo_url = Column(String, nullable=True)
+    role = Column(String, default="doctor")
+    schedules = Column(JSONB, nullable=True)
+    phone = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    experience = Column(String, nullable=True)
 
 class Service(Base):
     __tablename__ = "services"
