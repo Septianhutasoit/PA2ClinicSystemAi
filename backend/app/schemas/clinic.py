@@ -23,6 +23,9 @@ class ServiceBase(BaseModel): # <--- TAMBAHKAN AGAR RAPI
     name: str
     description: str
     price: str
+    image_url: Optional[str] = ""
+    details: Optional[str] = ""
+    gallery_urls: Optional[List[str]] = ""
 
 class ServiceResponse(ServiceBase):
     id: int
