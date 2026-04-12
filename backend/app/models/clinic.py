@@ -20,3 +20,6 @@ class Service(Base):
     name = Column(String)
     description = Column(Text)
     price = Column(String)
+    image_url = Column(String, nullable=True)
+    detail_info = Column(Text, nullable=True)
+    gallery_urls = Column(JSONB, nullable=True)

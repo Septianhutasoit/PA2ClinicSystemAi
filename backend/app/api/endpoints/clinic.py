@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Body, File, UploadFile, Request
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
@@ -8,8 +8,7 @@ from app.schemas import clinic as schemas
 from app.models.appointment import Appointment 
 from app.models.clinic import Doctor, Service # Pastikan model ini sudah sinkron
 from app.models.user import User
-import shutil
-import os
+import shutil, os, time
 
 router = APIRouter()
 
@@ -55,21 +54,29 @@ def delete_doctor(doctor_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/upload-photo")
-async def upload_photo(file: UploadFile = File(...)):
+async def upload_photo(request: Request, file: UploadFile = File(...)):
     try:
-        # 1. Buat folder jika belum ada
-        if not os.path.exists("uploads"):
-            os.makedirs("uploads")
+        # 1. Pastikan folder uploads ada
+        upload_dir = "uploads"
+        if not os.path.exists(upload_dir):
+            os.makedirs(upload_dir)
 
-        # 2. Simpan file ke folder uploads
-        file_path = os.path.join("uploads", file.filename)
+        # 2. Simpan file dengan nama unik agar tidak tertimpa
+        filename = f"{int(time.time())}_{file.filename.replace(' ', '_')}"
+        file_path = os.path.join(upload_dir, filename)
+        
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        return {"url": f"http://127.0.0.1:8000/uploads/{file.filename}"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Gagal upload: {str(e)}")
+        # 3. LOGIKA URL DINAMIS (Kunci Jawaban)
+        # Ini akan menghasilkan http://169.254.162.73:8000/uploads/nama_file.jpg
+        base_url = str(request.base_url).rstrip('/')
+        final_url = f"{base_url}/uploads/{filename}"
 
+        return {"url": final_url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 # ==========================================
 # 2. MANAJEMEN LAYANAN KLINIK
 # ==========================================

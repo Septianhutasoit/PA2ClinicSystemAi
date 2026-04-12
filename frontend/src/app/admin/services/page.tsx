@@ -54,9 +54,32 @@ export default function ManageServices() {
         setGalleryPreviews(prev => [...prev, ...newPreviews]);
     };
 
-    const removeGalleryImage = (index: number) => {
-        setGalleryFiles(prev => prev.filter((_, i) => i !== index));
+    const removeGalleryImage = async (index: number, imageUrl?: string) => {
+        // Hapus dari preview lokal
         setGalleryPreviews(prev => prev.filter((_, i) => i !== index));
+        setGalleryFiles(prev => prev.filter((_, i) => i !== index));
+
+        // Jika sedang edit dan ada URL gambar (bukan file baru)
+        if (editingId && imageUrl) {
+            // Hapus dari formData.gallery_urls
+            const updatedGalleryUrls = formData.gallery_urls.filter(url => url !== imageUrl);
+            setFormData(prev => ({
+                ...prev,
+                gallery_urls: updatedGalleryUrls
+            }));
+
+            // Langsung update ke database
+            try {
+                await api.patch(`/clinic/services/${editingId}`, {
+                    ...formData,
+                    gallery_urls: updatedGalleryUrls
+                });
+                console.log('Foto galeri berhasil dihapus dari database');
+            } catch (err) {
+                console.error('Gagal menghapus foto galeri:', err);
+                alert('❌ Gagal menghapus foto galeri');
+            }
+        }
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -64,17 +87,28 @@ export default function ManageServices() {
         setIsSaving(true);
         try {
             let finalImageUrl = formData.image_url;
-            let finalGalleryUrls = formData.gallery_urls || [];
+            // Mulai dengan galeri yang sudah ada (COPY, bukan reference)
+            let finalGalleryUrls = [...(formData.gallery_urls || [])];
 
+            // Handle cover image baru
             if (selectedFile) {
                 const uploadData = new FormData();
                 uploadData.append('file', selectedFile);
                 const resUpload = await api.post('/clinic/upload-photo', uploadData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
+
+                // JIKA SEDANG EDIT dan ada cover lama, pindahkan cover lama ke galeri
+                if (editingId && formData.image_url && formData.image_url !== resUpload.data.url) {
+                    if (!finalGalleryUrls.includes(formData.image_url)) {
+                        finalGalleryUrls.unshift(formData.image_url); // Tambahkan di awal galeri
+                    }
+                }
+
                 finalImageUrl = resUpload.data.url;
             }
 
+            // Upload gallery images baru (TAMBAHKAN ke galeri yang sudah ada)
             if (galleryFiles.length > 0) {
                 for (const file of galleryFiles) {
                     const uploadData = new FormData();
@@ -126,9 +160,67 @@ export default function ManageServices() {
     };
 
     const handleDelete = async (id: number) => {
-        if (confirm('Hapus layanan ini dari daftar?')) {
-            await api.delete(`/clinic/services/${id}`);
-            fetchServices();
+        if (confirm('⚠️ Peringatan! Hapus layanan ini dari daftar? Data yang dihapus tidak dapat dikembalikan!')) {
+            try {
+                setIsLoading(true);
+                const response = await api.delete(`/clinic/services/${id}`);
+
+                if (response.status === 200 || response.status === 204) {
+                    alert('✅ Layanan berhasil dihapus!');
+                    // Refresh data setelah hapus
+                    const res = await api.get('/clinic/services');
+                    setServices(res.data);
+                } else {
+                    alert('❌ Gagal menghapus layanan. Silakan coba lagi.');
+                }
+            } catch (err: any) {
+                console.error('Error detail:', err);
+
+                // Tampilkan pesan error yang lebih spesifik
+                if (err.code === 'ERR_NETWORK') {
+                    alert('❌ Koneksi server bermasalah. Pastikan backend berjalan.');
+                } else if (err.response?.status === 404) {
+                    alert('❌ Layanan tidak ditemukan! Mungkin sudah dihapus sebelumnya.');
+                } else if (err.response?.status === 500) {
+                    alert('❌ Terjadi kesalahan server. Silakan coba lagi nanti.');
+                } else {
+                    alert('❌ Gagal menghapus: ' + (err.response?.data?.detail || err.message));
+                }
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
+
+    // Hapus gambar galeri tertentu (tanpa menghapus seluruh layanan)
+    const handleDeleteGalleryImage = async (imageUrl: string) => {
+        if (confirm('Hapus foto ini dari galeri?')) {
+            try {
+                // Hapus dari array gallery_urls
+                const updatedGalleryUrls = formData.gallery_urls.filter(url => url !== imageUrl);
+
+                // Update form data
+                setFormData(prev => ({
+                    ...prev,
+                    gallery_urls: updatedGalleryUrls
+                }));
+
+                // Hapus dari preview
+                setGalleryPreviews(prev => prev.filter(url => url !== imageUrl));
+
+                // Optional: Simpan perubahan ke server
+                if (editingId) {
+                    await api.patch(`/clinic/services/${editingId}`, {
+                        ...formData,
+                        gallery_urls: updatedGalleryUrls
+                    });
+                    alert('✅ Foto galeri berhasil dihapus!');
+                    await fetchServices();
+                }
+            } catch (err) {
+                console.error(err);
+                alert('❌ Gagal menghapus foto galeri');
+            }
         }
     };
 
@@ -225,9 +317,11 @@ export default function ManageServices() {
                                     </button>
                                     <button
                                         onClick={() => handleDelete(item.id)}
-                                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-50 text-red-500 rounded-lg text-xs font-medium hover:bg-red-50 transition-all"
+                                        disabled={isLoading}
+                                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-50 text-red-500 rounded-lg text-xs font-medium hover:bg-red-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        <Trash2 size={12} /> Hapus
+                                        {isLoading ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                                        Hapus
                                     </button>
                                 </div>
                             </div>
@@ -341,18 +435,73 @@ export default function ManageServices() {
                                         <ImageIcon size={12} /> Galeri Foto (Opsional)
                                     </label>
                                     <div className="flex flex-wrap gap-3">
-                                        {galleryPreviews.map((url, idx) => (
-                                            <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200">
-                                                <img src={url} className="w-full h-full object-cover" />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeGalleryImage(idx)}
-                                                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-all"
-                                                >
-                                                    <X size={10} />
-                                                </button>
-                                            </div>
-                                        ))}
+                                        <div className="border rounded-xl p-4">
+                                            <label className="text-xs font-semibold text-slate-600 block mb-2 flex items-center gap-1">
+                                                <ImageIcon size={12} /> Galeri Foto
+                                            </label>
+
+                                            {/* Galeri Lama (yang sudah tersimpan) */}
+                                            {formData.gallery_urls && formData.gallery_urls.length > 0 && (
+                                                <div className="mb-3">
+                                                    <p className="text-[10px] text-slate-400 mb-2">Foto tersimpan:</p>
+                                                    <div className="flex flex-wrap gap-3">
+                                                        {formData.gallery_urls.map((url, idx) => (
+                                                            <div key={`old-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200">
+                                                                <img src={url} className="w-full h-full object-cover" />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={async () => {
+                                                                        if (confirm('Hapus foto ini dari galeri?')) {
+                                                                            const updatedUrls = formData.gallery_urls.filter(u => u !== url);
+                                                                            setFormData(prev => ({ ...prev, gallery_urls: updatedUrls }));
+                                                                            // Update ke database
+                                                                            if (editingId) {
+                                                                                await api.patch(`/clinic/services/${editingId}`, {
+                                                                                    ...formData,
+                                                                                    gallery_urls: updatedUrls
+                                                                                });
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-all"
+                                                                >
+                                                                    <X size={10} />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Galeri Baru (yang akan diupload) */}
+                                            {galleryPreviews.length > 0 && (
+                                                <div className="mb-3">
+                                                    <p className="text-[10px] text-slate-400 mb-2">Foto baru:</p>
+                                                    <div className="flex flex-wrap gap-3">
+                                                        {galleryPreviews.map((url, idx) => (
+                                                            <div key={`new-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200">
+                                                                <img src={url} className="w-full h-full object-cover" />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => removeGalleryImage(idx)}
+                                                                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition-all"
+                                                                >
+                                                                    <X size={10} />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Tombol tambah foto */}
+                                            <label className="w-20 h-20 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-emerald-300 hover:bg-emerald-50/20 transition-all">
+                                                <Plus size={16} className="text-slate-400" />
+                                                <span className="text-[9px] text-slate-400 mt-1">Tambah</span>
+                                                <input type="file" accept="image/*" multiple onChange={handleGalleryChange} className="hidden" />
+                                            </label>
+                                            <p className="text-[10px] text-slate-400 mt-2">Upload multiple foto untuk galeri layanan</p>
+                                        </div>
                                         <label className="w-20 h-20 border-2 border-dashed border-slate-200 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-emerald-300 hover:bg-emerald-50/20 transition-all">
                                             <Plus size={16} className="text-slate-400" />
                                             <span className="text-[9px] text-slate-400 mt-1">Tambah</span>
