@@ -10,6 +10,7 @@ from app.models.clinic import Doctor, Service
 from app.models.user import User
 import shutil, os, time
 from sqlalchemy import func
+from app.models.patient import Patient
 
 router = APIRouter()
 
@@ -191,3 +192,24 @@ def get_weekly_stats(db: Session = Depends(get_db)):
         return [{"day": s.date.strftime("%a"), "total": s.count} for s in stats]
     except Exception:
         return []
+
+@router.get("/patients")
+def get_all_patients(db: Session = Depends(get_db)):
+    try:
+        patients = db.query(Patient).all()
+        return patients
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ENDPOINT GET PATIENT BY ID
+@router.get("/patients/{p_id}")
+def get_patient_detail(p_id: int, db: Session = Depends(get_db)):
+    try:
+        patient = db.query(Patient).filter(Patient.id == p_id).first()
+        if not patient:
+            raise HTTPException(status_code=404, detail="Patient not found")
+        return patient
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
