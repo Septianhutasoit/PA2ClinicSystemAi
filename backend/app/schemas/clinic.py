@@ -47,3 +47,15 @@ class AppointmentResponse(AppointmentBase):
     status: str
     class Config: 
         from_attributes = True
+
+class PatientResponse(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    email: str
+    phone_number: str
+    gender: Optional[str] = None
+    address: Optional[str] = None
+
+    class Config:
+        from_attributes = True
