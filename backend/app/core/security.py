@@ -8,7 +8,7 @@ from app.core.config import settings
 # SECRET_KEY dimuat dari .env via config (bukan hardcoded)
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1440
+ACCESS_TOKEN_EXPIRE_MINUTES = 60  # ✅ KRITIS #5: Dikurangi dari 24 jam → 60 menit
 
 # OAuth2 scheme untuk dependency injection di endpoint yang butuh autentikasi
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")

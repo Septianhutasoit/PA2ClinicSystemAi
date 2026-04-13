@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr
+from jose import jwt
 
 from app.database.session import get_db
 from app.models.user import User
@@ -91,7 +92,6 @@ def reset_password(
 @router.get("/me", response_model=UserResponse)
 def get_me(db: Session = Depends(get_db), token: str = Depends(security.oauth2_scheme)):
     try:
-        from jose import jwt
         payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
         email: str = payload.get("sub")
         if email is None:

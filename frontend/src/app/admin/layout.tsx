@@ -11,7 +11,6 @@ import {
     Users2,
     UserRoundCog,
     CalendarCheck2,
-    BellRing,
     BrainCircuit,
     Stethoscope,
     Search,
@@ -35,10 +34,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const pathname = usePathname();
     const router = useRouter();
 
-    // 1. PROTEKSI RUTE & ROLE: Memastikan hanya ADMIN yang bisa masuk
+    // 1. PROTEKSI RUTE & ROLE: Cek dari Cookie saja (tidak dari localStorage)
     useEffect(() => {
-        const token = localStorage.getItem('token') || Cookies.get('token');
-        const role = localStorage.getItem('user_role') || Cookies.get('role');
+        // ✅ KRITIS #3: Hapus localStorage — gunakan Cookie saja
+        const token = Cookies.get('token');
+        const role = Cookies.get('role');
 
         if (!token) {
             router.push('/login');
@@ -50,11 +50,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
     }, [pathname, router]);
 
-    // 2. FUNGSI LOGOUT TOTAL (Pembersihan Sesi)
+    // 2. FUNGSI LOGOUT TOTAL — Hapus semua Cookie
     const handleLogout = () => {
         if (confirm("Apakah Anda yakin ingin keluar dari sistem?")) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user_role');
+            // ✅ KRITIS #3: Tidak ada localStorage — hanya hapus Cookie
             Cookies.remove('token');
             Cookies.remove('role');
             router.push('/login');
@@ -68,7 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         try {
             await api.post('/chatbot/ingest');
             alert("✅ Brain Database AI berhasil disinkronkan!");
-        } catch (err) {
+        } catch {
             alert("❌ Gagal memperbarui AI.");
         } finally {
             setIsSyncing(false);

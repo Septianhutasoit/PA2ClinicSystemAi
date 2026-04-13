@@ -37,20 +37,18 @@ export default function LoginPage() {
         }
     }, [router]);
 
-    // 2. Proteksi Sesi: Jika sudah login, jangan tampilkan form login
+    // 2. Proteksi Sesi: Jika sudah login via Cookie, redirect langsung
     useEffect(() => {
-        const token = localStorage.getItem('token') || Cookies.get('token');
-        const role = localStorage.getItem('user_role') || Cookies.get('role');
-
-        // DEBUG: Cek di Console apa yang dibaca browser
-        console.log("Sesi saat ini:", { token: !!token, role: role });
+        // ✅ KRITIS #3: Baca dari Cookie saja, bukan localStorage
+        const token = Cookies.get('token');
+        const role = Cookies.get('role');
 
         if (token && role) {
-            // Hanya redirect jika kita memang ingin auto-login
-            // Jika ingin ganti akun, user harus klik Logout dulu
             const lowerRole = role.toLowerCase();
             if (lowerRole === 'admin') router.push('/admin');
+            else if (lowerRole === 'nurse') router.push('/nurse');
             else if (lowerRole === 'patient') router.push('/patient/dashboard');
+            else if (lowerRole === 'doctor') router.push('/doctor/dashboard');
         }
     }, [router]);
 
@@ -63,21 +61,21 @@ export default function LoginPage() {
         params.append('password', password);
 
         try {
-            // TIPS: Jika kamu mengakses via IP 169.254.x.x, ganti 127.0.0.1 menjadi IP tersebut
-            const res = await axios.post('http://127.0.0.1:8000/api/v1/auth/login', params);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+            const res = await axios.post(`${apiUrl}/api/v1/auth/login`, params);
 
             const { access_token, role } = res.data;
 
-            // Simpan ke LocalStorage & Cookies agar Middleware bisa membaca
-            localStorage.setItem('token', access_token);
-            localStorage.setItem('user_role', role);
-            Cookies.set('token', access_token, { expires: 1 });
-            Cookies.set('role', role, { expires: 1 });
+            // ✅ KRITIS #3: Simpan HANYA ke Cookie (bukan localStorage)
+            // expires: 1/24 = 60 menit, selaras dengan JWT backend
+            Cookies.set('token', access_token, { expires: 1 / 24, sameSite: 'strict' });
+            Cookies.set('role', role, { expires: 1 / 24, sameSite: 'strict' });
 
             redirectUser(role);
 
-        } catch (err: any) {
-            const msg = err.response?.data?.detail || "Email atau password salah!";
+        } catch (err: unknown) {
+            const axiosErr = err as { response?: { data?: { detail?: string } } };
+            const msg = axiosErr.response?.data?.detail || "Email atau password salah!";
             alert(`❌ Login Gagal: ${msg}`);
         } finally {
             setIsLoading(false);
