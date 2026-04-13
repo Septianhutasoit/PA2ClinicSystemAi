@@ -2,13 +2,12 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List, Any
 
-# --- 1. Schema untuk Dokter ---
 class DoctorBase(BaseModel):
     name: str
     specialty: str
     photo_url: Optional[str] = None
     role: Optional[str] = "doctor"
-    schedules: Optional[List[Any]] = None  # Gunakan List[Any] agar bisa menerima format JSON array
+    schedules: Optional[List[Any]] = None
     phone: Optional[str] = ""
     email: Optional[str] = ""
     experience: Optional[str] = ""
@@ -18,8 +17,7 @@ class DoctorResponse(DoctorBase):
     class Config:
         from_attributes = True
 
-# --- 2. Schema untuk Layanan ---
-class ServiceBase(BaseModel): # <--- TAMBAHKAN AGAR RAPI
+class ServiceBase(BaseModel):
     name: str
     description: str
     price: str
@@ -32,14 +30,19 @@ class ServiceResponse(ServiceBase):
     class Config: 
         from_attributes = True
 
-# --- 3. Schema untuk Appointment (Janji Temu) ---
-class AppointmentCreate(BaseModel):
+# INDUK: Harus dibuat paling atas agar bisa dipanggil anak-anaknya
+class AppointmentBase(BaseModel):
     patient_name: str
     patient_phone: str
     doctor_name: str
     appointment_date: datetime
+    patient_address: Optional[str] = None # Kolom baru Neon
+    patient_gender: Optional[str] = None  # Kolom baru Neon
 
-class AppointmentResponse(AppointmentCreate):
+class AppointmentCreate(AppointmentBase):
+    pass
+
+class AppointmentResponse(AppointmentBase):
     id: int
     status: str
     class Config: 

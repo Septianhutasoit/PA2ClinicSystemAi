@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     ShieldCheck, Sparkles, ArrowRight, Calendar,
     Clock, Star, Heart, Activity, Phone, User,
-    Stethoscope, CheckCircle
+    Stethoscope, CheckCircle, MapPin
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
@@ -16,7 +16,9 @@ export default function WelcomePage() {
         patient_name: '',
         patient_phone: '',
         doctor_name: '',
-        appointment_date: ''
+        appointment_date: '',
+        patient_address: '',
+        patient_gender: ''
     });
     const [status, setStatus] = useState({ type: '', msg: '' });
 
@@ -261,6 +263,36 @@ export default function WelcomePage() {
                                         onChange={e => setFormData({ ...formData, patient_phone: e.target.value })}
                                         required
                                     />
+                                </div>
+                            </div>
+
+                            {/* TAMBAHKAN: Alamat dan Jenis Kelamin */}
+                            <div className="grid md:grid-cols-2 gap-5">
+                                <div className="relative">
+                                    <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Alamat Lengkap"
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                        value={formData.patient_address}
+                                        onChange={e => setFormData({ ...formData, patient_address: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="relative">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                        <User size={16} />
+                                    </div>
+                                    <select
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                        value={formData.patient_gender}
+                                        onChange={e => setFormData({ ...formData, patient_gender: e.target.value })}
+                                        required
+                                    >
+                                        <option value="">-- Jenis Kelamin --</option>
+                                        <option value="Laki-laki">Laki-laki</option>
+                                        <option value="Perempuan">Perempuan</option>
+                                    </select>
                                 </div>
                             </div>
 
