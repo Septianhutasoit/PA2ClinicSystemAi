@@ -13,3 +13,5 @@ class Appointment(Base):
     reminder_sent = Column(Boolean, default=False) # Untuk monitoring n8n
     notes = Column(String, nullable=True) # Untuk catatan medis singkat
     status = Column(String, default="Scheduled")
+    patient_address = Column(String, nullable=True) 
+    patient_gender = Column(String, nullable=True)
