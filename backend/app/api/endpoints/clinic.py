@@ -193,23 +193,36 @@ def get_weekly_stats(db: Session = Depends(get_db)):
     except Exception:
         return []
 
-@router.get("/patients")
+@router.get("/patients", response_model=List[schemas.PatientResponse])
 def get_all_patients(db: Session = Depends(get_db)):
+    """
+    Mengambil semua data dari tabel patients di Neon Cloud.
+    Gunakan try-except agar jika database bermasalah, kita tahu penyebabnya.
+    """
     try:
-        patients = db.query(Patient).all()
-        return patients
+        # PERBAIKAN: Panggil 'Patient' langsung, jangan 'patient.Patient'
+        return db.query(Patient).all()
     except Exception as e:
-        print(f"Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"❌ DATABASE CRASH: {str(e)}")
+        raise HTTPException(status_code=500, detail="Database Neon Cloud belum sinkron. Cek SQL Editor.")
 
-# ENDPOINT GET PATIENT BY ID
-@router.get("/patients/{p_id}")
+@router.get("/patients/{p_id}", response_model=schemas.PatientResponse)
 def get_patient_detail(p_id: int, db: Session = Depends(get_db)):
     try:
-        patient = db.query(Patient).filter(Patient.id == p_id).first()
-        if not patient:
-            raise HTTPException(status_code=404, detail="Patient not found")
-        return patient
+        # PERBAIKAN: Panggil 'Patient' langsung
+        patient_data = db.query(Patient).filter(Patient.id == p_id).first()
+        if not patient_data:
+            raise HTTPException(status_code=404, detail="Pasien tidak ditemukan")
+        return patient_data
     except Exception as e:
-        print(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.patch("/patients/{p_id}")
+def update_patient(p_id: int, payload: dict, db: Session = Depends(get_db)):
+    from app.models.patient import Patient
+    p = db.query(Patient).filter(Patient.id == p_id).first()
+    if p:
+        for k, v in payload.items():
+            setattr(p, k, v)
+        db.commit()
+    return {"message": "Success"}
