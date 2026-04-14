@@ -17,10 +17,12 @@ export default function ForgotPasswordPage() {
         e.preventDefault();
         setIsLoading(true);
         try {
-            await api.post('/auth/reset-password', {
-                email: email,
+            const res = await api.post('/auth/reset-password', {
+                email: email.toLowerCase().trim(),
                 new_password: newPassword
             });
+
+            console.log("Respon Reset:", res.data);
             setIsSuccess(true);
             setTimeout(() => router.push('/login'), 3000); // Redirect otomatis setelah 3 detik
         } catch (err: any) {

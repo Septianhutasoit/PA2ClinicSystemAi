@@ -64,20 +64,28 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
 @router.post("/reset-password")
 def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    # 1. Pastikan email diproses huruf kecil agar sinkron
     email_input = data.email.lower().strip()
+    print(f"DEBUG: Mencoba reset password untuk email: {email_input}")
+
+    # 2. Cari user
     user = db.query(User).filter(User.email == email_input).first()
     
     if not user:
-        raise HTTPException(status_code=404, detail="User tidak ditemukan.")
+        print("DEBUG: User tidak ditemukan di Neon Cloud")
+        raise HTTPException(status_code=404, detail="Email tidak terdaftar.")
 
-    # Update Password ke Hash Baru
+    # 3. Hash password baru dan update ke kolom hashed_password
     user.hashed_password = security.get_password_hash(data.new_password)
     
     try:
-        db.commit()
+        db.commit() # Simpan ke Neon Cloud
+        db.refresh(user)
+        print("DEBUG: Password berhasil diperbarui di database!")
         return {"message": "Sandi berhasil diperbarui!"}
-    except Exception:
+    except Exception as e:
         db.rollback()
+        print(f"DEBUG ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail="Gagal menyimpan ke database.")
 
 @router.get("/me", response_model=UserResponse)

@@ -6,7 +6,8 @@ import {
     User, Lock, LogOut, CheckCircle2,
     Camera, Mail, Smartphone, Calendar,
     MapPin, Loader2, ShieldCheck, Globe,
-    Building, Save, RefreshCcw, Info
+    Building, Save, RefreshCcw, Info,
+    ChevronRight, Award, Clock, Phone
 } from 'lucide-react';
 
 export default function AdminSettings() {
@@ -56,113 +57,163 @@ export default function AdminSettings() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] pb-20 animate-in fade-in duration-700">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 pb-20 animate-in fade-in duration-700">
+            <div className="max-w-7xl mx-auto px-4 lg:px-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
                 {/* --- KOLOM KIRI: SIDEBAR PROFILE --- */}
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-white rounded-[3rem] p-10 shadow-xl shadow-emerald-900/5 border border-slate-100 text-center">
-                        <div className="relative inline-block mb-6">
-                            <div className="w-28 h-28 rounded-[2.5rem] overflow-hidden border-4 border-white shadow-2xl bg-slate-50">
+                    <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-100 text-center">
+                        <div className="relative inline-block mb-5">
+                            <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-emerald-500 shadow-lg bg-slate-100">
                                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${adminData.full_name}`} className="w-full h-full object-cover" alt="avatar" />
                             </div>
-                            <button className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-3 rounded-2xl shadow-lg border-4 border-white hover:bg-emerald-600 transition-all active:scale-90">
-                                <Camera size={16} />
+                            <button className="absolute -bottom-1 -right-1 bg-emerald-600 text-white p-2.5 rounded-full shadow-lg border-2 border-white hover:bg-emerald-700 transition-all active:scale-90">
+                                <Camera size={14} />
                             </button>
                         </div>
-                        <h2 className="text-2xl font-black text-slate-800 tracking-tight leading-none uppercase italic">{adminData.full_name || 'Admin'}</h2>
-                        <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] mt-3 bg-emerald-50 py-1 rounded-full px-4 inline-block">{adminData.role}</p>
+                        <h2 className="text-xl font-bold text-slate-800">{adminData.full_name || 'Administrator'}</h2>
+                        <p className="text-[11px] font-semibold text-emerald-600 mt-2 bg-emerald-50 py-1.5 rounded-full px-4 inline-block">{adminData.role}</p>
 
-                        <div className="mt-12 space-y-2 text-left">
+                        <div className="mt-8 space-y-1 text-left">
                             {menuItems.map((item) => (
                                 <button
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
-                                    className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === item.id
-                                            ? "bg-emerald-600 text-white shadow-xl shadow-emerald-200"
-                                            : "text-slate-400 hover:bg-emerald-50 hover:text-emerald-600"
+                                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === item.id
+                                        ? "bg-emerald-600 text-white shadow-md"
+                                        : "text-slate-600 hover:bg-emerald-50 hover:text-emerald-600"
                                         }`}
                                 >
-                                    {item.icon} {item.label}
+                                    <div className="flex items-center gap-3">
+                                        {item.icon}
+                                        <span>{item.label}</span>
+                                    </div>
+                                    {activeTab === item.id && <ChevronRight size={16} />}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* SESI KEAMANAN */}
-                    <div className="bg-slate-900 p-8 rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
+                    {/* SESI KEAMANAN - Card Info */}
+                    <div className="bg-emerald-600 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
                         <div className="relative z-10 space-y-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400"><ShieldCheck size={20} /></div>
-                                <h4 className="font-black text-xs uppercase tracking-widest">Sesi Aktif</h4>
+                                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <ShieldCheck size={20} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-sm">Sesi Aktif</h4>
+                                    <p className="text-white/70 text-xs">Akun Anda aman</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Login Terakhir</p>
-                                <p className="text-sm font-black text-emerald-400 italic">Hari ini, 09:20 AM</p>
+                            <div className="pt-2">
+                                <p className="text-[10px] font-semibold text-white/70 uppercase tracking-wider">Login Terakhir</p>
+                                <p className="text-sm font-bold text-white">Hari ini, {new Date().toLocaleTimeString()}</p>
+                            </div>
+                            <div className="pt-2 border-t border-white/20">
+                                <p className="text-[10px] font-semibold text-white/70 uppercase tracking-wider">IP Address</p>
+                                <p className="text-xs font-mono text-white/80">192.168.1.1</p>
                             </div>
                         </div>
-                        <Globe size={180} className="absolute -right-16 -bottom-16 opacity-5 text-white rotate-12" />
                     </div>
                 </div>
 
                 {/* --- KOLOM KANAN: PANEL FORM --- */}
                 <div className="lg:col-span-8">
-                    <div className="bg-white rounded-[3.5rem] p-10 lg:p-16 shadow-xl shadow-emerald-900/5 border border-slate-100 min-h-[750px] relative overflow-hidden">
+                    <div className="bg-white rounded-2xl p-8 lg:p-10 shadow-lg border border-slate-100 min-h-[600px]">
                         <AnimatePresence mode="wait">
                             {activeTab === 'profile' && (
-                                <motion.div key="profile" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Personal Info</h3>
-                                            <p className="text-slate-400 text-xs font-bold mt-2 uppercase tracking-widest">Kelola detail informasi profil Anda</p>
-                                        </div>
-                                        <div className="flex gap-4">
-                                            <label className="flex items-center gap-2 cursor-pointer bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-                                                <input type="radio" name="g" defaultChecked className="accent-emerald-500 w-4 h-4" />
-                                                <span className="text-[10px] font-black text-slate-600 uppercase">Laki-laki</span>
-                                            </label>
-                                            <label className="flex items-center gap-2 cursor-pointer bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-                                                <input type="radio" name="g" className="accent-emerald-500 w-4 h-4" />
-                                                <span className="text-[10px] font-black text-slate-600 uppercase">Perempuan</span>
-                                            </label>
-                                        </div>
+                                <motion.div key="profile" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-slate-800">Informasi Pribadi</h3>
+                                        <p className="text-slate-400 text-sm mt-1">Kelola detail informasi profil Anda</p>
                                     </div>
 
-                                    <form onSubmit={handleSaveProfile} className="space-y-8 pt-6 border-t border-slate-50">
-                                        <div className="grid md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Nama Lengkap</label>
-                                                <input type="text" value={adminData.full_name} onChange={e => setAdminData({ ...adminData, full_name: e.target.value })} className="w-full p-4 bg-[#F8FAFF] rounded-2xl border border-slate-100 font-bold text-sm focus:ring-4 focus:ring-emerald-50 outline-none transition-all" />
+                                    <form onSubmit={handleSaveProfile} className="space-y-5">
+                                        <div className="flex gap-6">
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input type="radio" name="gender" checked={adminData.gender === 'Laki-laki'} onChange={() => setAdminData({ ...adminData, gender: 'Laki-laki' })} className="accent-emerald-600 w-4 h-4" />
+                                                <span className="text-sm text-slate-700">Laki-laki</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input type="radio" name="gender" checked={adminData.gender === 'Perempuan'} onChange={() => setAdminData({ ...adminData, gender: 'Perempuan' })} className="accent-emerald-600 w-4 h-4" />
+                                                <span className="text-sm text-slate-700">Perempuan</span>
+                                            </label>
+                                        </div>
+
+                                        <div className="grid md:grid-cols-2 gap-5">
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-semibold text-slate-600">Nama Lengkap</label>
+                                                <input
+                                                    type="text"
+                                                    value={adminData.full_name}
+                                                    onChange={e => setAdminData({ ...adminData, full_name: e.target.value })}
+                                                    className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
+                                                />
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Sistem Email</label>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-semibold text-slate-600">Email</label>
                                                 <div className="relative">
-                                                    <input type="email" value={adminData.email} className="w-full p-4 bg-[#F8FAFF] rounded-2xl border border-slate-100 font-bold text-sm text-slate-400" disabled />
-                                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 border border-emerald-100"><CheckCircle2 size={10} /> Verified</div>
+                                                    <input
+                                                        type="email"
+                                                        value={adminData.email}
+                                                        className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm text-slate-500"
+                                                        disabled
+                                                    />
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-lg text-[9px] font-semibold flex items-center gap-1">
+                                                        <CheckCircle2 size={10} /> Verified
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Alamat Domisili</label>
-                                            <textarea rows={3} value={adminData.address} onChange={e => setAdminData({ ...adminData, address: e.target.value })} className="w-full p-4 bg-[#F8FAFF] rounded-2xl border border-slate-100 font-bold text-sm focus:ring-4 focus:ring-emerald-50 outline-none transition-all resize-none" placeholder="Tulis alamat lengkap..."></textarea>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-semibold text-slate-600">Alamat</label>
+                                            <textarea
+                                                rows={2}
+                                                value={adminData.address}
+                                                onChange={e => setAdminData({ ...adminData, address: e.target.value })}
+                                                className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all resize-none"
+                                                placeholder="Masukkan alamat lengkap..."
+                                            />
                                         </div>
 
-                                        <div className="grid md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Nomor Telepon</label>
-                                                <input type="text" value={adminData.phone} onChange={e => setAdminData({ ...adminData, phone: e.target.value })} className="w-full p-4 bg-[#F8FAFF] rounded-2xl border border-slate-100 font-bold text-sm focus:ring-4 focus:ring-emerald-50 outline-none transition-all" />
+                                        <div className="grid md:grid-cols-2 gap-5">
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-semibold text-slate-600">Nomor Telepon</label>
+                                                <input
+                                                    type="text"
+                                                    value={adminData.phone}
+                                                    onChange={e => setAdminData({ ...adminData, phone: e.target.value })}
+                                                    className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                                />
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">ID Pegawai</label>
-                                                <input type="text" value="#ADM-0001" disabled className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 font-bold text-sm text-slate-400" />
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-semibold text-slate-600">ID Pegawai</label>
+                                                <input
+                                                    type="text"
+                                                    value="#ADM-0001"
+                                                    disabled
+                                                    className="w-full px-4 py-3 bg-slate-100 rounded-xl border border-slate-200 text-sm text-slate-400"
+                                                />
                                             </div>
                                         </div>
 
-                                        <div className="pt-10 flex gap-4">
-                                            <button type="button" className="flex-1 py-5 rounded-[2rem] bg-white border-2 border-slate-100 text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2"><RefreshCcw size={16} /> Reset</button>
-                                            <button type="submit" disabled={isLoading} className="flex-[2] py-5 rounded-[2rem] bg-emerald-600 text-white font-black text-xs uppercase tracking-widest shadow-2xl shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center gap-2">
-                                                {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} Simpan Profil
+                                        <div className="flex gap-3 pt-4">
+                                            <button
+                                                type="button"
+                                                className="flex-1 py-3 rounded-xl bg-white border border-slate-200 text-slate-500 text-sm font-semibold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <RefreshCcw size={14} /> Reset
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={isLoading}
+                                                className="flex-[2] py-3 rounded-xl bg-emerald-600 text-white text-sm font-semibold shadow-md hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                {isLoading ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+                                                Simpan Profil
                                             </button>
                                         </div>
                                     </form>
@@ -170,44 +221,96 @@ export default function AdminSettings() {
                             )}
 
                             {activeTab === 'clinic' && (
-                                <motion.div key="clinic" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
+                                <motion.div key="clinic" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
                                     <div>
-                                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Clinic Identity</h3>
-                                        <p className="text-slate-400 text-xs font-bold mt-2 uppercase tracking-widest">Informasi global yang tampil di website pasien</p>
+                                        <h3 className="text-2xl font-bold text-slate-800">Informasi Klinik</h3>
+                                        <p className="text-slate-400 text-sm mt-1">Informasi yang tampil di website pasien</p>
                                     </div>
 
-                                    <div className="space-y-6 pt-6 border-t border-slate-50">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nama Klinik Utama</label>
-                                            <input type="text" value={clinicData.clinic_name} onChange={e => setClinicData({ ...clinicData, clinic_name: e.target.value })} className="w-full p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100 font-black text-sm text-emerald-900 focus:ring-4 focus:ring-emerald-50 outline-none transition-all" />
+                                    <div className="space-y-5">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-semibold text-slate-600">Nama Klinik</label>
+                                            <input
+                                                type="text"
+                                                value={clinicData.clinic_name}
+                                                onChange={e => setClinicData({ ...clinicData, clinic_name: e.target.value })}
+                                                className="w-full px-4 py-3 bg-emerald-50/50 rounded-xl border border-emerald-200 font-semibold text-sm text-emerald-800 focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            />
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Tagline AI</label>
-                                            <input type="text" value={clinicData.tagline} onChange={e => setClinicData({ ...clinicData, tagline: e.target.value })} className="w-full p-4 bg-[#F8FAFF] rounded-2xl border border-slate-100 font-bold text-sm outline-none" />
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-semibold text-slate-600">Tagline</label>
+                                            <input
+                                                type="text"
+                                                value={clinicData.tagline}
+                                                onChange={e => setClinicData({ ...clinicData, tagline: e.target.value })}
+                                                className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            />
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Alamat Cabang Balige</label>
-                                            <textarea rows={3} value={clinicData.clinic_address} onChange={e => setClinicData({ ...clinicData, clinic_address: e.target.value })} className="w-full p-4 bg-[#F8FAFF] rounded-2xl border border-slate-100 font-bold text-sm outline-none resize-none" />
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-semibold text-slate-600">Alamat Klinik</label>
+                                            <textarea
+                                                rows={2}
+                                                value={clinicData.clinic_address}
+                                                onChange={e => setClinicData({ ...clinicData, clinic_address: e.target.value })}
+                                                className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all resize-none"
+                                            />
                                         </div>
-                                        <button className="w-full py-5 rounded-[2rem] bg-slate-900 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:bg-emerald-600 transition-all flex items-center justify-center gap-2"><Globe size={18} /> Update Informasi Publik</button>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-semibold text-slate-600">Nomor Telepon Klinik</label>
+                                            <input
+                                                type="text"
+                                                value={clinicData.clinic_phone}
+                                                onChange={e => setClinicData({ ...clinicData, clinic_phone: e.target.value })}
+                                                className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            />
+                                        </div>
+                                        <button className="w-full py-3 rounded-xl bg-emerald-600 text-white text-sm font-semibold shadow-md hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
+                                            <Globe size={16} /> Update Informasi Publik
+                                        </button>
                                     </div>
                                 </motion.div>
                             )}
 
                             {activeTab === 'security' && (
-                                <motion.div key="security" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
+                                <motion.div key="security" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
                                     <div>
-                                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none text-rose-600">Keamanan & Sandi</h3>
-                                        <p className="text-slate-400 text-xs font-bold mt-2 uppercase tracking-widest">Atur perlindungan akun administrator Anda</p>
+                                        <h3 className="text-2xl font-bold text-slate-800">Keamanan & Sandi</h3>
+                                        <p className="text-slate-400 text-sm mt-1">Atur perlindungan akun administrator Anda</p>
                                     </div>
-                                    <div className="p-6 bg-rose-50 border border-rose-100 rounded-3xl flex gap-4 items-center">
-                                        <Info className="text-rose-500" size={24} />
-                                        <p className="text-xs font-bold text-rose-700 leading-relaxed uppercase tracking-tighter">Perhatian: Gunakan kombinasi simbol dan angka agar akun tidak mudah ditembus.</p>
+
+                                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex gap-3 items-start">
+                                        <Info size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                                        <p className="text-xs text-amber-700 leading-relaxed">Gunakan kombinasi huruf besar, angka, dan simbol untuk password yang lebih aman.</p>
                                     </div>
-                                    <div className="space-y-6 pt-6 border-t border-slate-50">
-                                        <input type="password" placeholder="Password Saat Ini" className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 font-bold text-sm outline-none focus:ring-4 focus:ring-rose-50" />
-                                        <input type="password" placeholder="Password Baru" className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 font-bold text-sm outline-none focus:ring-4 focus:ring-emerald-50" />
-                                        <button className="w-full py-5 rounded-[2rem] bg-rose-600 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-rose-200 hover:bg-rose-700 transition-all">Ganti Password Sekarang</button>
+
+                                    <div className="space-y-4">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-semibold text-slate-600">Password Saat Ini</label>
+                                            <input
+                                                type="password"
+                                                placeholder="Masukkan password saat ini"
+                                                className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-semibold text-slate-600">Password Baru</label>
+                                            <input
+                                                type="password"
+                                                placeholder="Masukkan password baru"
+                                                className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-semibold text-slate-600">Konfirmasi Password Baru</label>
+                                            <input
+                                                type="password"
+                                                placeholder="Konfirmasi password baru"
+                                                className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                            />
+                                        </div>
+                                        <button className="w-full py-3 rounded-xl bg-emerald-600 text-white text-sm font-semibold shadow-md hover:bg-emerald-700 transition-all">
+                                            Ganti Password Sekarang
+                                        </button>
                                     </div>
                                 </motion.div>
                             )}
