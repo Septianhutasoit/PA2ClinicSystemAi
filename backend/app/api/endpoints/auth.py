@@ -95,3 +95,14 @@ def get_me(db: Session = Depends(get_db), token: str = Depends(security.oauth2_s
         return user
     except Exception:
         raise HTTPException(status_code=401, detail="Sesi berakhir, silakan login ulang.")
+    
+@router.patch("/update-me")
+def update_profile(payload: dict, db: Session = Depends(get_db), current_user: User = Depends(get_me)):
+    # Update data user yang sedang login
+    if "full_name" in payload: current_user.full_name = payload["full_name"]
+    if "phone" in payload: current_user.phone = payload["phone"]
+    if "address" in payload: current_user.address = payload["address"]
+    if "gender" in payload: current_user.gender = payload["gender"]
+    
+    db.commit()
+    return {"message": "Profil berhasil diperbarui!"}
