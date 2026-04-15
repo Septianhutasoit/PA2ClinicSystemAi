@@ -1,18 +1,33 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Cookies from 'js-cookie';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, ClipboardList, UserRound,
-    LogOut, Bell, Settings, Calendar, ShieldCheck, Loader2
+    LogOut, Bell, Settings, Calendar, ShieldCheck, Loader2,
+    ChevronDown, UserCircle, Database, Search, Menu, X,
+    CalendarCheck2, Users, Clock, Activity, BellRing,
+    CheckCheck, CalendarClock, UserPlus, AlertCircle
 } from 'lucide-react';
 
 export default function DoctorLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const [isAuthorized, setIsAuthorized] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const profileRef = useRef<HTMLDivElement>(null);
+    const notifRef = useRef<HTMLDivElement>(null);
+
+    // Dummy notifikasi
+    const [notifications, setNotifications] = useState([
+        { id: 1, icon: <CalendarClock size={14} />, color: 'text-teal-600 bg-teal-50', title: 'Jadwal Baru', desc: 'Pasien baru hari ini jam 14:00', time: '10 menit lalu', read: false },
+        { id: 2, icon: <UserPlus size={14} />, color: 'text-emerald-600 bg-emerald-50', title: 'Pasien Terdaftar', desc: 'Pasien baru terdaftar di sistem', time: '1 jam lalu', read: false },
+    ]);
+    const unreadCount = notifications.filter(n => !n.read).length;
 
     useEffect(() => {
         const token = localStorage.getItem('token') || Cookies.get('token');
@@ -24,7 +39,19 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
         } else {
             setIsAuthorized(true);
         }
-    }, [pathname]);
+    }, [pathname, router]);
+
+    // Close dropdowns when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (profileRef.current && !profileRef.current.contains(e.target as Node))
+                setIsProfileOpen(false);
+            if (notifRef.current && !notifRef.current.contains(e.target as Node))
+                setIsNotifOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleLogout = () => {
         localStorage.clear();
@@ -33,53 +60,188 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
     };
 
     const navItems = [
-        { name: 'Dashboard', href: '/doctor/dashboard', icon: <LayoutDashboard size={18} />, bg: 'bg-blue-50', color: 'text-blue-600' },
-        { name: 'Jadwal Pasien', href: '/doctor/schedule', icon: <Calendar size={18} />, bg: 'bg-indigo-50', color: 'text-indigo-600' },
-        { name: 'Riwayat Medis', href: '/doctor/medical-records', icon: <ClipboardList size={18} />, bg: 'bg-emerald-50', color: 'text-emerald-600' },
+        { name: 'Dashboard', href: '/doctor/dashboard', icon: <LayoutDashboard size={16} />, color: 'text-emerald-600' },
+        { name: 'Jadwal Pasien', href: '/doctor/schedule', icon: <Calendar size={16} />, color: 'text-teal-600' },
+        { name: 'Riwayat Medis', href: '/doctor/medical-records', icon: <ClipboardList size={16} />, color: 'text-green-600' },
     ];
 
-    if (!isAuthorized) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
+    const profileMenuItems = [
+        { name: 'View Profile', icon: <UserCircle size={16} />, action: () => { setIsProfileOpen(false); router.push('/doctor/profile'); } },
+        { name: 'Settings', icon: <Settings size={16} />, action: () => { setIsProfileOpen(false); router.push('/doctor/settings'); } },
+        { name: 'Sign Out', icon: <LogOut size={16} />, action: handleLogout, color: 'text-red-600' },
+    ];
+
+    const markRead = (id: number) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+
+    if (!isAuthorized) return (
+        <div className="h-screen w-screen bg-white flex flex-col items-center justify-center gap-3">
+            <Loader2 className="animate-spin text-emerald-600" size={32} />
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Checking Security...</p>
+        </div>
+    );
 
     return (
-        <div className="flex min-h-screen bg-[#F4F7FE] font-sans overflow-hidden">
-            {/* --- DOCTOR SIDEBAR --- */}
-            <aside className="w-64 h-screen bg-white border-r border-blue-50 flex flex-col p-4">
-                <div className="p-4 mb-8 flex items-center gap-3">
-                    <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg italic font-black">D</div>
-                    <h1 className="text-xl font-black tracking-tighter text-slate-800 uppercase italic leading-none">Medical.<span className="text-indigo-600">Pro</span></h1>
+        <div className="flex min-h-screen bg-[#F0F9F7] text-[#1E293B] font-sans">
+
+            {/* ───────────────── SIDEBAR (HIJAU TUA) ───────────────────── */}
+            <aside className={`fixed lg:sticky lg:top-0 z-50 w-60 h-screen bg-white border-r border-emerald-50/50 shadow-sm transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                <div className="flex flex-col h-full">
+                    {/* Logo */}
+                    <div className="p-5 flex items-center gap-2.5">
+                        <div className="w-7 h-7 bg-emerald-700 rounded-lg flex items-center justify-center text-white shadow-lg shadow-emerald-200 font-black italic text-xs">D</div>
+                        <h1 className="text-base font-black tracking-tighter text-slate-800">Medical.<span className="text-emerald-700">Pro</span></h1>
+                    </div>
+
+                    {/* Info Dokter */}
+                    <div className="mx-3 mb-4 p-3 bg-emerald-50/40 rounded-xl border border-emerald-100/50">
+                        <p className="text-[10px] font-black text-emerald-900 uppercase leading-none">dr. Septian Adi</p>
+                        <p className="text-[9px] text-emerald-600 font-bold truncate mt-1 italic opacity-70">Spesialis Gigi Anak</p>
+                    </div>
+
+                    {/* Navigasi */}
+                    <nav className="flex-1 px-2 space-y-0.5 overflow-y-auto">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] px-3 mb-2 opacity-60">Dokter Portal</p>
+                        {navItems.map((item) => {
+                            const isActive = pathname === item.href;
+                            return (
+                                <Link key={item.href} href={item.href} className="block group">
+                                    <div className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all relative ${isActive ? 'bg-emerald-700 text-white shadow-md shadow-emerald-200' : 'text-slate-600 hover:bg-emerald-50/50 hover:text-emerald-700'}`}>
+                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isActive ? 'bg-white/20' : 'bg-transparent'}`}>
+                                            <span className={isActive ? 'text-white' : item.color}>{item.icon}</span>
+                                        </div>
+                                        <span className={`text-[12px] font-bold tracking-tight ${isActive ? 'text-white' : ''}`}>{item.name}</span>
+                                        {isActive && <motion.div layoutId="nav-line" className="absolute -left-1 w-1 h-4 bg-emerald-700 rounded-full" />}
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </nav>
+
+                    {/* Logout */}
+                    <div className="p-3 border-t border-slate-50">
+                        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-red-600 text-[12px] font-bold transition-all group rounded-xl hover:bg-red-50">
+                            <LogOut size={16} className="group-hover:translate-x-1 transition-transform" /> <span>Logout</span>
+                        </button>
+                    </div>
                 </div>
-
-                <nav className="flex-1 space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 mb-4 opacity-70">Dokter Portal</p>
-                    {navItems.map((item) => (
-                        <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all relative ${pathname === item.href ? "bg-indigo-600 text-white shadow-xl shadow-indigo-200" : "text-slate-500 hover:bg-slate-50"}`}>
-                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${pathname === item.href ? 'bg-white/20' : item.bg}`}>{item.icon}</div>
-                            <span className="text-[13px] font-bold">{item.name}</span>
-                        </Link>
-                    ))}
-                </nav>
-
-                <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-4 text-slate-400 hover:text-red-600 text-xs font-black uppercase tracking-widest border-t border-slate-50 transition-colors mt-auto">
-                    <LogOut size={18} /> Akhiri Sesi
-                </button>
             </aside>
 
-            {/* --- MAIN CONTENT --- */}
-            <main className="flex-1 flex flex-col min-w-0">
-                <header className="h-16 bg-white/80 backdrop-blur-md px-8 flex justify-between items-center border-b border-blue-50 sticky top-0 z-40">
-                    <h2 className="text-sm font-black uppercase tracking-[0.2em] text-indigo-600 italic">Doctor Workstation</h2>
+            {/* ───────────────── MAIN CONTENT ─────────────────────────── */}
+            <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+
+                {/* ───────────────── HEADER ───────────────────────────── */}
+                <header className="h-14 bg-white/80 backdrop-blur-md border-b border-emerald-50/50 px-6 flex items-center justify-between sticky top-0 z-40 shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="text-right">
-                            <p className="text-[10px] font-black text-slate-900 uppercase">dr. Septian Adi</p>
-                            <p className="text-[8px] text-indigo-500 font-bold tracking-widest italic">Spesialis Gigi Anak</p>
+                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-2 bg-emerald-50 rounded-lg text-emerald-600">
+                            <Menu size={18} />
+                        </button>
+                        <h2 className="text-[12px] font-black text-slate-800 tracking-widest leading-none uppercase italic border-l-2 border-emerald-600 pl-3">
+                            {navItems.find(i => i.href === pathname)?.name || 'Dashboard'}
+                        </h2>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {/* Search */}
+                        <div className="relative hidden md:block group mr-1">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300 group-focus-within:text-emerald-500 transition-colors" />
+                            <input type="text" placeholder="Cari pasien..." className="pl-9 pr-4 py-1.5 bg-emerald-50/50 border border-transparent rounded-full text-[11px] w-52 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-all" />
                         </div>
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-black">SA</div>
+
+                        {/* NOTIFIKASI */}
+                        <div className="relative" ref={notifRef}>
+                            <button
+                                onClick={() => { setIsNotifOpen(v => !v); setIsProfileOpen(false); }}
+                                className={`relative p-2 rounded-lg transition-all duration-200 ${isNotifOpen ? 'bg-emerald-800 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-emerald-800 hover:shadow-md'}`}
+                            >
+                                <BellRing size={16} />
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">
+                                        {unreadCount}
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* Dropdown Notifikasi */}
+                            <AnimatePresence>
+                                {isNotifOpen && (
+                                    <motion.div initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-emerald-100/30 overflow-hidden z-50">
+                                        <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 px-4 py-3 flex justify-between items-center">
+                                            <p className="text-[12px] font-black text-white uppercase">Notifikasi</p>
+                                            {unreadCount > 0 && <button onClick={markAllRead} className="text-[9px] text-emerald-200 hover:text-white">Tandai semua</button>}
+                                        </div>
+                                        <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                                            {notifications.map(n => (
+                                                <button key={n.id} onClick={() => markRead(n.id)} className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-emerald-50/60 ${!n.read ? 'bg-emerald-50/30' : ''}`}>
+                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${n.color}`}>{n.icon}</div>
+                                                    <div className="flex-1">
+                                                        <p className={`text-[11px] font-black ${!n.read ? 'text-slate-800' : 'text-slate-500'}`}>{n.title}</p>
+                                                        <p className="text-[10px] text-slate-500">{n.desc}</p>
+                                                        <p className="text-[9px] text-slate-400 mt-1">{n.time}</p>
+                                                    </div>
+                                                    {!n.read && <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-1" />}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        <div className="h-5 w-[1px] bg-emerald-100 mx-1" />
+
+                        {/* PROFILE DROPDOWN */}
+                        <div className="relative" ref={profileRef}>
+                            <button
+                                onClick={() => { setIsProfileOpen(v => !v); setIsNotifOpen(false); }}
+                                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 group ${isProfileOpen ? 'bg-emerald-800 shadow-lg' : 'hover:bg-emerald-800 hover:shadow-md'}`}
+                            >
+                                <div className="relative">
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Septian" className="w-8 h-8 rounded-lg bg-emerald-50 border-2 border-white/20 shadow-sm" alt="avatar" />
+                                    <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-400 border-2 border-white rounded-full animate-pulse" />
+                                </div>
+                                <div className="text-left hidden sm:block">
+                                    <p className={`text-[11px] font-black uppercase transition-colors ${isProfileOpen ? 'text-white' : 'text-slate-800 group-hover:text-white'}`}>dr. Septian</p>
+                                    <p className={`text-[9px] font-bold tracking-widest uppercase transition-colors ${isProfileOpen ? 'text-emerald-200' : 'text-emerald-600 group-hover:text-emerald-300'}`}>Spesialis Gigi</p>
+                                </div>
+                                <ChevronDown size={13} className={`transition-all duration-200 ${isProfileOpen ? 'rotate-180 text-emerald-200' : 'text-slate-400 group-hover:text-emerald-200'}`} />
+                            </button>
+
+                            <AnimatePresence>
+                                {isProfileOpen && (
+                                    <motion.div initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-emerald-100/30 overflow-hidden z-50">
+                                        <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 p-4 text-white">
+                                            <div className="flex items-center gap-3">
+                                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Septian" className="w-10 h-10 rounded-xl border-2 border-white/30" alt="avatar" />
+                                                <div><p className="text-[13px] font-black uppercase">dr. Septian Adi</p><p className="text-[10px] font-bold opacity-80">Spesialis Gigi Anak</p></div>
+                                            </div>
+                                        </div>
+                                        <div className="px-4 py-3 border-b border-slate-100/50"><p className="text-[9px] font-black text-slate-400 uppercase">Signed in as</p><p className="text-[12px] font-bold text-slate-700">dr.septian@klinik.ai</p></div>
+                                        <div className="py-2 px-2">
+                                            {profileMenuItems.map((item, idx) => (
+                                                <button key={idx} onClick={item.action} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[12px] font-bold transition-all ${item.color ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 hover:bg-emerald-50 hover:text-emerald-700'}`}>
+                                                    <span className={item.color || 'text-emerald-600'}>{item.icon}</span> {item.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
                     </div>
                 </header>
-                <div className="flex-1 overflow-y-auto p-8 lg:p-12">
-                    {children}
+
+                {/* ───────────────── CONTENT ──────────────────────────── */}
+                <div className="flex-1 p-6 lg:p-10">
+                    <AnimatePresence mode="wait">
+                        <motion.div key={pathname} initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }} transition={{ duration: 0.25, ease: 'easeOut' }} className="max-w-[1500px] mx-auto">
+                            {children}
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
             </main>
+
+            {isMobileMenuOpen && <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
         </div>
     );
 }
