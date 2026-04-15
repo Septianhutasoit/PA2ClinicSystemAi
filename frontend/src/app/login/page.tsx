@@ -43,16 +43,13 @@ export default function LoginPage() {
         const role = localStorage.getItem('user_role') || Cookies.get('role');
 
         // DEBUG: Cek di Console apa yang dibaca browser
-        console.log("Sesi saat ini:", { token: !!token, role: role });
+        console.log("Mengecek Sesi Aktif:", { adaToken: !!token, role: role });
 
         if (token && role) {
-            // Hanya redirect jika kita memang ingin auto-login
-            // Jika ingin ganti akun, user harus klik Logout dulu
-            const lowerRole = role.toLowerCase();
-            if (lowerRole === 'admin') router.push('/admin');
-            else if (lowerRole === 'patient') router.push('/patient/dashboard');
+            // Ini akan otomatis menghandle Admin, Doctor, Nurse, dan Patient
+            redirectUser(role);
         }
-    }, [router]);
+    }, [router, redirectUser]); 
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
