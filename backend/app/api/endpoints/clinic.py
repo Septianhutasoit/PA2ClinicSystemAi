@@ -226,3 +226,32 @@ def update_patient(p_id: int, payload: dict, db: Session = Depends(get_db)):
             setattr(p, k, v)
         db.commit()
     return {"message": "Success"}
+
+@router.get("/medical-records/{p_id}")
+def get_all_records(db: Session = Depends(get_db)):
+    """
+    Fungsi untuk Dokter melihat seluruh arsip pemeriksaan.
+    Data ditarik dari tabel medical_records dan digabung dengan nama pasien.
+    """
+    return db.query(
+        Appointment.patient_name,
+        MedicalRecord.id,
+        MedicalRecord.diagnosis,
+        MedicalRecord.treatment,
+        MedicalRecord.notes,
+        MedicalRecord.created_at
+    ).join(Appointment, MedicalRecord.appointment_id == Appointment.id).all()
+
+# --- ENDPOINT SIMPAN REKAM MEDIS BARU ---
+@router.post("/medical-records")
+def create_medical_record(payload: dict, db: Session = Depends(get_db)):
+    # Simpan data diagnosa dokter
+    new_record = MedicalRecord(
+        appointment_id=payload.get("appointment_id"),
+        diagnosis=payload.get("diagnosis"),
+        treatment=payload.get("treatment"),
+        notes=payload.get("notes")
+    )
+    db.add(new_record)
+    db.commit()
+    return {"message": "Rekam medis berhasil diarsipkan"}
