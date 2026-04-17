@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Body, File, UploadFile, Request
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timedelta
 from app.database.session import get_db
 from app.crud import clinic as crud
 from app.schemas import clinic as schemas
 from app.models.appointment import Appointment 
-from app.models.clinic import Doctor, Service 
+from app.models.clinic import Doctor, Service, MedicalRecord
 from app.models.user import User
 import shutil, os, time
 from sqlalchemy import func
@@ -221,31 +221,31 @@ def update_patient(p_id: int, payload: dict, db: Session = Depends(get_db)):
         db.commit()
     return {"message": "Success"}
 
-@router.get("/medical-records/{p_id}")
-def get_all_records(db: Session = Depends(get_db)):
-    """
-    Fungsi untuk Dokter melihat seluruh arsip pemeriksaan.
-    Data ditarik dari tabel medical_records dan digabung dengan nama pasien.
-    """
-    return db.query(
-        Appointment.patient_name,
-        MedicalRecord.id,
-        MedicalRecord.diagnosis,
-        MedicalRecord.treatment,
-        MedicalRecord.notes,
-        MedicalRecord.created_at
-    ).join(Appointment, MedicalRecord.appointment_id == Appointment.id).all()
+@router.get("/medical-records", response_model=List[schemas.MedicalRecordResponse])
+def read_medical_records(db: Session = Depends(get_db)):
+    try:
+        # Mengambil data rekam medis dan menggabungkannya dengan nama pasien dari tabel appointments
+        results = db.query(
+            MedicalRecord.id,
+            MedicalRecord.diagnosis,
+            MedicalRecord.treatment,
+            MedicalRecord.notes,
+            MedicalRecord.created_at,
+            Appointment.patient_name
+            MedicalRecord.appointment_id
+        ).join(Appointment, MedicalRecord.appointment_id == Appointment.id).all()
+        return results
+    
 
 # --- ENDPOINT SIMPAN REKAM MEDIS BARU ---
 @router.post("/medical-records")
-def create_medical_record(payload: dict, db: Session = Depends(get_db)):
-    # Simpan data diagnosa dokter
-    new_record = MedicalRecord(
-        appointment_id=payload.get("appointment_id"),
-        diagnosis=payload.get("diagnosis"),
-        treatment=payload.get("treatment"),
-        notes=payload.get("notes")
-    )
-    db.add(new_record)
-    db.commit()
-    return {"message": "Rekam medis berhasil diarsipkan"}
+def create_medical_record(data: schemas.MedicalRecordCreate, db: Session = Depends(get_db)):
+    try:
+        # Gunakan 'data' (Pydantic) bukan 'payload' (dict) agar lebih aman
+        new_record = MedicalRecord(**data.model_dump())
+        db.add(new_record)
+        db.commit()
+        return {"message": "Rekam medis tersimpan"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

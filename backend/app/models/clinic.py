@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB  # PENTING: JSONB harus diimpor dari dialek postgresql
 from app.database.session import Base
+from datetime import datetime
 
 class Doctor(Base):
     __tablename__ = "doctors"
@@ -23,3 +24,12 @@ class Service(Base):
     image_url = Column(String, nullable=True)
     detail_info = Column(Text, nullable=True)
     gallery_urls = Column(JSONB, nullable=True)
+
+class MedicalRecord(Base):
+    __tablename__ = "medical_records"
+    id = Column(Integer, primary_key=True, index=True)
+    appointment_id = Column(Integer, ForeignKey("appointments.id"))
+    diagnosis = Column(Text)
+    treatment = Column(Text)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

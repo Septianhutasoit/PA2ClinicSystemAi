@@ -59,3 +59,20 @@ class PatientResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class MedicalRecordBase(BaseModel):
+    appointment_id: int
+    diagnosis: str
+    treatment: str
+    notes: Optional[str] = None
+
+class MedicalRecordCreate(MedicalRecordBase):
+    pass
+
+class MedicalRecordResponse(MedicalRecordBase):
+    id: int
+    patient_name: str # Kita ambil dari join table nanti
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

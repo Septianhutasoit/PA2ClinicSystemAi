@@ -1,202 +1,285 @@
 'use client';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import {
-  ShieldCheck, Sparkles, ArrowRight, UserPlus, LogIn,
-  Calendar, Clock, Star, Heart, Smile, ChevronRight,
-  Activity, Award, BadgeCheck, Gem
-} from 'lucide-react';
+import { ShieldCheck, Clock, Star, Activity } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+
+const FEATURES = [
+  { icon: '📅', text: 'Booking Online' },
+  { icon: '⏱', text: 'Antrian Real-time' },
+  { icon: '⭐', text: 'Dokter Spesialis' },
+  { icon: '🩺', text: 'Rekam Medis Digital' },
+  { icon: '💊', text: 'Perawatan Modern' },
+];
+
+const STATS = [
+  { num: '2.4K+', label: 'Pasien Puas' },
+  { num: '15+', label: 'Dokter Spesialis' },
+  { num: '98%', label: 'Tingkat Kepuasan' },
+];
+
+const FLOAT_BADGES = [
+  { icon: '❤️', title: 'Pasien Puas', sub: '2,400+ pasien', pos: 'top-2 -right-4' },
+  { icon: '⚡', title: 'AI Powered', sub: 'Diagnosis cepat', pos: '-bottom-2 -left-8' },
+  { icon: '🏅', title: 'Bersertifikat', sub: 'Standar ISO', pos: 'top-1/2 -left-14 -translate-y-1/2' },
+];
 
 export default function WelcomePage() {
-  const features = [
-    { icon: <Calendar size={16} />, text: "Booking Online 24/7" },
-    { icon: <Clock size={16} />, text: "Antrian Real-time" },
-    { icon: <Star size={16} />, text: "Dokter Spesialis" },
-    { icon: <Heart size={16} />, text: "Perawatan Modern" },
-  ];
+  const trackRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 overflow-hidden relative font-sans">
+    <div className="min-h-screen bg-[#f8fffe] overflow-hidden relative font-sans">
 
-      {/* Background Decorations */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-200/20 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-blue-100/10 to-indigo-100/10 rounded-full blur-3xl" />
-
-        {/* Medical Pattern */}
-        <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-white to-transparent" />
+      {/* Background mesh */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(ellipse 60% 50% at 10% 20%, rgba(20,184,166,0.08) 0%, transparent 60%),
+              radial-gradient(ellipse 50% 60% at 90% 80%, rgba(14,165,233,0.07) 0%, transparent 60%),
+              radial-gradient(ellipse 40% 40% at 50% 50%, rgba(16,185,129,0.04) 0%, transparent 70%)
+            `
+          }}
+        />
+        {/* Floating orbs */}
+        <motion.div
+          className="absolute w-80 h-80 -top-20 -left-20 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.12), transparent)' }}
+          animate={{ x: [0, 20, 0], y: [0, -15, 0], scale: [1, 1.05, 1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute w-64 h-64 bottom-[10%] -right-16 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(14,165,233,0.10), transparent)' }}
+          animate={{ x: [0, -15, 0], y: [0, 10, 0], scale: [1, 0.97, 1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: -3 }}
+        />
+        {/* Floating particles */}
+        {Array.from({ length: 14 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              width: `${Math.random() * 4 + 2}px`,
+              height: `${Math.random() * 4 + 2}px`,
+              background: i % 2 === 0 ? 'rgba(20,184,166,0.35)' : 'rgba(14,165,233,0.3)',
+            }}
+            initial={{ y: '100vh', opacity: 0 }}
+            animate={{ y: '-20px', opacity: [0, 0.6, 0.6, 0] }}
+            transition={{
+              duration: 8 + Math.random() * 12,
+              repeat: Infinity,
+              delay: Math.random() * -20,
+              ease: 'linear',
+            }}
+          />
+        ))}
       </div>
 
-      {/* Main Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 min-h-screen flex flex-col justify-center">
+      {/* Main layout */}
+      <div className="relative z-10 max-w-[1200px] mx-auto px-8 min-h-screen flex flex-col">
 
-        {/* Hero Section */}
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+        {/* Nav */}
+        <motion.nav
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center justify-between py-8 mb-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #0d9488, #0891b2)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C9 2 7 4 7 7c0 2 1 3.5 1 5.5 0 2.5-1 4.5-1 7.5 0 1.1.9 2 2 2s2-.9 2-2V17h2v3c0 1.1.9 2 2 2s2-.9 2-2c0-3-1-5-1-7.5 0-2 1-3.5 1-5.5 0-3-2-5-5-5z"
+                  fill="white" opacity="0.9" />
+              </svg>
+            </div>
+            <div>
+              <div className="text-[15px] font-black text-slate-900 tracking-tight">Clinic Nauli Dental Care</div>
+              <div className="text-[10px] font-semibold text-slate-400 tracking-[0.12em] uppercase">Klinik Balige,Jln Horas Damn</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 bg-white border border-slate-100 rounded-full px-4 py-[7px] shadow-sm text-[12px] font-semibold text-slate-500">
+            <span className="w-[7px] h-[7px] rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.2)] animate-pulse" />
+            Buka Sekarang • 24/7
+          </div>
+        </motion.nav>
 
-          {/* Left Content */}
+        {/* Hero grid */}
+        <div className="grid lg:grid-cols-2 gap-14 items-center flex-1 pb-8">
+
+          {/* Left */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="space-y-8"
-          >
-            {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm border border-slate-100"
-            >
-              <Sparkles size={16} className="text-blue-500" />
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600">Nauli Dental AI</span>
-            </motion.div>
-
-            {/* Main Title */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="space-y-4"
-            >
-              <h1 className="text-5xl lg:text-7xl font-black text-slate-900 tracking-tighter leading-[1.1]">
-                Senyum Sehat,
-                <br />
-                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Masa Depan Cerah
-                </span>
-              </h1>
-              <p className="text-slate-500 text-lg lg:text-xl font-medium leading-relaxed max-w-lg">
-                Sistem manajemen klinik gigi modern dengan teknologi AI untuk pengalaman perawatan yang lebih nyaman dan efisien.
-              </p>
-            </motion.div>
-
-            {/* Features Grid */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="grid grid-cols-2 gap-4 pt-4"
-            >
-              {features.map((feature, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + idx * 0.1 }}
-                  className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-xl px-4 py-3 border border-slate-100"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
-                    {feature.icon}
-                  </div>
-                  <span className="text-sm font-semibold text-slate-700">{feature.text}</span>
-                </motion.div>
-              ))}
-            </motion.div>
-          </motion.div>
-
-          {/* Right Content - Cards */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
             className="space-y-6"
           >
-            {/* Register Card */}
-            <motion.div
-              whileHover={{ scale: 1.02, y: -5 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
-              <Link href="/register" className="block group">
-                <div className="relative bg-gradient-to-br from-white to-blue-50/30 rounded-3xl p-8 border border-slate-100 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-full blur-2xl" />
+            {/* Pill tag */}
+            <div className="inline-flex items-center gap-2 rounded-full px-4 py-[7px] text-[11px] font-bold tracking-[0.12em] uppercase text-teal-700 border border-teal-200/60"
+              style={{ background: 'linear-gradient(135deg, rgba(20,184,166,0.1), rgba(14,165,233,0.08))' }}>
+              <span>✦</span> Nauli Dental AI System
+            </div>
 
-                  <div className="flex justify-between items-start relative">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
-                      <UserPlus size={24} />
-                    </div>
-                    <motion.div
-                      initial={{ x: 0 }}
-                      whileHover={{ x: 10 }}
-                      className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-500 group-hover:text-white transition-all"
-                    >
-                      <ChevronRight size={18} />
-                    </motion.div>
-                  </div>
+            {/* Title */}
+            <h1 className="text-[58px] font-black leading-[1.05] tracking-[-2px] text-slate-900">
+              Nauli Dental Care,<br />
+              <span className="font-['Playfair_Display',serif] italic font-semibold"
+                style={{ background: 'linear-gradient(135deg, #0d9488 20%, #0891b2 80%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                Masa Depan
+              </span><br />Cerah
+            </h1>
 
-                  <div className="mt-6 relative">
-                    <h3 className="text-2xl font-black text-slate-800">Daftar Pasien Baru</h3>
-                    <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                      Daftarkan diri Anda sebagai pasien baru dan nikmati kemudahan akses layanan kesehatan gigi terbaik.
-                    </p>
-                    <div className="mt-4 flex items-center gap-2">
-                      <div className="h-px flex-1 bg-gradient-to-r from-blue-200 to-transparent" />
-                      <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Mulai Sekarang</span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
+            <p className="text-[16px] leading-[1.75] text-slate-500 max-w-[420px]">
+              Sistem manajemen klinik gigi modern dengan teknologi AI Chatbot & n8n Automation untuk pengalaman perawatan yang lebih nyaman, cepat, dan efisien.
+            </p>
 
-            {/* Login Card */}
-            <motion.div
-              whileHover={{ scale: 1.02, y: -5 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17, delay: 0.1 }}
-            >
-              <Link href="/login" className="block group">
-                <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-indigo-400/20 rounded-full blur-2xl" />
-                  <div className="absolute bottom-0 left-0 w-40 h-40 bg-gradient-to-tr from-blue-500/10 to-transparent rounded-full blur-2xl" />
+            {/* Scrolling strip */}
+            <div className="bg-white border border-[#e8f5f3] rounded-2xl px-5 py-[14px] shadow-sm overflow-hidden">
+              <div className="flex gap-4 items-center" style={{ animation: 'scrollTrack 12s linear infinite', width: 'max-content' }}>
+                {[...FEATURES, ...FEATURES].map((f, i) => (
+                  <span key={i} className="flex items-center gap-2 text-[12px] font-semibold text-slate-500 whitespace-nowrap">
+                    {i > 0 && <span className="text-slate-200 mr-1">·</span>}
+                    <span>{f.icon}</span> {f.text}
+                  </span>
+                ))}
+              </div>
+            </div>
 
-                  <div className="flex justify-between items-start relative">
-                    <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white shadow-lg">
-                      <LogIn size={24} />
-                    </div>
-                    <motion.div
-                      initial={{ x: 0 }}
-                      whileHover={{ x: 10 }}
-                      className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/60 group-hover:bg-blue-500 group-hover:text-white transition-all"
-                    >
-                      <ChevronRight size={18} />
-                    </motion.div>
-                  </div>
-
-                  <div className="mt-6 relative">
-                    <h3 className="text-2xl font-black text-white">Masuk ke Sistem</h3>
-                    <p className="text-sm text-slate-300 mt-2 leading-relaxed">
-                      Akses dashboard pasien, lihat jadwal, rekam medis, dan kelola informasi kesehatan Anda.
-                    </p>
-                    <div className="mt-4 flex items-center gap-2">
-                      <div className="h-px flex-1 bg-gradient-to-r from-slate-600 to-transparent" />
-                      <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Member Area</span>
-                    </div>
+            {/* Stats */}
+            <div className="flex items-center gap-7">
+              {STATS.map((s, i) => (
+                <div key={i} className="flex items-center gap-7">
+                  {i > 0 && <div className="w-px h-9 bg-slate-200" />}
+                  <div>
+                    <div className="text-[26px] font-black text-teal-600 leading-none tracking-tight">{s.num}</div>
+                    <div className="text-[11px] font-semibold text-slate-400 tracking-[0.08em] uppercase mt-1">{s.label}</div>
                   </div>
                 </div>
-              </Link>
-            </motion.div>
+              ))}
+            </div>
+          </motion.div>
 
-            {/* Additional Info */}
+          {/* Right */}
+          <motion.div
+            initial={{ opacity: 0, x: 28 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="space-y-5"
+          >
+            {/* Central illustration */}
+            <div className="relative flex items-center justify-center h-[210px]">
+              {/* Rings */}
+              {[210, 250, 290].map((size, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute rounded-full border border-teal-500/15"
+                  style={{ width: size, height: size }}
+                  animate={{ scale: [1, 1.02, 1], opacity: [0.4, 0.15, 0.4] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: i * 0.8, ease: 'easeInOut' }}
+                />
+              ))}
+              {/* Main circle */}
+              <motion.div
+                className="w-[170px] h-[170px] rounded-full flex items-center justify-center relative z-10"
+                style={{ background: 'linear-gradient(135deg, #0d9488, #0891b2)', boxShadow: '0 20px 60px rgba(13,148,136,0.35)' }}
+                animate={{ scale: [1, 1.03, 1], boxShadow: ['0 20px 60px rgba(13,148,136,0.3)', '0 28px 70px rgba(13,148,136,0.4)', '0 20px 60px rgba(13,148,136,0.3)'] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <path d="M40 8C32 8 26 13 26 20c0 4 2 7 2 11 0 5-2 9-2 15 0 2.2 1.8 4 4 4s4-1.8 4-4v-6h12v6c0 2.2 1.8 4 4 4s4-1.8 4-4c0-6-2-10-2-15 0-4 2-7 2-11 0-7-6-12-14-12z"
+                    fill="white" opacity="0.95" />
+                  <ellipse cx="33" cy="18" rx="4" ry="7" fill="white" opacity="0.3" transform="rotate(-15 33 18)" />
+                  <rect x="37" y="30" width="6" height="16" rx="3" fill="rgba(13,148,136,0.4)" />
+                  <rect x="32" y="35" width="16" height="6" rx="3" fill="rgba(13,148,136,0.4)" />
+                </svg>
+              </motion.div>
+              {/* Float badges */}
+              {FLOAT_BADGES.map((b, i) => (
+                <motion.div
+                  key={i}
+                  className={`absolute ${b.pos} bg-white rounded-2xl px-3 py-2 flex items-center gap-2 shadow-xl border border-slate-100 whitespace-nowrap z-20`}
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, delay: -i * 1.2, ease: 'easeInOut' }}
+                >
+                  <span className="text-[18px]">{b.icon}</span>
+                  <div>
+                    <div className="text-[11px] font-bold text-slate-700">{b.title}</div>
+                    <div className="text-[10px] text-slate-400">{b.sub}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Action cards */}
+            <div className="flex flex-col gap-3">
+              {/* Register */}
+              <motion.div whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+                <Link href="/register" className="flex items-center gap-5 rounded-[22px] p-6 relative overflow-hidden group"
+                  style={{ background: 'linear-gradient(135deg, #0d9488, #0891b2)', boxShadow: '0 8px 32px rgba(13,148,136,0.35)' }}>
+                  <div className="absolute top-0 right-0 w-28 h-28 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.15), transparent)', transform: 'translate(20px,-30px)' }} />
+                  <div className="w-[50px] h-[50px] rounded-[15px] bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zM4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M19 8v6M22 11h-6" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[17px] font-black text-white tracking-tight">Daftar Pasien Baru</div>
+                    <div className="text-[12px] text-white/75 mt-0.5">Registrasi dan nikmati layanan kesehatan gigi terbaik</div>
+                  </div>
+                  <motion.div className="w-9 h-9 rounded-full bg-white/12 flex items-center justify-center flex-shrink-0"
+                    whileHover={{ x: 3 }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </motion.div>
+                </Link>
+              </motion.div>
+
+              {/* Login */}
+              <motion.div whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+                <Link href="/login" className="flex items-center gap-5 rounded-[22px] p-6 relative overflow-hidden group"
+                  style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', boxShadow: '0 8px 32px rgba(15,23,42,0.3)' }}>
+                  <div className="absolute top-0 right-0 w-28 h-28 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.08), transparent)', transform: 'translate(20px,-30px)' }} />
+                  <div className="w-[50px] h-[50px] rounded-[15px] bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <rect x="3" y="3" width="18" height="18" rx="4" stroke="white" strokeWidth="2" />
+                      <path d="M15 12H9M12 9l3 3-3 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[17px] font-black text-white tracking-tight">Masuk ke Sistem</div>
+                    <div className="text-[12px] text-white/55 mt-0.5">Akses jadwal, rekam medis & kelola akun Anda</div>
+                  </div>
+                  <motion.div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0"
+                    whileHover={{ x: 3 }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </motion.div>
+                </Link>
+              </motion.div>
+            </div>
+
+            {/* Trust bar */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
-              className="flex items-center justify-center gap-4 pt-4"
+              className="flex items-center justify-center gap-5 pt-1"
             >
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <ShieldCheck size={14} className="text-emerald-500" />
-                <span>Data Terenkripsi</span>
+              <div className="flex items-center gap-[6px] text-[11px] font-semibold text-slate-400">
+                <ShieldCheck size={13} className="text-emerald-500" /> Data Terenkripsi
               </div>
-              <div className="w-1 h-1 rounded-full bg-slate-300" />
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <Smile size={14} className="text-amber-500" />
-                <span>24/7 Support</span>
+              <div className="w-[3px] h-[3px] rounded-full bg-slate-200" />
+              <div className="flex items-center gap-[6px] text-[11px] font-semibold text-slate-400">
+                <Clock size={13} className="text-amber-400" /> 24/7 Support
               </div>
-              <div className="w-1 h-1 rounded-full bg-slate-300" />
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <Activity size={14} className="text-blue-500" />
-                <span>Dokter Spesialis</span>
+              <div className="w-[3px] h-[3px] rounded-full bg-slate-200" />
+              <div className="flex items-center gap-[6px] text-[11px] font-semibold text-slate-400">
+                <Activity size={13} className="text-sky-500" /> Dokter Spesialis
               </div>
             </motion.div>
           </motion.div>
@@ -207,13 +290,19 @@ export default function WelcomePage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
-          className="mt-20 pt-8 border-t border-slate-200/50 text-center"
+          className="border-t border-slate-100 py-5 text-center text-[11px] text-slate-400"
         >
-          <p className="text-xs text-slate-400">
-            © 2024 Nauli Dental Care. All rights reserved. | Sistem Informasi Klinik Gigi Modern
-          </p>
+          © 2024 Nauli Dental Care. All rights reserved. | Sistem Informasi Klinik Gigi Modern
         </motion.div>
       </div>
+
+      {/* Keyframe for scrolling strip */}
+      <style>{`
+        @keyframes scrollTrack {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
     </div>
   );
 }
