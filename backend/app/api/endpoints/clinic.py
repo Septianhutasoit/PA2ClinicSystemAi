@@ -63,9 +63,7 @@ async def upload_photo(request: Request, file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ==========================================
 # 2. CLINIC SERVICES
-# ==========================================
 
 @router.get("/services", response_model=List[schemas.ServiceResponse])
 def read_services(db: Session = Depends(get_db)):
@@ -99,9 +97,7 @@ def delete_service(service_id: int, db: Session = Depends(get_db)):
         db.commit()
     return {"message": "Layanan dihapus"}
 
-# ==========================================
 # 3. APPOINTMENTS (RESERVASI)
-# ==========================================
 
 @router.get("/appointments", response_model=List[schemas.AppointmentResponse])
 def get_all_appointments(db: Session = Depends(get_db)):
@@ -129,9 +125,7 @@ def update_appointment_status(app_id: int, payload: dict = Body(...), db: Sessio
     db.commit()
     return {"message": "Update Berhasil"}
 
-# ==========================================
 # 4. DASHBOARD ANALYTICS (MODERN & DINAMIS)
-# ==========================================
 
 @router.get("/stats/summary")
 def get_admin_stats(db: Session = Depends(get_db)):
