@@ -2,6 +2,7 @@ from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles # Sudah benar
 from app.database.session import engine, Base
+from app.models import clinic as clinic_models 
 import os
 
 # 1. IMPORT SEMUA MODEL
