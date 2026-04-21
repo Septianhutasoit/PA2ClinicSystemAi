@@ -9,13 +9,13 @@ from langchain_core.messages import HumanMessage, AIMessage
 from app.core.config import settings
 
 # Pastikan API Key terpasang
-os.environ["COHERE_API_KEY"] = settings.COHERE_API_KEY
+os.environ["COHERE_API_KEY"]   = settings.COHERE_API_KEY
 os.environ["PINECONE_API_KEY"] = settings.PINECONE_API_KEY
 
 class ChatbotService:
     def __init__(self):
         try:
-            print(f"🤖 Inisialisasi Chatbot untuk Index: {settings.PINECONE_INDEX_NAME}")
+            print(f"[INFO] Inisialisasi Chatbot untuk Index: {settings.PINECONE_INDEX_NAME}")
             
             # 1. Setup Database & Model
             self.embeddings = CohereEmbeddings(model="embed-multilingual-v3.0")
@@ -59,10 +59,10 @@ class ChatbotService:
             # 4. Bangun RAG Chain
             question_answer_chain = create_stuff_documents_chain(self.llm, qa_prompt)
             self.rag_chain = create_retrieval_chain(self.history_aware_retriever, question_answer_chain)
-            print("✅ Chatbot Service Berhasil Dibuat!")
+            print("[INFO] Chatbot Service Berhasil Dibuat!")
             
         except Exception as e:
-            print(f"❌ GAGAL MEMBUAT CHATBOT SERVICE: {str(e)}")
+            print(f"[ERROR] GAGAL MEMBUAT CHATBOT SERVICE: {str(e)}")
 
     def get_response(self, query: str, history: list = []):
         try:
@@ -75,7 +75,7 @@ class ChatbotService:
                     chat_history.append(AIMessage(content=msg['content']))
 
             # Jalankan AI
-            print(f"💬 User bertanya: {query}")
+            print(f"[CHAT] User bertanya: {query}")
             result = self.rag_chain.invoke({
                 "input": query, 
                 "chat_history": chat_history
@@ -83,5 +83,5 @@ class ChatbotService:
             return result["answer"]
             
         except Exception as e:
-            print(f"❌ ERROR SAAT MEMPROSES JAWABAN: {str(e)}")
-            raise e # Lempar error agar ditangkap oleh FastAPI
+            print(f"[ERROR] SAAT MEMPROSES JAWABAN: {str(e)}")
+            raise e

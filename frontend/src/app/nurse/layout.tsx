@@ -35,7 +35,7 @@ export default function NurseLayout({ children }: { children: React.ReactNode })
         } else {
             setIsAuthorized(true);
         }
-    }, [pathname, router]);
+    }, [router]); // Auth dicek sekali saat mount saja
 
     const handleLogout = () => {
         if (confirm('Apakah Anda yakin ingin keluar?')) {

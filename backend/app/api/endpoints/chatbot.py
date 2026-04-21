@@ -25,7 +25,7 @@ current_file = Path(__file__).resolve()
 ROOT_DIR = current_file.parents[4]
 PATH_MATERI = ROOT_DIR / "docs"
 
-print(f"🔍 KLINIK.AI DEBUG: Folder Docs terdeteksi di: {PATH_MATERI}")
+print(f"[DEBUG] KLINIK.AI: Folder Docs terdeteksi di: {PATH_MATERI}")
 
 # Inisialisasi service chatbot
 chatbot_service = ChatbotService() 
@@ -50,10 +50,10 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
     try:
         # A. Pastikan folder docs ada
         if not PATH_MATERI.exists():
-            print(f"❌ ERROR: Folder {PATH_MATERI} tidak ditemukan!")
+            print(f"[ERROR] Folder {PATH_MATERI} tidak ditemukan!")
             raise HTTPException(status_code=404, detail="Folder 'docs' tidak ditemukan.")
 
-        print(f"🚀 Memulai sinkronisasi AI...")
+        print("[INFO] Memulai sinkronisasi AI...")
         
         # B. Ambil data dari Database
         doctors = db.query(Doctor).all()
@@ -92,9 +92,9 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
         try:
             loader = DirectoryLoader(str(PATH_MATERI), glob="**/*.pdf", loader_cls=PyPDFLoader)
             pdf_docs = loader.load()
-            print(f"✅ Berhasil memuat {len(pdf_docs)} halaman dari file PDF.")
+            print(f"[INFO] Berhasil memuat {len(pdf_docs)} halaman dari file PDF.")
         except Exception as e:
-            print(f"⚠️ Warning: Gagal membaca beberapa PDF: {str(e)}")
+            print(f"[WARN] Gagal membaca beberapa PDF: {str(e)}")
 
         # D. Setup AI & Upload ke Pinecone
         os.environ["COHERE_API_KEY"] = settings.COHERE_API_KEY
@@ -115,7 +115,7 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
         if pdf_docs:
             vectorstore.add_documents(pdf_docs)
 
-        return {"message": "✅ Sukses! AI telah mempelajari database dan folder PDF terbaru."}
+        return {"message": "Sukses! AI telah mempelajari database dan folder PDF terbaru."}
 
     except Exception as e:
         print(f"DEBUG ERROR SYNC: {str(e)}")
@@ -127,7 +127,7 @@ async def list_knowledge_files():
     try:
         files_info = []
         if not PATH_MATERI.exists():
-            print(f"⚠️ Warning: Folder {PATH_MATERI} tidak ditemukan.")
+            print(f"[WARN] Folder {PATH_MATERI} tidak ditemukan.")
             return []
 
         # Mencari semua file PDF di folder docs dan subfoldernya
@@ -137,7 +137,7 @@ async def list_knowledge_files():
                 "category": path.parent.name if path.parent.name != "docs" else "Utama"
             })
             
-        print(f"📂 Berhasil mendata {len(files_info)} file PDF.")
+        print(f"[INFO] Berhasil mendata {len(files_info)} file PDF.")
         return files_info
     except Exception as e:
         print(f"DEBUG ERROR LIST FILES: {str(e)}")

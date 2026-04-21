@@ -5,28 +5,14 @@ import api from '@/services/api';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Cookies from 'js-cookie';
-import ConfirmModal from '@/components/ConfirmModal';
 import {
-    LayoutDashboard,
-    Users2,
-    UserRoundCog,
-    CalendarCheck2,
-    BrainCircuit,
-    Stethoscope,
-    Search,
-    LogOut,
-    Database,
-    Menu,
-    X,
-    Settings2,
-    AlarmClockCheck,
-    Loader2,
-    ChevronRight,
-    Sparkles,
-    UserCircle
+    LayoutDashboard, Users2, UserRoundCog, CalendarCheck2,
+    BrainCircuit, Stethoscope, Search, LogOut,
+    Database, Menu, Settings2, AlarmClockCheck, Loader2,
+    ChevronDown, UserCircle, Shield,
+    BellRing, CheckCheck, CalendarClock, UserPlus, AlertCircle
 } from 'lucide-react';
 
-// ─── Dummy notifikasi (ganti dengan data dari API) ──────────────────────────
 const INITIAL_NOTIFICATIONS = [
     {
         id: 1,
@@ -67,30 +53,24 @@ const INITIAL_NOTIFICATIONS = [
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const [isLogoutOpen, setIsLogoutOpen]         = useState(false);
     const [isSyncing, setIsSyncing]               = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isAuthorized, setIsAuthorized]         = useState(false);
+    const [isProfileOpen, setIsProfileOpen]       = useState(false);
+    const [isNotifOpen, setIsNotifOpen]           = useState(false);
+    const [notifications, setNotifications]       = useState(INITIAL_NOTIFICATIONS);
 
-    // ── Profile dropdown
-    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
-
-    // ── Notifikasi dropdown
-    const [isNotifOpen, setIsNotifOpen]     = useState(false);
-    const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
-    const notifRef = useRef<HTMLDivElement>(null);
+    const notifRef   = useRef<HTMLDivElement>(null);
     const unreadCount = notifications.filter(n => !n.read).length;
 
     const pathname = usePathname();
     const router   = useRouter();
 
-    // 1. PROTEKSI RUTE & ROLE: Cek dari Cookie saja (tidak dari localStorage)
+    // 1. PROTEKSI RUTE
     useEffect(() => {
-        // ✅ KRITIS #3: Hapus localStorage — gunakan Cookie saja
-        const token = Cookies.get('token');
-        const role = Cookies.get('role');
-
+        const token = localStorage.getItem('token') || Cookies.get('token');
+        const role  = localStorage.getItem('user_role') || Cookies.get('role');
         if (!token) {
             router.push('/login');
         } else if (role?.toLowerCase() !== 'admin') {
@@ -99,45 +79,48 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         } else {
             setIsAuthorized(true);
         }
-    }, [pathname, router]);
+    }, [router]); // ← hapus 'pathname' agar auth hanya dicek sekali saat mount
 
-    // 2. FUNGSI LOGOUT TOTAL — Hapus semua Cookie
-    const handleLogout = () => {
-        if (confirm("Apakah Anda yakin ingin keluar dari sistem?")) {
-            // ✅ KRITIS #3: Tidak ada localStorage — hanya hapus Cookie
-            Cookies.remove('token');
-            Cookies.remove('role');
-            router.push('/login');
-        }
-    };
+    // 2. CLOSE DROPDOWNS WHEN CLICKING OUTSIDE
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (profileRef.current && !profileRef.current.contains(e.target as Node))
+                setIsProfileOpen(false);
+            if (notifRef.current && !notifRef.current.contains(e.target as Node))
+                setIsNotifOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
-    // 4. LOGOUT
+    // 3. LOGOUT
     const handleLogout = () => {
-        localStorage.clear();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_role');
         Cookies.remove('token');
         Cookies.remove('role');
         window.location.href = '/login';
     };
 
-    // 5. SYNC AI
+    // 4. SYNC AI
     const handleSyncAI = async () => {
         if (!confirm('Sinkronisasi database AI?')) return;
         setIsSyncing(true);
         try {
             await api.post('/chatbot/ingest');
-            alert("✅ Brain Database AI berhasil disinkronkan!");
+            alert('✅ Brain Database AI berhasil disinkronkan!');
         } catch {
-            alert("❌ Gagal memperbarui AI.");
+            alert('❌ Gagal memperbarui AI.');
         } finally {
             setIsSyncing(false);
         }
     };
 
-    // 6. Tandai semua notifikasi sudah dibaca
+    // 5. Tandai semua notifikasi sudah dibaca
     const markAllRead = () =>
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
 
-    // 7. Tandai satu notifikasi sudah dibaca
+    // 6. Tandai satu notifikasi sudah dibaca
     const markRead = (id: number) =>
         setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
 
@@ -158,11 +141,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: 'Sign Out',       icon: <LogOut size={16} />,     action: handleLogout, color: 'text-red-600' },
     ];
 
-    // Tampilan saat sistem sedang memverifikasi role
     if (!isAuthorized) {
         return (
             <div className="h-screen w-screen bg-white flex flex-col items-center justify-center gap-4">
-                <Loader2 className="animate-spin text-blue-600" size={40} />
+                <Loader2 className="animate-spin text-emerald-600" size={40} />
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Mengamankan Akses Admin...</p>
             </div>
         );
@@ -171,8 +153,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
         <div className="flex min-h-screen bg-[#F0F9F7] text-[#1E293B] font-sans">
 
-            {/* --- SIDEBAR --- */}
-            <aside className={`fixed lg:sticky lg:top-0 z-50 w-60 h-screen bg-white border-r border-blue-50/50 shadow-sm transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+            {/* ═══ SIDEBAR ═══════════════════════════════════════════════════ */}
+            <aside className={`fixed lg:sticky lg:top-0 z-50 w-60 h-screen bg-white border-r border-emerald-50/50 shadow-sm transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
                 <div className="flex flex-col h-full">
                     {/* Logo */}
                     <div className="p-5 flex items-center gap-2.5">
@@ -180,13 +162,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <h1 className="text-base font-black tracking-tighter text-slate-800">Klinik.<span className="text-emerald-700">AI</span></h1>
                     </div>
 
-                    {/* Alamat */}
-                    <div className="mx-3 mb-4 p-3 bg-blue-50/40 rounded-xl border border-blue-100/50">
-                        <p className="text-[10px] font-black text-blue-900 uppercase leading-none">Nauli Dental Care</p>
-                        <p className="text-[9px] text-blue-500 font-bold truncate mt-1 italic opacity-70">Jl. Balige No. 12, Toba</p>
+                    {/* Clinic Info */}
+                    <div className="mx-3 mb-4 p-3 bg-emerald-50/40 rounded-xl border border-emerald-100/50">
+                        <p className="text-[10px] font-black text-emerald-900 uppercase leading-none">Nauli Dental Care</p>
+                        <p className="text-[9px] text-emerald-600 font-bold truncate mt-1 italic opacity-70">Jl. Balige No. 12, Toba</p>
                     </div>
 
-                    {/* Navigasi */}
+                    {/* Nav */}
                     <nav className="flex-1 px-2 space-y-0.5 overflow-y-auto">
                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] px-3 mb-2 opacity-60">Admin System</p>
                         {navItems.map((item) => {
@@ -209,19 +191,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <div className="p-3 border-t border-slate-100">
                         <button
                             onClick={handleLogout}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-red-700 hover:bg-red-50 text-[13px] font-medium transition-colors group rounded-xl"
+                            className="w-full flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-red-600 text-[12px] font-bold transition-all group rounded-xl hover:bg-red-50"
                         >
                             <LogOut size={16} className="group-hover:translate-x-1 transition-transform" />
-                            <span className="font-bold">Logout</span>
+                            <span>Logout</span>
                         </button>
                     </div>
                 </div>
             </aside>
 
-            {/* ═══════════════════ MAIN CONTENT ══════════════════════════════ */}
+            {/* ═══ MAIN CONTENT ══════════════════════════════════════════════ */}
             <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
 
-                {/* ────────────────── HEADER ────────────────────────────────── */}
+                {/* ── HEADER ─────────────────────────────────────────────── */}
                 <header className="h-14 bg-white/80 backdrop-blur-md border-b border-emerald-50/50 px-6 flex items-center justify-between sticky top-0 z-40 shrink-0">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="lg:hidden p-2 bg-emerald-50 rounded-lg text-emerald-600">
@@ -246,22 +228,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                         <div className="h-5 w-[1px] bg-emerald-100 mx-1" />
 
-                        {/* ════ IKON 1 — NOTIFIKASI ════════════════════════ */}
+                        {/* ── NOTIFIKASI ── */}
                         <div className="relative" ref={notifRef}>
                             <button
-                                onClick={() => {
-                                    setIsNotifOpen(v => !v);
-                                    setIsProfileOpen(false);   // tutup profile jika terbuka
-                                }}
+                                onClick={() => { setIsNotifOpen(v => !v); setIsProfileOpen(false); }}
                                 title="Notifikasi"
-                                className={`relative p-2 rounded-lg transition-all duration-200 ${
-                                    isNotifOpen
-                                        ? 'bg-emerald-800 text-white shadow-md shadow-emerald-900/20'
-                                        : 'text-slate-400 hover:text-white hover:bg-emerald-800 hover:shadow-md hover:shadow-emerald-900/10'
-                                }`}
+                                className={`relative p-2 rounded-lg transition-all duration-200 ${isNotifOpen ? 'bg-emerald-800 text-white shadow-md shadow-emerald-900/20' : 'text-slate-400 hover:text-white hover:bg-emerald-800 hover:shadow-md hover:shadow-emerald-900/10'}`}
                             >
                                 <BellRing size={16} />
-                                {/* Badge jumlah unread */}
                                 <AnimatePresence>
                                     {unreadCount > 0 && (
                                         <motion.span
@@ -277,7 +251,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 </AnimatePresence>
                             </button>
 
-                            {/* Dropdown Notifikasi */}
                             <AnimatePresence>
                                 {isNotifOpen && (
                                     <motion.div
@@ -287,45 +260,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         transition={{ duration: 0.15 }}
                                         className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-emerald-100/30 overflow-hidden z-50"
                                     >
-                                        {/* Header */}
                                         <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 px-4 py-3 flex items-center justify-between">
                                             <div>
                                                 <p className="text-[12px] font-black text-white uppercase tracking-wide">Notifikasi</p>
                                                 <p className="text-[9px] text-emerald-200 font-bold mt-0.5">{unreadCount} belum dibaca</p>
                                             </div>
                                             {unreadCount > 0 && (
-                                                <button
-                                                    onClick={markAllRead}
-                                                    className="flex items-center gap-1 px-2 py-1 bg-white/15 hover:bg-white/25 text-white text-[9px] font-black rounded-lg transition-all uppercase tracking-wide"
-                                                >
+                                                <button onClick={markAllRead} className="flex items-center gap-1 px-2 py-1 bg-white/15 hover:bg-white/25 text-white text-[9px] font-black rounded-lg transition-all uppercase tracking-wide">
                                                     <CheckCheck size={11} /> Tandai semua
                                                 </button>
                                             )}
                                         </div>
-
-                                        {/* List */}
                                         <div className="divide-y divide-slate-50 max-h-72 overflow-y-auto">
-                                            {notifications.length === 0 ? (
-                                                <div className="py-8 text-center text-slate-400 text-[11px] font-bold">
-                                                    Tidak ada notifikasi
-                                                </div>
-                                            ) : notifications.map(notif => (
+                                            {notifications.map(notif => (
                                                 <button
                                                     key={notif.id}
                                                     onClick={() => markRead(notif.id)}
                                                     className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-all hover:bg-emerald-50/60 ${!notif.read ? 'bg-emerald-50/30' : ''}`}
                                                 >
-                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${notif.color}`}>
-                                                        {notif.icon}
-                                                    </div>
+                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${notif.color}`}>{notif.icon}</div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center justify-between gap-2">
-                                                            <p className={`text-[11px] font-black truncate ${!notif.read ? 'text-slate-800' : 'text-slate-500'}`}>
-                                                                {notif.title}
-                                                            </p>
-                                                            {!notif.read && (
-                                                                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0" />
-                                                            )}
+                                                            <p className={`text-[11px] font-black truncate ${!notif.read ? 'text-slate-800' : 'text-slate-500'}`}>{notif.title}</p>
+                                                            {!notif.read && <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0" />}
                                                         </div>
                                                         <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">{notif.desc}</p>
                                                         <p className="text-[9px] text-slate-400 mt-1 font-bold">{notif.time}</p>
@@ -333,8 +290,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                                 </button>
                                             ))}
                                         </div>
-
-                                        {/* Footer */}
                                         <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/50">
                                             <button
                                                 onClick={() => { setIsNotifOpen(false); router.push('/admin/notifications'); }}
@@ -350,45 +305,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                         <div className="h-5 w-[1px] bg-emerald-100 mx-1" />
 
-                        {/* ════ PROFILE BUTTON ════════════════════════════ */}
+                        {/* ── PROFILE ── */}
                         <div className="relative" ref={profileRef}>
                             <button
-                                onClick={() => {
-                                    setIsProfileOpen(v => !v);
-                                    setIsNotifOpen(false);   // tutup notif jika terbuka
-                                }}
-                                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 group ${
-                                    isProfileOpen
-                                        ? 'bg-emerald-800 shadow-lg shadow-emerald-900/20'
-                                        : 'hover:bg-emerald-800 hover:shadow-md hover:shadow-emerald-900/10'
-                                }`}
+                                onClick={() => { setIsProfileOpen(v => !v); setIsNotifOpen(false); }}
+                                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 group ${isProfileOpen ? 'bg-emerald-800 shadow-lg shadow-emerald-900/20' : 'hover:bg-emerald-800 hover:shadow-md hover:shadow-emerald-900/10'}`}
                             >
-                                {/* Avatar */}
                                 <div className="relative shrink-0 transition-transform active:scale-90 group-hover:scale-105">
-                                    <img
-                                        src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
-                                        className="w-8 h-8 rounded-lg bg-emerald-50 border-2 border-white/20 shadow-sm"
-                                        alt="avatar"
-                                    />
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" className="w-8 h-8 rounded-lg bg-emerald-50 border-2 border-white/20 shadow-sm" alt="avatar" />
                                     <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-400 border-2 border-white rounded-full animate-pulse" />
                                 </div>
-                                {/* Teks */}
                                 <div className="text-left hidden sm:block leading-none">
-                                    <p className={`text-[11px] font-black uppercase transition-colors ${isProfileOpen ? 'text-white' : 'text-slate-800 group-hover:text-white'}`}>
-                                        admin
-                                    </p>
-                                    <p className={`text-[9px] font-bold tracking-widest mt-0.5 uppercase transition-colors ${isProfileOpen ? 'text-emerald-200' : 'text-emerald-600 group-hover:text-emerald-300'}`}>
-                                        Super Admin
-                                    </p>
+                                    <p className={`text-[11px] font-black uppercase transition-colors ${isProfileOpen ? 'text-white' : 'text-slate-800 group-hover:text-white'}`}>admin</p>
+                                    <p className={`text-[9px] font-bold tracking-widest mt-0.5 uppercase transition-colors ${isProfileOpen ? 'text-emerald-200' : 'text-emerald-600 group-hover:text-emerald-300'}`}>Super Admin</p>
                                 </div>
-                                {/* Chevron */}
-                                <ChevronDown
-                                    size={13}
-                                    className={`transition-all duration-200 ${isProfileOpen ? 'rotate-180 text-emerald-200' : 'text-slate-400 group-hover:text-emerald-200'}`}
-                                />
+                                <ChevronDown size={13} className={`transition-all duration-200 ${isProfileOpen ? 'rotate-180 text-emerald-200' : 'text-slate-400 group-hover:text-emerald-200'}`} />
                             </button>
 
-                            {/* Dropdown Profile */}
                             <AnimatePresence>
                                 {isProfileOpen && (
                                     <motion.div
@@ -430,7 +363,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </div>
                 </header>
 
-                {/* ────────────────── CONTENT ───────────────────────────────── */}
+                {/* ── CONTENT ──────────────────────────────────────────────── */}
                 <div className="flex-1 p-6 lg:p-10">
                     <AnimatePresence mode="wait">
                         <motion.div
