@@ -50,7 +50,7 @@ export default function LoginPage() {
             else if (lowerRole === 'patient') router.push('/patient/dashboard');
             else if (lowerRole === 'doctor') router.push('/doctor/dashboard');
         }
-    }, [router]);
+    }, [router, redirectUser]); 
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();

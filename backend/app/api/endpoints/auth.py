@@ -79,7 +79,7 @@ def reset_password(
     if len(data.new_password) < 8:
         raise HTTPException(status_code=400, detail="Password minimal 8 karakter")
 
-    # Update Password ke Hash Baru
+    # 3. Hash password baru dan update ke kolom hashed_password
     user.hashed_password = security.get_password_hash(data.new_password)
     
     try:
@@ -87,6 +87,7 @@ def reset_password(
         return {"message": "Password berhasil diperbarui!"}
     except Exception:
         db.rollback()
+        print(f"DEBUG ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail="Gagal menyimpan ke database.")
 
 @router.get("/me", response_model=UserResponse)
@@ -103,3 +104,14 @@ def get_me(db: Session = Depends(get_db), token: str = Depends(security.oauth2_s
         return user
     except Exception:
         raise HTTPException(status_code=401, detail="Sesi berakhir, silakan login ulang.")
+    
+@router.patch("/update-me")
+def update_profile(payload: dict, db: Session = Depends(get_db), current_user: User = Depends(get_me)):
+    # Update data user yang sedang login
+    if "full_name" in payload: current_user.full_name = payload["full_name"]
+    if "phone" in payload: current_user.phone = payload["phone"]
+    if "address" in payload: current_user.address = payload["address"]
+    if "gender" in payload: current_user.gender = payload["gender"]
+    
+    db.commit()
+    return {"message": "Profil berhasil diperbarui!"}

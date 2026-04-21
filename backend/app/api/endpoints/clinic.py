@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Body, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Body, File, UploadFile, Request
 from sqlalchemy.orm import Session
-from typing import List
-from datetime import datetime
+from typing import List, Optional
+from datetime import datetime, timedelta
 from app.database.session import get_db
 from app.crud import clinic as crud
 from app.schemas import clinic as schemas
@@ -52,9 +52,8 @@ def update_doctor(
     for key, value in payload.items():
         if hasattr(doc, key):
             setattr(doc, key, value)
-    
     db.commit()
-    return {"message": "Data staff berhasil diperbarui"}
+    return {"message": "Data staff diperbarui"}
 
 @router.delete("/doctors/{doctor_id}")
 def delete_doctor(
@@ -66,8 +65,7 @@ def delete_doctor(
     if doc:
         db.delete(doc)
         db.commit()
-    return {"message": "Staff berhasil dihapus"}
-
+    return {"message": "Staff dihapus"}
 
 # ==========================================
 # UPLOAD FOTO (VALIDASI KETAT)   ✅ KRITIS #2
@@ -137,6 +135,7 @@ def add_service(
     db.refresh(new_service)
     return new_service
 
+# PERBAIKAN: Nama fungsi diubah agar tidak bentrok dengan delete
 @router.patch("/services/{service_id}")
 def update_service(
     service_id: int,
@@ -147,13 +146,11 @@ def update_service(
     item = db.query(Service).filter(Service.id == service_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Layanan tidak ditemukan")
-    
     for key, value in payload.items():
         if hasattr(item, key):
             setattr(item, key, value)
-    
     db.commit()
-    return {"message": "Layanan berhasil diperbarui"}
+    return {"message": "Layanan diperbarui"}
 
 @router.delete("/services/{service_id}")
 def delete_service(
@@ -186,13 +183,7 @@ def create_appointment(
     current_user: dict = Depends(get_current_user)  # ✅ KRITIS #1: Harus login (pasien/admin)
 ):
     try:
-        new_appo = Appointment(
-            patient_name=data.patient_name,
-            patient_phone=data.patient_phone,
-            doctor_name=data.doctor_name,
-            appointment_date=data.appointment_date,
-            status="pending"
-        )
+        new_appo = Appointment(**data.model_dump(), status="pending")
         db.add(new_appo)
         db.commit()
         db.refresh(new_appo)
@@ -215,7 +206,6 @@ def update_appointment_status(
     for key, value in payload.items():
         if hasattr(appointment, key):
             setattr(appointment, key, value)
-    
     db.commit()
     return {"message": "Update Berhasil"}
 

@@ -51,7 +51,7 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
         # A. Pastikan folder docs ada
         if not PATH_MATERI.exists():
             print(f"❌ ERROR: Folder {PATH_MATERI} tidak ditemukan!")
-            raise HTTPException(status_code=404, detail="Folder 'docs' tidak ditemukan di root proyek.")
+            raise HTTPException(status_code=404, detail="Folder 'docs' tidak ditemukan.")
 
         print(f"🚀 Memulai sinkronisasi AI...")
         
@@ -59,44 +59,68 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
         doctors = db.query(Doctor).all()
         services = db.query(Service).all()
 
+        # Gunakan nama variabel yang konsisten: knowledge_texts
         knowledge_texts = [ 
             "Klinik Nauli Dental Care berlokasi di Balige, Toba. Jam Operasional: 08:00 - 21:00.",
             "Pendaftaran dapat dilakukan melalui website atau chatbot KlinikAI."
         ]
         
+        # PERBAIKAN LOGIKA DOKTER
         for d in doctors:
-            knowledge_texts.append(f"Dokter {d.name} spesialis {d.specialty}. Jadwal: {d.schedule}.")
+            jadwal_teks = ""
+            # Gunakan d.schedules (jamak) sesuai model terbaru kita
+            if d.schedules:
+                # Pastikan format data schedules adalah list of dict
+                try:
+                    jadwal_list = [f"{s['day']} jam {s['time']} di {s['loc']}" for s in d.schedules]
+                    jadwal_teks = ", ".join(jadwal_list)
+                except:
+                    jadwal_teks = str(d.schedules)
+            else:
+                jadwal_teks = "Jadwal belum diatur"
+
+            info_dokter = f"Dokter {d.name} adalah spesialis {d.specialty}. Jadwal praktik: {jadwal_teks}."
+            knowledge_texts.append(info_dokter) # Perbaikan: append ke knowledge_texts
+
+        # PERBAIKAN LOGIKA LAYANAN
         for s in services: 
-            knowledge_texts.append(f"Layanan {s.name}: {s.description}. Harga {s.price}.")
+            info_layanan = f"Layanan {s.name} memiliki biaya estimasi Rp {s.price}. Deskripsi: {s.description}. Detail prosedur: {s.detail_info or ''}"
+            knowledge_texts.append(info_layanan) # Perbaikan: append ke knowledge_texts
 
         # C. Ambil data dari Folder Docs (PDF)
-        # Menggunakan loader yang menyisir semua subfolder di dalam docs/
-        loader = DirectoryLoader(str(PATH_MATERI), glob="**/*.pdf", loader_cls=PyPDFLoader)
-        pdf_docs = loader.load()
-        print(f"✅ Berhasil memuat {len(pdf_docs)} halaman dari file PDF.")
+        pdf_docs = []
+        try:
+            loader = DirectoryLoader(str(PATH_MATERI), glob="**/*.pdf", loader_cls=PyPDFLoader)
+            pdf_docs = loader.load()
+            print(f"✅ Berhasil memuat {len(pdf_docs)} halaman dari file PDF.")
+        except Exception as e:
+            print(f"⚠️ Warning: Gagal membaca beberapa PDF: {str(e)}")
 
         # D. Setup AI & Upload ke Pinecone
         os.environ["COHERE_API_KEY"] = settings.COHERE_API_KEY
         os.environ["PINECONE_API_KEY"] = settings.PINECONE_API_KEY
+        
         embeddings = CohereEmbeddings(model="embed-multilingual-v3.0")
         
-        # Ingest teks dari Database (Menghapus data lama dan mengisi yang baru)
+        # Ingest teks dari Database (knowledge_texts)
+        # Sesuai library terbaru, kita gunakan inisialisasi yang bersih
         vectorstore = PineconeVectorStore.from_texts(
             texts=knowledge_texts,
             embedding=embeddings,
-            index_name=settings.PINECONE_INDEX_NAME
+            index_name=settings.PINECONE_INDEX_NAME,
+            pinecone_api_key=settings.PINECONE_API_KEY
         )
         
-        # Tambahkan data dari PDF ke dalam index yang sama
+        # Tambahkan data dari PDF jika ada
         if pdf_docs:
             vectorstore.add_documents(pdf_docs)
 
-        return {"message": "✅ Sukses! KlinikAI telah mempelajari database dan folder PDF terbaru."}
+        return {"message": "✅ Sukses! AI telah mempelajari database dan folder PDF terbaru."}
 
     except Exception as e:
         print(f"DEBUG ERROR SYNC: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
+        raise HTTPException(status_code=500, detail=f"Gagal Sinkron: {str(e)}")
+    
 # 3. Endpoint untuk List File (DIPERBAIKI)
 @router.get("/knowledge-files")
 async def list_knowledge_files():

@@ -7,7 +7,7 @@ import {
     ArrowRight, Loader2, Activity,
     Clock, Award, Users, Calendar, Star, Heart,
     Zap, CheckCircle, Phone, X, Info, MapPin,
-    DollarSign, Image as ImageIcon
+    DollarSign, Image as ImageIcon, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -17,6 +17,7 @@ export default function PatientServicesPage() {
     const [isHovering, setIsHovering] = useState(false);
     const [selectedService, setSelectedService] = useState<any>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
     const sectionRef = useRef(null);
 
     useEffect(() => {
@@ -38,7 +39,22 @@ export default function PatientServicesPage() {
 
     const handleViewDetail = (service: any) => {
         setSelectedService(service);
+        setCurrentGalleryIndex(0);
         setIsDetailOpen(true);
+    };
+
+    const nextGalleryImage = () => {
+        const gallery = selectedService?.gallery_urls || [];
+        if (gallery.length > 0) {
+            setCurrentGalleryIndex((prev) => (prev + 1) % gallery.length);
+        }
+    };
+
+    const prevGalleryImage = () => {
+        const gallery = selectedService?.gallery_urls || [];
+        if (gallery.length > 0) {
+            setCurrentGalleryIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
+        }
     };
 
     const stats = [
@@ -194,28 +210,144 @@ export default function PatientServicesPage() {
                 )}
             </section>
 
-            {/* DETAIL MODAL */}
+            {/* DETAIL MODAL - Dengan Galeri Slider */}
             <AnimatePresence>
                 {isDetailOpen && selectedService && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setIsDetailOpen(false)}>
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.2 }} className="bg-white w-[90%] max-w-2xl rounded-2xl shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                            <div className="relative h-64 w-full overflow-hidden">
-                                <img src={selectedService.image_url || 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95'} className="w-full h-full object-cover" alt={selectedService.name} />
-                                <button onClick={() => setIsDetailOpen(false)} className="absolute top-4 right-4 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-all"><X size={18} /></button>
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setIsDetailOpen(false)}>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                            className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Gallery Slider */}
+                            <div className="relative h-64 w-full overflow-hidden bg-slate-900">
+                                {selectedService.gallery_urls && selectedService.gallery_urls.length > 0 ? (
+                                    <>
+                                        <img
+                                            src={selectedService.gallery_urls[currentGalleryIndex]}
+                                            className="w-full h-full object-contain bg-slate-900"
+                                            alt={`Gallery ${currentGalleryIndex + 1}`}
+                                        />
+                                        {selectedService.gallery_urls.length > 1 && (
+                                            <>
+                                                <button
+                                                    onClick={prevGalleryImage}
+                                                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
+                                                >
+                                                    <ChevronLeft size={20} />
+                                                </button>
+                                                <button
+                                                    onClick={nextGalleryImage}
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
+                                                >
+                                                    <ChevronRight size={20} />
+                                                </button>
+                                                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                                                    {selectedService.gallery_urls.map((_: string, idx: number) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() => setCurrentGalleryIndex(idx)}
+                                                            className={`w-1.5 h-1.5 rounded-full transition-all ${currentGalleryIndex === idx ? 'bg-white w-3' : 'bg-white/50'}`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </>
+                                ) : (
+                                    <img
+                                        src={selectedService.image_url || 'https://images.unsplash.com/photo-1606811841689-23dfddce3e95'}
+                                        className="w-full h-full object-cover"
+                                        alt={selectedService.name}
+                                    />
+                                )}
+                                <button
+                                    onClick={() => setIsDetailOpen(false)}
+                                    className="absolute top-4 right-4 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-all z-10"
+                                >
+                                    <X size={18} />
+                                </button>
                             </div>
+
+                            {/* Content */}
                             <div className="p-6">
-                                <div className="flex justify-between items-start">
-                                    <div><h2 className="text-2xl font-bold text-slate-800">{selectedService.name}</h2><p className="text-sm text-emerald-600 font-medium mt-1 flex items-center gap-1"><CheckCircle size={14} /> AI Verified Service</p></div>
-                                    <div className="bg-emerald-50 rounded-xl px-4 py-2"><p className="text-lg font-black text-emerald-600">Rp {selectedService.price?.toLocaleString()}</p></div>
+                                <div className="flex justify-between items-start flex-wrap gap-3">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-slate-800">{selectedService.name}</h2>
+                                        <p className="text-sm text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                                            <CheckCircle size={14} /> AI Verified Service
+                                        </p>
+                                    </div>
+                                    <div className="bg-emerald-50 rounded-xl px-4 py-2">
+                                        <p className="text-lg font-black text-emerald-600">Rp {selectedService.price?.toLocaleString()}</p>
+                                    </div>
                                 </div>
-                                <div className="mt-5"><h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Deskripsi Layanan</h4><p className="text-sm text-slate-600 leading-relaxed">{selectedService.description}</p></div>
-                                {selectedService.detail_info && (<div className="mt-5"><h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1"><Info size={12} /> Detail Informasi</h4><p className="text-sm text-slate-600 leading-relaxed">{selectedService.detail_info}</p></div>)}
+
+                                {/* Deskripsi */}
+                                <div className="mt-5">
+                                    <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Deskripsi Layanan</h4>
+                                    <p className="text-sm text-slate-600 leading-relaxed">{selectedService.description}</p>
+                                </div>
+
+                                {/* Detail Info */}
+                                {selectedService.detail_info && (
+                                    <div className="mt-5">
+                                        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                            <Info size={12} /> Detail Informasi
+                                        </h4>
+                                        <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{selectedService.detail_info}</p>
+                                    </div>
+                                )}
+
+                                {/* Informasi Tambahan */}
                                 <div className="mt-5 grid grid-cols-2 gap-4">
-                                    <div className="flex items-center gap-3 text-sm bg-slate-50 p-3 rounded-xl"><Clock size={16} className="text-emerald-500" /><div><p className="text-[10px] text-slate-400">Durasi</p><p className="font-medium text-slate-700">30-60 menit</p></div></div>
-                                    <div className="flex items-center gap-3 text-sm bg-slate-50 p-3 rounded-xl"><ShieldCheck size={16} className="text-emerald-500" /><div><p className="text-[10px] text-slate-400">Garansi</p><p className="font-medium text-slate-700">1 bulan pasca perawatan</p></div></div>
+                                    <div className="flex items-center gap-3 text-sm bg-slate-50 p-3 rounded-xl">
+                                        <Clock size={16} className="text-emerald-500" />
+                                        <div>
+                                            <p className="text-[10px] text-slate-400">Durasi</p>
+                                            <p className="font-medium text-slate-700">30-60 menit</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm bg-slate-50 p-3 rounded-xl">
+                                        <ShieldCheck size={16} className="text-emerald-500" />
+                                        <div>
+                                            <p className="text-[10px] text-slate-400">Garansi</p>
+                                            <p className="font-medium text-slate-700">1 bulan pasca perawatan</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm bg-slate-50 p-3 rounded-xl">
+                                        <MapPin size={16} className="text-emerald-500" />
+                                        <div>
+                                            <p className="text-[10px] text-slate-400">Lokasi</p>
+                                            <p className="font-medium text-slate-700">Nauli Dental Care</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm bg-slate-50 p-3 rounded-xl">
+                                        <DollarSign size={16} className="text-emerald-500" />
+                                        <div>
+                                            <p className="text-[10px] text-slate-400">Pembayaran</p>
+                                            <p className="font-medium text-slate-700">Cash / Transfer / BPJS</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                {selectedService.gallery_urls && selectedService.gallery_urls.length > 0 && (<div className="mt-5"><h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Galeri Perawatan</h4><div className="flex gap-3 overflow-x-auto pb-2"><div className="flex gap-3">{selectedService.gallery_urls.map((url: string, idx: number) => (<img key={idx} src={url} className="w-24 h-24 rounded-xl object-cover border" alt={`Gallery ${idx}`} />))}</div></div></div>)}
-                                <div className="flex gap-3 mt-6 pt-4 border-t border-slate-100"><Link href="/patient/dashboard" className="flex-1"><button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all">Booking Sekarang <ArrowRight size={16} /></button></Link><button onClick={() => setIsDetailOpen(false)} className="flex-1 flex items-center justify-center px-4 py-3 bg-slate-100 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-all">Tutup</button></div>
+
+                                {/* Tombol Aksi */}
+                                <div className="flex gap-3 mt-6 pt-4 border-t border-slate-100">
+                                    <Link href="/patient/dashboard" className="flex-1">
+                                        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all">
+                                            Booking Sekarang <ArrowRight size={16} />
+                                        </button>
+                                    </Link>
+                                    <button
+                                        onClick={() => setIsDetailOpen(false)}
+                                        className="flex-1 flex items-center justify-center px-4 py-3 bg-slate-100 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-all"
+                                    >
+                                        Tutup
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </div>

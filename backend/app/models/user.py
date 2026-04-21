@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum
+from sqlalchemy import Column, Integer, String, Enum, Text, Date
 from app.database.session import Base
 import enum
 
@@ -15,3 +15,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     role = Column(String, default=UserRole.PATIENT)
+    phone = Column(String, nullable=True)
+    address = Column(Text, nullable=True)
+    birth_date = Column(Date, nullable=True)
+    gender = Column(String, nullable=True)  
