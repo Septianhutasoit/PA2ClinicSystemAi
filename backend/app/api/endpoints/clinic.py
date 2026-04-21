@@ -253,3 +253,27 @@ def get_admin_stats(
         }
     except Exception:
         raise HTTPException(status_code=500, detail="Gagal mengambil data statistik.")
+
+# ==========================================
+# 5. MANAJEMEN PASIEN (ADMIN ONLY)
+# ==========================================
+
+@router.get("/patients")
+def get_patients(
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin)
+):
+    # Mengambil semua user dengan role patient
+    patients = db.query(User).filter(User.role == "patient").all()
+    
+    # Format data agar rapi untuk frontend
+    return [
+        {
+            "id": p.id,
+            "full_name": p.full_name,
+            "email": p.email,
+            "created_at": p.created_at if hasattr(p, 'created_at') else None,
+            "total_appointments": db.query(Appointment).filter(Appointment.patient_name == p.full_name).count()
+        }
+        for p in patients
+    ]

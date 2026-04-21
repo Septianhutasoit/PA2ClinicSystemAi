@@ -24,10 +24,10 @@ export default function LoginPage() {
                 router.push('/admin');
                 break;
             case 'doctor':
-                router.push('/doctor/dashboard');
+                router.push('/doctor');
                 break;
             case 'nurse':
-                router.push('/nurse/dashboard');
+                router.push('/nurse');
                 break;
             case 'patient':
                 router.push('/patient/dashboard');
@@ -66,10 +66,11 @@ export default function LoginPage() {
 
             const { access_token, role } = res.data;
 
-            // ✅ KRITIS #3: Simpan HANYA ke Cookie (bukan localStorage)
-            // expires: 1/24 = 60 menit, selaras dengan JWT backend
+            // Simpan ke Cookie (untuk middleware) DAN localStorage (untuk api.ts interceptor)
             Cookies.set('token', access_token, { expires: 1 / 24, sameSite: 'strict' });
             Cookies.set('role', role, { expires: 1 / 24, sameSite: 'strict' });
+            localStorage.setItem('token', access_token);
+            localStorage.setItem('user_role', role);
 
             redirectUser(role);
 

@@ -120,7 +120,7 @@ export default function WelcomePage() {
                     <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tighter leading-[1.2] mb-4">
                         Senyum Sehat,
                         <br />
-                        <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                        <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">
                             Masa Depan Cerah
                         </span>
                     </h1>
@@ -157,9 +157,9 @@ export default function WelcomePage() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ delay: idx * 0.1 }}
                                 viewport={{ once: true }}
-                                className="bg-gradient-to-br from-slate-50 to-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all border border-slate-100 group"
+                                className="bg-gradient-to-br from-emerald-50 to-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all border border-emerald-100 group"
                             >
-                                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform">
+                                <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform">
                                     {item.icon}
                                 </div>
                                 <h3 className="text-lg font-black text-slate-800 mb-2">{item.title}</h3>
@@ -180,9 +180,9 @@ export default function WelcomePage() {
                             transition={{ duration: 0.6 }}
                             viewport={{ once: true }}
                         >
-                            <div className="inline-flex items-center gap-2 bg-indigo-100 px-4 py-2 rounded-full mb-4">
-                                <Heart size={14} className="text-indigo-600" />
-                                <span className="text-[10px] font-bold text-indigo-600">Tentang Kami</span>
+                            <div className="inline-flex items-center gap-2 bg-emerald-100 px-4 py-2 rounded-full mb-4">
+                                <Heart size={14} className="text-emerald-600" />
+                                <span className="text-[10px] font-bold text-emerald-600">Tentang Kami</span>
                             </div>
                             <h2 className="text-3xl md:text-4xl font-black text-slate-800 mb-4">
                                 Klinik Gigi Modern dengan Teknologi AI
@@ -199,7 +199,7 @@ export default function WelcomePage() {
                             whileInView={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.6 }}
                             viewport={{ once: true }}
-                            className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white text-center"
+                            className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-3xl p-8 text-white text-center"
                         >
                             <ShieldCheck size={48} className="mx-auto mb-4 text-white/80" />
                             <h3 className="text-2xl font-bold mb-2">Terpercaya & Profesional</h3>
@@ -219,9 +219,9 @@ export default function WelcomePage() {
                         viewport={{ once: true }}
                         className="text-center mb-10"
                     >
-                        <div className="inline-flex items-center gap-2 bg-indigo-100 px-4 py-2 rounded-full mb-4">
-                            <Calendar size={16} className="text-indigo-600" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Booking Online</span>
+                        <div className="inline-flex items-center gap-2 bg-emerald-100 px-4 py-2 rounded-full mb-4">
+                            <Calendar size={16} className="text-emerald-600" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Booking Online</span>
                         </div>
                         <h2 className="text-3xl md:text-4xl font-black text-slate-800 mb-4">
                             Buat Janji Temu Sekarang
@@ -245,7 +245,7 @@ export default function WelcomePage() {
                                     <input
                                         type="text"
                                         placeholder="Nama Lengkap"
-                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                                         value={formData.patient_name}
                                         onChange={e => setFormData({ ...formData, patient_name: e.target.value })}
                                         required
@@ -256,7 +256,7 @@ export default function WelcomePage() {
                                     <input
                                         type="text"
                                         placeholder="Nomor WhatsApp"
-                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                                         value={formData.patient_phone}
                                         onChange={e => setFormData({ ...formData, patient_phone: e.target.value })}
                                         required
@@ -268,7 +268,7 @@ export default function WelcomePage() {
                                 <div className="relative">
                                     <Stethoscope size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
                                     <select
-                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                                         value={formData.doctor_name}
                                         onChange={e => setFormData({ ...formData, doctor_name: e.target.value })}
                                         required
@@ -285,7 +285,7 @@ export default function WelcomePage() {
                                     <Clock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                     <input
                                         type="datetime-local"
-                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                        className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                                         value={formData.appointment_date}
                                         onChange={e => setFormData({ ...formData, appointment_date: e.target.value })}
                                         required
@@ -295,7 +295,7 @@ export default function WelcomePage() {
 
                             <button
                                 type="submit"
-                                className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-4 rounded-xl font-bold text-sm uppercase tracking-wider shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-4 rounded-xl font-bold text-sm uppercase tracking-wider shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 {status.type === 'loading' ? 'Memproses...' : 'Konfirmasi Janji Temu'}
                             </button>
@@ -305,10 +305,10 @@ export default function WelcomePage() {
                                     initial={{ opacity: 0, y: -10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     className={`text-center text-sm font-medium py-3 rounded-xl ${status.type === 'success'
-                                        ? 'text-green-600 bg-green-50'
+                                        ? 'text-emerald-600 bg-emerald-50'
                                         : status.type === 'error'
                                             ? 'text-red-600 bg-red-50'
-                                            : 'text-indigo-600 bg-indigo-50'
+                                            : 'text-emerald-600 bg-emerald-50'
                                         }`}
                                 >
                                     {status.msg}
@@ -331,8 +331,8 @@ export default function WelcomePage() {
             <div className="bg-slate-900 py-10 px-6">
                 <div className="max-w-7xl mx-auto text-center">
                     <div className="flex items-center justify-center gap-2 mb-4">
-                        <Sparkles size={20} className="text-blue-400" />
-                        <span className="text-white font-black text-lg">Nauli<span className="text-blue-400">Dental</span></span>
+                        <Sparkles size={20} className="text-emerald-400" />
+                        <span className="text-white font-black text-lg">Nauli<span className="text-emerald-400">Dental</span></span>
                     </div>
                     <p className="text-slate-400 text-sm mb-4">
                         Klinik Gigi Modern dengan Teknologi AI • Profesional • Terpercaya

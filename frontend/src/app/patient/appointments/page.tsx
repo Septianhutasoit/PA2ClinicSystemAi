@@ -245,8 +245,8 @@ export default function AppointmentsPage() {
                             key={tab.id}
                             onClick={() => setFilter(tab.id)}
                             className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${filter === tab.id
-                                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
-                                    : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'
+                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
+                                : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'
                                 }`}
                         >
                             {tab.label} <span className="ml-1 text-xs opacity-70">({tab.count})</span>
