@@ -231,10 +231,13 @@ def read_medical_records(db: Session = Depends(get_db)):
             MedicalRecord.treatment,
             MedicalRecord.notes,
             MedicalRecord.created_at,
-            Appointment.patient_name
+            Appointment.patient_name,
             MedicalRecord.appointment_id
         ).join(Appointment, MedicalRecord.appointment_id == Appointment.id).all()
         return results
+    except Exception as e:
+        print(f"❌ ERROR REKAM MEDIS: {str(e)}")
+        raise HTTPException(status_code=500, detail="Gagal mengambil data rekam medis")
     
 
 # --- ENDPOINT SIMPAN REKAM MEDIS BARU ---
