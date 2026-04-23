@@ -9,7 +9,7 @@ from app.core.security import require_admin, get_current_user
 from app.core.config import settings
 
 from app.models.appointment import Appointment 
-from app.models.clinic import Doctor, Service
+from app.models.clinic import Doctor, Service, MedicalRecord
 from app.models.user import User
 import shutil
 import os
@@ -267,3 +267,45 @@ def get_patients(
         }
         for p in patients
     ]
+
+@router.patch("/patients/{p_id}")
+def update_patient(p_id: int, payload: dict, db: Session = Depends(get_db)):
+    from app.models.patient import Patient
+    p = db.query(Patient).filter(Patient.id == p_id).first()
+    if p:
+        for k, v in payload.items():
+            setattr(p, k, v)
+        db.commit()
+    return {"message": "Success"}
+
+@router.get("/medical-records", response_model=List[schemas.MedicalRecordResponse])
+def read_medical_records(db: Session = Depends(get_db)):
+    try:
+        # Mengambil data rekam medis dan menggabungkannya dengan nama pasien dari tabel appointments
+        results = db.query(
+            MedicalRecord.id,
+            MedicalRecord.diagnosis,
+            MedicalRecord.treatment,
+            MedicalRecord.notes,
+            MedicalRecord.created_at,
+            Appointment.patient_name,
+            MedicalRecord.appointment_id
+        ).join(Appointment, MedicalRecord.appointment_id == Appointment.id).all()
+        return results
+    except Exception as e:
+        print(f"\u274c ERROR REKAM MEDIS: {str(e)}")
+        raise HTTPException(status_code=500, detail="Gagal mengambil data rekam medis")
+
+
+# --- ENDPOINT SIMPAN REKAM MEDIS BARU ---
+@router.post("/medical-records")
+def create_medical_record(data: schemas.MedicalRecordCreate, db: Session = Depends(get_db)):
+    try:
+        # Gunakan 'data' (Pydantic) bukan 'payload' (dict) agar lebih aman
+        new_record = MedicalRecord(**data.model_dump())
+        db.add(new_record)
+        db.commit()
+        return {"message": "Rekam medis tersimpan"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
