@@ -23,7 +23,7 @@ class ChatbotService:
                 index_name=settings.PINECONE_INDEX_NAME,
                 embedding=self.embeddings
             )
-            self.llm = ChatCohere(model="command-r-plus-08-2024", temperature=0.3)
+            self.llm = ChatCohere(model="   command-r-plus-08-2024", temperature=0.3)
 
             # 2. PROMPT: Agar AI Pintar mengolah konteks riwayat chat
             contextualize_q_system_prompt = (

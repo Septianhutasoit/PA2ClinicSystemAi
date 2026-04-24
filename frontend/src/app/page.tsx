@@ -1,8 +1,27 @@
 'use client';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Clock, Star, Activity } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { ShieldCheck, Clock, Activity } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+// Pre-computed static particle values — tidak pakai Math.random() saat render
+// agar tidak terjadi hydration mismatch antara server dan client
+const PARTICLES = [
+  { left: '7%',  w: 3, h: 3, dur: 10, delay: -5  },
+  { left: '14%', w: 5, h: 5, dur: 14, delay: -12 },
+  { left: '21%', w: 2, h: 2, dur: 9,  delay: -3  },
+  { left: '29%', w: 4, h: 4, dur: 18, delay: -17 },
+  { left: '36%', w: 3, h: 3, dur: 11, delay: -8  },
+  { left: '43%', w: 5, h: 5, dur: 15, delay: -1  },
+  { left: '51%', w: 2, h: 2, dur: 13, delay: -14 },
+  { left: '59%', w: 4, h: 4, dur: 8,  delay: -7  },
+  { left: '66%', w: 3, h: 3, dur: 17, delay: -19 },
+  { left: '73%', w: 5, h: 5, dur: 12, delay: -4  },
+  { left: '80%', w: 2, h: 2, dur: 16, delay: -11 },
+  { left: '87%', w: 4, h: 4, dur: 10, delay: -16 },
+  { left: '93%', w: 3, h: 3, dur: 14, delay: -9  },
+  { left: '97%', w: 5, h: 5, dur: 19, delay: -2  },
+];
 
 const FEATURES = [
   { icon: '📅', text: 'Booking Online' },
@@ -26,6 +45,10 @@ const FLOAT_BADGES = [
 
 export default function WelcomePage() {
   const trackRef = useRef<HTMLDivElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Pastikan partikel hanya dirender di sisi client (cegah hydration mismatch)
+  useEffect(() => { setIsMounted(true); }, []);
 
   return (
     <div className="min-h-screen bg-[#f8fffe] overflow-hidden relative font-sans">
@@ -54,23 +77,23 @@ export default function WelcomePage() {
           animate={{ x: [0, -15, 0], y: [0, 10, 0], scale: [1, 0.97, 1] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: -3 }}
         />
-        {/* Floating particles */}
-        {Array.from({ length: 14 }).map((_, i) => (
+        {/* Floating particles — hanya render setelah client mount */}
+        {isMounted && PARTICLES.map((p, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full"
             style={{
-              left: `${Math.random() * 100}%`,
-              width: `${Math.random() * 4 + 2}px`,
-              height: `${Math.random() * 4 + 2}px`,
+              left: p.left,
+              width: `${p.w}px`,
+              height: `${p.h}px`,
               background: i % 2 === 0 ? 'rgba(20,184,166,0.35)' : 'rgba(14,165,233,0.3)',
             }}
             initial={{ y: '100vh', opacity: 0 }}
             animate={{ y: '-20px', opacity: [0, 0.6, 0.6, 0] }}
             transition={{
-              duration: 8 + Math.random() * 12,
+              duration: p.dur,
               repeat: Infinity,
-              delay: Math.random() * -20,
+              delay: p.delay,
               ease: 'linear',
             }}
           />
