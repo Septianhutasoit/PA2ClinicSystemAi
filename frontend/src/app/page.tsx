@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Clock, Star, Activity } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const FEATURES = [
   { icon: '📅', text: 'Booking Online' },
@@ -25,13 +25,27 @@ const FLOAT_BADGES = [
 ];
 
 export default function WelcomePage() {
-  const trackRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [particles, setParticles] = useState<Array<{ left: number; width: number; height: number; bg: string; delay: number }>>([]);
+
+  useEffect(() => {
+    setMounted(true);
+    // Generate partikel hanya setelah mount (client)
+    const newParticles = Array.from({ length: 14 }).map((_, i) => ({
+      left: Math.random() * 100,
+      width: Math.random() * 4 + 2,
+      height: Math.random() * 4 + 2,
+      bg: i % 2 === 0 ? 'rgba(20,184,166,0.35)' : 'rgba(14,165,233,0.3)',
+      delay: Math.random() * -20,
+    }));
+    setParticles(newParticles);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#f8fffe] overflow-hidden relative font-sans">
+    <div className="min-h-screen bg-[#f8fffe] overflow-hidden relative font-sans" suppressHydrationWarning>
 
       {/* Background mesh */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
+      <div className="fixed inset-0 z-0 pointer-events-none" suppressHydrationWarning>
         <div className="absolute inset-0"
           style={{
             background: `
@@ -41,7 +55,7 @@ export default function WelcomePage() {
             `
           }}
         />
-        {/* Floating orbs */}
+        {/* Floating orbs - aman karena tidak menggunakan random di server */}
         <motion.div
           className="absolute w-80 h-80 -top-20 -left-20 rounded-full"
           style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.12), transparent)' }}
@@ -54,30 +68,30 @@ export default function WelcomePage() {
           animate={{ x: [0, -15, 0], y: [0, 10, 0], scale: [1, 0.97, 1] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: -3 }}
         />
-        {/* Floating particles */}
-        {Array.from({ length: 14 }).map((_, i) => (
+        {/* Floating particles - hanya di render client */}
+        {mounted && particles.map((p, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full"
             style={{
-              left: `${Math.random() * 100}%`,
-              width: `${Math.random() * 4 + 2}px`,
-              height: `${Math.random() * 4 + 2}px`,
-              background: i % 2 === 0 ? 'rgba(20,184,166,0.35)' : 'rgba(14,165,233,0.3)',
+              left: `${p.left}%`,
+              width: `${p.width}px`,
+              height: `${p.height}px`,
+              background: p.bg,
             }}
             initial={{ y: '100vh', opacity: 0 }}
             animate={{ y: '-20px', opacity: [0, 0.6, 0.6, 0] }}
             transition={{
               duration: 8 + Math.random() * 12,
               repeat: Infinity,
-              delay: Math.random() * -20,
+              delay: p.delay,
               ease: 'linear',
             }}
           />
         ))}
       </div>
 
-      {/* Main layout */}
+      {/* Main layout (sama seperti sebelumnya, tetapi tanpa partikel langsung) */}
       <div className="relative z-10 max-w-[1200px] mx-auto px-8 min-h-screen flex flex-col">
 
         {/* Nav */}
@@ -296,7 +310,6 @@ export default function WelcomePage() {
         </motion.div>
       </div>
 
-      {/* Keyframe for scrolling strip */}
       <style>{`
         @keyframes scrollTrack {
           0% { transform: translateX(0); }
