@@ -174,7 +174,22 @@ def get_all_appointments(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)  # ✅ KRITIS #1: Harus login
 ):
+    # Endpoint ini untuk Nurse dan Doctor melihat semua antrian
+    if current_user["role"] == "patient":
+        raise HTTPException(status_code=403, detail="Pasien tidak diizinkan melihat semua antrian")
     return db.query(Appointment).order_by(Appointment.appointment_date.desc()).all()
+
+@router.get("/appointments/me", response_model=List[schemas.AppointmentResponse])
+def get_my_appointments(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    # Menyaring antrian khusus milik pasien yang login
+    user = db.query(User).filter(User.email == current_user["email"]).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+    
+    return db.query(Appointment).filter(Appointment.user_id == user.id).order_by(Appointment.appointment_date.desc()).all()
 
 @router.post("/appointments", response_model=schemas.AppointmentResponse)
 def create_appointment(
@@ -183,14 +198,16 @@ def create_appointment(
     current_user: dict = Depends(get_current_user)  # ✅ KRITIS #1: Harus login (pasien/admin)
 ):
     try:
-        new_appo = Appointment(**data.model_dump(), status="pending")
+        user = db.query(User).filter(User.email == current_user["email"]).first()
+        appo_data = data.model_dump()
+        new_appo = Appointment(**appo_data, status="pending", user_id=user.id if user else None)
         db.add(new_appo)
         db.commit()
         db.refresh(new_appo)
         return new_appo
-    except Exception:
+    except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Gagal mendaftar")
+        raise HTTPException(status_code=500, detail="Gagal mendaftar: " + str(e))
 
 @router.patch("/appointments/{app_id}")
 def update_appointment_status(

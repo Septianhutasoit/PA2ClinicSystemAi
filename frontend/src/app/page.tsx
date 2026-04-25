@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Clock, Star, Activity } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const FEATURES = [
   { icon: '📅', text: 'Booking Online' },
@@ -24,8 +24,21 @@ const FLOAT_BADGES = [
   { icon: '🏅', title: 'Bersertifikat', sub: 'Standar ISO', pos: 'top-1/2 -left-14 -translate-y-1/2' },
 ];
 
+// Pre-computed static particle values untuk hydration yang aman
+const PARTICLES = Array.from({ length: 14 }).map((_, i) => ({
+  left: (i * 7.14) % 100, // Distribusi horizontal
+  w: (i % 4) + 2,
+  h: (i % 4) + 2,
+  dur: (i % 10) + 8,
+  delay: -(i * 1.5),
+  bg: i % 2 === 0 ? 'rgba(20,184,166,0.35)' : 'rgba(14,165,233,0.3)'
+}));
+
 export default function WelcomePage() {
   const trackRef = useRef<HTMLDivElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => { setIsMounted(true); }, []);
 
   return (
     <div className="min-h-screen bg-[#f8fffe] overflow-hidden relative font-sans" suppressHydrationWarning>
@@ -54,16 +67,16 @@ export default function WelcomePage() {
           animate={{ x: [0, -15, 0], y: [0, 10, 0], scale: [1, 0.97, 1] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: -3 }}
         />
-        {/* Floating particles */}
-        {Array.from({ length: 14 }).map((_, i) => (
+        {/* Floating particles — cegah hydration error dengan isMounted */}
+        {isMounted && PARTICLES.map((p, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full"
             style={{
-              left: `${Math.random() * 100}%`,
-              width: `${Math.random() * 4 + 2}px`,
-              height: `${Math.random() * 4 + 2}px`,
-              background: i % 2 === 0 ? 'rgba(20,184,166,0.35)' : 'rgba(14,165,233,0.3)',
+              left: `${p.left}%`,
+              width: `${p.w}px`,
+              height: `${p.h}px`,
+              background: p.bg,
             }}
             initial={{ y: '100vh', opacity: 0 }}
             animate={{ y: '-20px', opacity: [0, 0.6, 0.6, 0] }}

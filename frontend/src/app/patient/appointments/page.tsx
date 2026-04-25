@@ -39,15 +39,11 @@ export default function AppointmentsPage() {
 
     const fetchAppointments = async () => {
         try {
-            const res = await api.get('/clinic/appointments');
+            const res = await api.get('/clinic/appointments/me');
             setAppointments(res.data);
-        } catch {
-            // Use sample data if API fails
-            setAppointments([
-                { id: 1, patient_name: 'Septian Adi', patient_phone: '081234567890', doctor_name: 'Dr. Sarah', appointment_date: '2024-12-20T09:00', status: 'confirmed' },
-                { id: 2, patient_name: 'Septian Adi', patient_phone: '081234567890', doctor_name: 'Dr. Budi', appointment_date: '2024-12-22T14:00', status: 'pending' },
-                { id: 3, patient_name: 'Septian Adi', patient_phone: '081234567890', doctor_name: 'Dr. Maya', appointment_date: '2024-11-15T10:00', status: 'completed' },
-            ]);
+        } catch (error) {
+            console.error("Gagal memuat janji temu:", error);
+            setAppointments([]); // Jangan tampilkan data orang lain jika gagal
         } finally {
             setLoading(false);
         }
