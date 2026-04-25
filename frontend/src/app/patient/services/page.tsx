@@ -10,14 +10,17 @@ import {
     DollarSign, Image as ImageIcon, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function PatientServicesPage() {
+    const router = useRouter();
     const [services, setServices] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isHovering, setIsHovering] = useState(false);
     const [selectedService, setSelectedService] = useState<any>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
+    const [isBooking, setIsBooking] = useState(false);
     const sectionRef = useRef(null);
 
     useEffect(() => {
@@ -54,6 +57,40 @@ export default function PatientServicesPage() {
         const gallery = selectedService?.gallery_urls || [];
         if (gallery.length > 0) {
             setCurrentGalleryIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
+        }
+    };
+
+    const handleQuickBook = async () => {
+        if (!selectedService) return;
+        setIsBooking(true);
+        let name = "Pasien Baru";
+        let phone = "Belum diisi";
+        try {
+            const userRes = await api.get('/auth/me');
+            if (userRes.data?.full_name) name = userRes.data.full_name;
+            if (userRes.data?.phone_number) phone = userRes.data.phone_number;
+        } catch (e) {
+            console.warn("Gagal mengambil data profil", e);
+        }
+
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(10, 0, 0, 0);
+
+        try {
+            await api.post('/clinic/appointments', {
+                patient_name: name,
+                patient_phone: phone,
+                doctor_name: `Layanan: ${selectedService.name}`,
+                appointment_date: tomorrow.toISOString(),
+                notes: "Dokter menangani akan ditentukan oleh pihak klinik. Kami akan segera mengonfirmasi ketersediaan."
+            });
+            setIsDetailOpen(false);
+            router.push('/patient/appointments');
+        } catch (err) {
+            alert("Gagal melakukan booking otomatis. Silakan coba menu Janji Temu.");
+        } finally {
+            setIsBooking(false);
         }
     };
 
@@ -105,9 +142,9 @@ export default function PatientServicesPage() {
                             Inovasi perawatan gigi modern berbasis AI untuk hasil akurat, aman, dan tanpa rasa sakit.
                         </motion.p>
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }} className="flex gap-2">
-                            <Link href="/patient/dashboard" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-full font-bold text-[8px] uppercase tracking-wider transition-all flex items-center gap-1 shadow-lg shadow-blue-500/30">
-                                Pesan Sekarang <ArrowRight size={8} />
-                            </Link>
+                            <a href="#services" className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-5 py-2.5 rounded-full font-bold text-[10px] uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-blue-500/30">
+                                Pilih Layanan <ArrowRight size={14} />
+                            </a>
                             <a href="#services" className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white px-3 py-1.5 rounded-full font-bold text-[8px] uppercase tracking-wider transition-all flex items-center gap-1">
                                 <Stethoscope size={8} /> Lihat Katalog
                             </a>
@@ -145,7 +182,7 @@ export default function PatientServicesPage() {
                 </motion.div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {features.map((feature, idx) => {
-                        const colorClasses = { blue: "from-blue-500 to-blue-600", emerald: "from-emerald-500 to-emerald-600", rose: "from-rose-500 to-rose-600", purple: "from-purple-500 to-purple-600" };
+                        const colorClasses: Record<string, string> = { blue: "from-blue-500 to-blue-600", emerald: "from-emerald-500 to-emerald-600", rose: "from-rose-500 to-rose-600", purple: "from-purple-500 to-purple-600" };
                         return (
                             <motion.div key={idx} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.1 }} whileHover={{ y: -8 }} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-lg hover:shadow-xl transition-all group">
                                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colorClasses[feature.color]} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
@@ -336,11 +373,14 @@ export default function PatientServicesPage() {
 
                                 {/* Tombol Aksi */}
                                 <div className="flex gap-3 mt-6 pt-4 border-t border-slate-100">
-                                    <Link href="/patient/dashboard" className="flex-1">
-                                        <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all">
-                                            Booking Sekarang <ArrowRight size={16} />
-                                        </button>
-                                    </Link>
+                                    <button 
+                                        onClick={handleQuickBook}
+                                        disabled={isBooking}
+                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all disabled:opacity-70"
+                                    >
+                                        {isBooking ? <Loader2 size={16} className="animate-spin" /> : "Booking Sekarang"}
+                                        {!isBooking && <ArrowRight size={16} />}
+                                    </button>
                                     <button
                                         onClick={() => setIsDetailOpen(false)}
                                         className="flex-1 flex items-center justify-center px-4 py-3 bg-slate-100 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-200 transition-all"

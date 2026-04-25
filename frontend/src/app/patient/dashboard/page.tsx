@@ -8,8 +8,10 @@ import {
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function WelcomePage() {
+    const router = useRouter();
     const [currentSlide, setCurrentSlide] = useState(0);
     const [doctors, setDoctors] = useState([]);
     const [formData, setFormData] = useState({
@@ -43,14 +45,17 @@ export default function WelcomePage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setStatus({ type: 'loading', msg: 'Mengirim...' });
+        setStatus({ type: 'loading', msg: 'Memproses...' });
         try {
             await api.post('/clinic/appointments', formData);
-            setStatus({ type: 'success', msg: '✅ Berhasil! Jadwal tercatat.' });
-            setFormData({ ...formData, doctor_name: '', appointment_date: '' });
-            setTimeout(() => setStatus({ type: '', msg: '' }), 3000);
+            setStatus({ type: 'success', msg: '✅ Berhasil! Jadwal tercatat. Mengalihkan...' });
+            setFormData({ patient_name: '', patient_phone: '', doctor_name: '', appointment_date: '', patient_address: '', patient_gender: '' });
+            setTimeout(() => {
+                setStatus({ type: '', msg: '' });
+                router.push('/patient/appointments');
+            }, 1500);
         } catch (err) {
-            setStatus({ type: 'error', msg: '❌ Gagal mendaftar.' });
+            setStatus({ type: 'error', msg: '❌ Gagal mendaftar. Pastikan data sudah benar.' });
             setTimeout(() => setStatus({ type: '', msg: '' }), 3000);
         }
     };

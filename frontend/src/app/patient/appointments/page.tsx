@@ -5,7 +5,7 @@ import {
     XCircle, AlertCircle, Plus, Search, Filter,
     ChevronRight, Phone, MapPin, CalendarDays
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import api from '@/services/api';
 
 interface Appointment {
@@ -15,9 +15,10 @@ interface Appointment {
     doctor_name: string;
     appointment_date: string;
     status: string;
+    notes?: string;
 }
 
-export default function AppointmentsPage() {
+function AppointmentsContent() {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
@@ -289,9 +290,14 @@ export default function AppointmentsPage() {
                                                     {formatTime(apt.appointment_date)} WIB
                                                 </span>
                                             </div>
+                                            {apt.notes && (
+                                                <div className="mt-3 bg-emerald-50 text-emerald-700 text-xs px-3 py-2 rounded-lg font-medium">
+                                                    {apt.notes}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-4">
                                         {getStatusBadge(apt.status)}
                                         <ChevronRight size={16} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
                                     </div>
@@ -302,5 +308,13 @@ export default function AppointmentsPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function AppointmentsPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Memuat...</div>}>
+            <AppointmentsContent />
+        </Suspense>
     );
 }

@@ -36,8 +36,9 @@ class AppointmentBase(BaseModel):
     patient_phone: str
     doctor_name: str
     appointment_date: datetime
-    patient_address: Optional[str] = None # Kolom baru Neon
-    patient_gender: Optional[str] = None  # Kolom baru Neon
+    patient_address: Optional[str] = None
+    patient_gender: Optional[str] = None
+    notes: Optional[str] = None
 
 class AppointmentCreate(AppointmentBase):
     pass
