@@ -41,10 +41,15 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     }, []);
 
     const handleLogout = () => {
-        if (confirm("Keluar dari Portal Pasien?")) {
+        if (confirm("Yakin Keluar dari Portal Pasien?")) {
             localStorage.clear();
-            Cookies.remove('token');
-            Cookies.remove('role');
+            Cookies.remove('token', { path: '/' });
+            Cookies.remove('role', { path: '/' });
+            document.cookie.split(";").forEach(c => {
+                document.cookie = c
+                    .replace(/^ +/, "")
+                    .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
             router.push('/login');
         }
     };
