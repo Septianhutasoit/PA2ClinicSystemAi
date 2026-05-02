@@ -1,258 +1,320 @@
 'use client';
-import { useEffect, useState } from 'react';
-import api from '@/services/api';
-import {
-  Activity,
-  Calendar,
-  Phone,
-  User,
-  ArrowRight,
-  CheckCircle2,
-  Clock,
-  ShieldCheck,
-  MapPin
-} from 'lucide-react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { ShieldCheck, Clock, Star, Activity } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
-export default function Home() {
-  const [doctors, setDoctors] = useState([]);
-  const [services, setServices] = useState([]);
-  const [formData, setFormData] = useState({
-    patient_name: '',
-    patient_phone: '',
-    doctor_name: '',
-    appointment_date: ''
-  });
-  const [status, setStatus] = useState({ type: '', msg: '' });
+const FEATURES = [
+  { icon: '📅', text: 'Booking Online' },
+  { icon: '⏱', text: 'Antrian Real-time' },
+  { icon: '⭐', text: 'Dokter Spesialis' },
+  { icon: '🩺', text: 'Rekam Medis Digital' },
+  { icon: '💊', text: 'Perawatan Modern' },
+];
 
-  useEffect(() => {
-    api.get('/clinic/doctors').then((res) => setDoctors(res.data)).catch(err => console.error(err));
-    api.get('/clinic/services').then((res) => setServices(res.data)).catch(err => console.error(err));
-  }, []);
+const STATS = [
+  { num: '2.4K+', label: 'Pasien Puas' },
+  { num: '15+', label: 'Dokter Spesialis' },
+  { num: '98%', label: 'Tingkat Kepuasan' },
+];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus({ type: 'loading', msg: 'Memproses pendaftaran...' });
+const FLOAT_BADGES = [
+  { icon: '❤️', title: 'Pasien Puas', sub: '2,400+ pasien', pos: 'top-2 -right-4' },
+  { icon: '⚡', title: 'AI Powered', sub: 'Diagnosis cepat', pos: '-bottom-2 -left-8' },
+  { icon: '🏅', title: 'Bersertifikat', sub: 'Standar ISO', pos: 'top-1/2 -left-14 -translate-y-1/2' },
+];
 
-    // LOGIKA PENTING: Format nomor WA untuk n8n
-    let formattedPhone = formData.patient_phone;
-    if (formattedPhone.startsWith('0')) {
-      formattedPhone = '62' + formattedPhone.substring(1);
-    }
+// Pre-computed static particle values untuk hydration yang aman
+const PARTICLES = Array.from({ length: 14 }).map((_, i) => ({
+  left: (i * 7.14) % 100, // Distribusi horizontal
+  w: (i % 4) + 2,
+  h: (i % 4) + 2,
+  dur: (i % 10) + 8,
+  delay: -(i * 1.5),
+  bg: i % 2 === 0 ? 'rgba(20,184,166,0.35)' : 'rgba(14,165,233,0.3)'
+}));
 
-    try {
-      await api.post('/clinic/appointments', {
-        ...formData,
-        patient_phone: formattedPhone
-      });
-      setStatus({ type: 'success', msg: '✅ Berhasil! Pengingat akan dikirim ke WhatsApp Anda.' });
-      setFormData({ patient_name: '', patient_phone: '', doctor_name: '', appointment_date: '' });
-    } catch (error) {
-      setStatus({ type: 'error', msg: '❌ Terjadi kesalahan. Silakan coba lagi.' });
-    }
-  };
+export default function WelcomePage() {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => { setIsMounted(true); }, []);
 
   return (
-    <div className="bg-white min-h-screen text-slate-900 scroll-smooth">
-      {/* Navbar Modern */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-200 italic">
-              K
-            </div>
-            <h1 className="text-2xl font-black tracking-tighter text-blue-600 italic">KLINIK.AI</h1>
-          </div>
-          <div className="hidden md:flex items-center gap-10 text-sm font-bold uppercase tracking-widest text-slate-500">
-            <a href="#services" className="hover:text-blue-600 transition">Layanan</a>
-            <a href="#doctors" className="hover:text-blue-600 transition">Dokter</a>
-            <a href="#appointment" className="bg-blue-600 text-white px-8 py-3 rounded-full shadow-lg shadow-blue-200 hover:scale-105 transition active:scale-95">Daftar Sekarang</a>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-[#f8fffe] overflow-hidden relative font-sans" suppressHydrationWarning>
 
-      {/* Hero Section */}
-      <header className="pt-40 pb-20 px-6 overflow-hidden">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 items-center gap-12">
-          <div className="space-y-8 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest">
-              <Activity size={16} /> Digital Health Assistant
+      {/* Background mesh */}
+      <div className="fixed inset-0 z-0 pointer-events-none" suppressHydrationWarning>
+        <div className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(ellipse 60% 50% at 10% 20%, rgba(20,184,166,0.08) 0%, transparent 60%),
+              radial-gradient(ellipse 50% 60% at 90% 80%, rgba(14,165,233,0.07) 0%, transparent 60%),
+              radial-gradient(ellipse 40% 40% at 50% 50%, rgba(16,185,129,0.04) 0%, transparent 70%)
+            `
+          }}
+        />
+        {/* Floating orbs - aman karena tidak menggunakan random di server */}
+        <motion.div
+          className="absolute w-80 h-80 -top-20 -left-20 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.12), transparent)' }}
+          animate={{ x: [0, 20, 0], y: [0, -15, 0], scale: [1, 1.05, 1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute w-64 h-64 bottom-[10%] -right-16 rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(14,165,233,0.10), transparent)' }}
+          animate={{ x: [0, -15, 0], y: [0, 10, 0], scale: [1, 0.97, 1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: -3 }}
+        />
+        {/* Floating particles — cegah hydration error dengan isMounted */}
+        {isMounted && PARTICLES.map((p, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              left: `${p.left}%`,
+              width: `${p.w}px`,
+              height: `${p.h}px`,
+              background: p.bg,
+            }}
+            initial={{ y: '100vh', opacity: 0 }}
+            animate={{ y: '-20px', opacity: [0, 0.6, 0.6, 0] }}
+            transition={{
+              duration: p.dur,
+              repeat: Infinity,
+              delay: p.delay,
+              ease: 'linear',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Main layout (sama seperti sebelumnya, tetapi tanpa partikel langsung) */}
+      <div className="relative z-10 max-w-[1200px] mx-auto px-8 min-h-screen flex flex-col">
+
+        {/* Nav */}
+        <motion.nav
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center justify-between py-8 mb-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #0d9488, #0891b2)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C9 2 7 4 7 7c0 2 1 3.5 1 5.5 0 2.5-1 4.5-1 7.5 0 1.1.9 2 2 2s2-.9 2-2V17h2v3c0 1.1.9 2 2 2s2-.9 2-2c0-3-1-5-1-7.5 0-2 1-3.5 1-5.5 0-3-2-5-5-5z"
+                  fill="white" opacity="0.9" />
+              </svg>
             </div>
-            <h2 className="text-6xl md:text-7xl font-black tracking-tighter leading-[0.9] text-slate-900">
-              Kesehatan <br /> <span className="text-blue-600">Lebih Pintar.</span>
-            </h2>
-            <p className="text-slate-500 text-lg max-w-lg font-medium leading-relaxed">
-              Konsultasi cepat dengan Chatbot AI kami dan buat janji temu dokter spesialis hanya dalam hitungan detik.
+            <div>
+              <div className="text-[15px] font-black text-slate-900 tracking-tight">Clinic Nauli Dental Care</div>
+              <div className="text-[10px] font-semibold text-slate-400 tracking-[0.12em] uppercase">Klinik Balige,Jln Horas Damn</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 bg-white border border-slate-100 rounded-full px-4 py-[7px] shadow-sm text-[12px] font-semibold text-slate-500">
+            <span className="w-[7px] h-[7px] rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.2)] animate-pulse" />
+            Buka Sekarang • 24/7
+          </div>
+        </motion.nav>
+
+        {/* Hero grid */}
+        <div className="grid lg:grid-cols-2 gap-14 items-center flex-1 pb-8">
+
+          {/* Left */}
+          <motion.div
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="space-y-6"
+          >
+            {/* Pill tag */}
+            <div className="inline-flex items-center gap-2 rounded-full px-4 py-[7px] text-[11px] font-bold tracking-[0.12em] uppercase text-teal-700 border border-teal-200/60"
+              style={{ background: 'linear-gradient(135deg, rgba(20,184,166,0.1), rgba(14,165,233,0.08))' }}>
+              <span>✦</span> Nauli Dental AI System
+            </div>
+
+            {/* Title */}
+            <h1 className="text-[58px] font-black leading-[1.05] tracking-[-2px] text-slate-900">
+              Nauli Dental Care,<br />
+              <span className="font-['Playfair_Display',serif] italic font-semibold"
+                style={{ background: 'linear-gradient(135deg, #0d9488 20%, #0891b2 80%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                Masa Depan
+              </span><br />Cerah
+            </h1>
+
+            <p className="text-[16px] leading-[1.75] text-slate-500 max-w-[420px]">
+              Sistem manajemen klinik gigi modern dengan teknologi AI Chatbot & n8n Automation untuk pengalaman perawatan yang lebih nyaman, cepat, dan efisien.
             </p>
-            <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-              <a href="#appointment" className="w-full sm:w-auto bg-slate-900 text-white px-10 py-5 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-blue-600 transition-all shadow-xl shadow-slate-200">
-                Buat Janji Temu <ArrowRight size={20} />
-              </a>
-              <div className="flex -space-x-3">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="w-10 h-10 border-4 border-white bg-slate-200 rounded-full flex items-center justify-center font-bold text-[10px]">DR</div>
-                ))}
-                <div className="pl-5 text-xs font-bold text-slate-400 self-center">Dipilih oleh 1000+ Pasien</div>
-              </div>
-            </div>
-          </div>
-          {/* Hero Illustration Placeholder */}
-          <div className="relative flex justify-center">
-            <div className="w-72 h-72 md:w-96 md:h-96 bg-blue-600 rounded-[4rem] rotate-12 shadow-2xl shadow-blue-200"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-64 h-64 md:w-80 md:h-80 bg-white/20 backdrop-blur-2xl rounded-3xl border border-white/30 rotate-[-6deg] flex flex-col p-8 space-y-4">
-                <div className="h-4 w-3/4 bg-white/40 rounded-full"></div>
-                <div className="h-4 w-1/2 bg-white/40 rounded-full"></div>
-                <div className="mt-10 p-4 bg-white rounded-2xl shadow-xl flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-400 rounded-full flex items-center justify-center text-white"><CheckCircle2 size={24} /></div>
-                  <div className="text-xs font-bold text-slate-800">Dokter Siap Melayani</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
 
-      {/* Services Section */}
-      <section id="services" className="py-32 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center space-y-4 mb-20">
-            <h3 className="text-sm font-black text-blue-600 uppercase tracking-[0.3em]">Services</h3>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight">Layanan Unggulan Kami</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {services.map((s: any) => (
-              <div key={s.id} className="bg-white p-10 rounded-[2.5rem] shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all group">
-                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  <ShieldCheck size={32} />
-                </div>
-                <h4 className="font-black text-2xl mb-3">{s.name}</h4>
-                <p className="text-slate-400 text-sm font-medium leading-relaxed mb-6">{s.description}</p>
-                <div className="pt-6 border-t border-slate-50 flex justify-between items-center">
-                  <span className="text-blue-600 font-black text-xl">{s.price}</span>
-                  <div className="w-8 h-8 rounded-full border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-transparent transition">
-                    <ArrowRight size={16} />
+            {/* Scrolling strip */}
+            <div className="bg-white border border-[#e8f5f3] rounded-2xl px-5 py-[14px] shadow-sm overflow-hidden">
+              <div className="flex gap-4 items-center" style={{ animation: 'scrollTrack 12s linear infinite', width: 'max-content' }}>
+                {[...FEATURES, ...FEATURES].map((f, i) => (
+                  <span key={i} className="flex items-center gap-2 text-[12px] font-semibold text-slate-500 whitespace-nowrap">
+                    {i > 0 && <span className="text-slate-200 mr-1">·</span>}
+                    <span>{f.icon}</span> {f.text}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="flex items-center gap-7">
+              {STATS.map((s, i) => (
+                <div key={i} className="flex items-center gap-7">
+                  {i > 0 && <div className="w-px h-9 bg-slate-200" />}
+                  <div>
+                    <div className="text-[26px] font-black text-teal-600 leading-none tracking-tight">{s.num}</div>
+                    <div className="text-[11px] font-semibold text-slate-400 tracking-[0.08em] uppercase mt-1">{s.label}</div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+              ))}
+            </div>
+          </motion.div>
 
-      {/* Doctors Section */}
-      <section id="doctors" className="py-32">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <div className="space-y-4 mb-20">
-            <h3 className="text-sm font-black text-blue-600 uppercase tracking-[0.3em]">Specialists</h3>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight">Tim Dokter Ahli</h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {doctors.map((d: any) => (
-              <div key={d.id} className="p-8 rounded-[3rem] border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all group">
-                <div className="w-24 h-24 bg-slate-100 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl group-hover:scale-110 transition">
-                  👨‍⚕️
-                </div>
-                <h4 className="font-black text-lg text-slate-800">{d.name}</h4>
-                <p className="text-sm font-bold text-blue-600 uppercase tracking-widest mt-1">{d.specialty}</p>
-                <div className="mt-6 flex items-center justify-center gap-2 text-slate-400 text-[10px] font-bold italic uppercase tracking-tighter">
-                  <Clock size={12} /> {d.schedule}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Appointment Section */}
-      <section id="appointment" className="py-32 px-6">
-        <div className="max-w-4xl mx-auto bg-slate-900 rounded-[3.5rem] p-8 md:p-20 text-white relative overflow-hidden shadow-2xl">
-          {/* Background Decorative Circles */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-
-          <div className="relative z-10 space-y-12">
-            <div className="text-center space-y-4">
-              <h3 className="text-4xl md:text-5xl font-black tracking-tight">Buat Janji Temu</h3>
-              <p className="text-slate-400 font-medium">Layanan instan tanpa perlu antri panjang.</p>
+          {/* Right */}
+          <motion.div
+            initial={{ opacity: 0, x: 28 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="space-y-5"
+          >
+            {/* Central illustration */}
+            <div className="relative flex items-center justify-center h-[210px]">
+              {/* Rings */}
+              {[210, 250, 290].map((size, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute rounded-full border border-teal-500/15"
+                  style={{ width: size, height: size }}
+                  animate={{ scale: [1, 1.02, 1], opacity: [0.4, 0.15, 0.4] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: i * 0.8, ease: 'easeInOut' }}
+                />
+              ))}
+              {/* Main circle */}
+              <motion.div
+                className="w-[170px] h-[170px] rounded-full flex items-center justify-center relative z-10"
+                style={{ background: 'linear-gradient(135deg, #0d9488, #0891b2)', boxShadow: '0 20px 60px rgba(13,148,136,0.35)' }}
+                animate={{ scale: [1, 1.03, 1], boxShadow: ['0 20px 60px rgba(13,148,136,0.3)', '0 28px 70px rgba(13,148,136,0.4)', '0 20px 60px rgba(13,148,136,0.3)'] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <path d="M40 8C32 8 26 13 26 20c0 4 2 7 2 11 0 5-2 9-2 15 0 2.2 1.8 4 4 4s4-1.8 4-4v-6h12v6c0 2.2 1.8 4 4 4s4-1.8 4-4c0-6-2-10-2-15 0-4 2-7 2-11 0-7-6-12-14-12z"
+                    fill="white" opacity="0.95" />
+                  <ellipse cx="33" cy="18" rx="4" ry="7" fill="white" opacity="0.3" transform="rotate(-15 33 18)" />
+                  <rect x="37" y="30" width="6" height="16" rx="3" fill="rgba(13,148,136,0.4)" />
+                  <rect x="32" y="35" width="16" height="6" rx="3" fill="rgba(13,148,136,0.4)" />
+                </svg>
+              </motion.div>
+              {/* Float badges */}
+              {FLOAT_BADGES.map((b, i) => (
+                <motion.div
+                  key={i}
+                  className={`absolute ${b.pos} bg-white rounded-2xl px-3 py-2 flex items-center gap-2 shadow-xl border border-slate-100 whitespace-nowrap z-20`}
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, delay: -i * 1.2, ease: 'easeInOut' }}
+                >
+                  <span className="text-[18px]">{b.icon}</span>
+                  <div>
+                    <div className="text-[11px] font-bold text-slate-700">{b.title}</div>
+                    <div className="text-[10px] text-slate-400">{b.sub}</div>
+                  </div>
+                </motion.div>
+              ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 ml-2">Nama Pasien</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                  <input
-                    type="text" placeholder="Septian" required
-                    className="w-full pl-12 pr-6 py-5 bg-white/5 border border-white/10 rounded-3xl focus:ring-2 focus:ring-blue-600 transition outline-none text-white font-medium"
-                    value={formData.patient_name}
-                    onChange={(e) => setFormData({ ...formData, patient_name: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 ml-2">WhatsApp</label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                  <input
-                    type="text" placeholder="628123..." required
-                    className="w-full pl-12 pr-6 py-5 bg-white/5 border border-white/10 rounded-3xl focus:ring-2 focus:ring-blue-600 transition outline-none text-white font-medium"
-                    value={formData.patient_phone}
-                    onChange={(e) => setFormData({ ...formData, patient_phone: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 ml-2">Pilih Dokter</label>
-                <div className="relative">
-                  <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                  <select
-                    required className="w-full pl-12 pr-6 py-5 bg-white/5 border border-white/10 rounded-3xl focus:ring-2 focus:ring-blue-600 transition outline-none text-white font-medium appearance-none"
-                    value={formData.doctor_name}
-                    onChange={(e) => setFormData({ ...formData, doctor_name: e.target.value })}
-                  >
-                    <option value="" className="text-black">Pilih Dokter</option>
-                    {doctors.map((d: any) => <option key={d.id} value={d.name} className="text-black">{d.name} ({d.specialty})</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 ml-2">Waktu Kedatangan</label>
-                <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                  <input
-                    type="datetime-local" required
-                    className="w-full pl-12 pr-6 py-5 bg-white/5 border border-white/10 rounded-3xl focus:ring-2 focus:ring-blue-600 transition outline-none text-white font-medium invert-calendar-icon"
-                    value={formData.appointment_date}
-                    onChange={(e) => setFormData({ ...formData, appointment_date: e.target.value })}
-                  />
-                </div>
-              </div>
-              <button className="md:col-span-2 w-full bg-blue-600 text-white py-6 rounded-[2rem] font-black text-xl hover:bg-blue-500 hover:-translate-y-1 transition-all shadow-2xl shadow-blue-600/30">
-                KONFIRMASI PENDAFTARAN
-              </button>
-              {status.msg && (
-                <p className={`md:col-span-2 text-center text-sm font-black uppercase tracking-widest mt-4 ${status.type === 'error' ? 'text-red-400' : 'text-green-400'}`}>
-                  {status.msg}
-                </p>
-              )}
-            </form>
-          </div>
-        </div>
-      </section>
+            {/* Action cards */}
+            <div className="flex flex-col gap-3">
+              {/* Register */}
+              <motion.div whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+                <Link href="/register" className="flex items-center gap-5 rounded-[22px] p-6 relative overflow-hidden group"
+                  style={{ background: 'linear-gradient(135deg, #0d9488, #0891b2)', boxShadow: '0 8px 32px rgba(13,148,136,0.35)' }}>
+                  <div className="absolute top-0 right-0 w-28 h-28 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.15), transparent)', transform: 'translate(20px,-30px)' }} />
+                  <div className="w-[50px] h-[50px] rounded-[15px] bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zM4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M19 8v6M22 11h-6" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[17px] font-black text-white tracking-tight">Daftar Pasien Baru</div>
+                    <div className="text-[12px] text-white/75 mt-0.5">Registrasi dan nikmati layanan kesehatan gigi terbaik</div>
+                  </div>
+                  <motion.div className="w-9 h-9 rounded-full bg-white/12 flex items-center justify-center flex-shrink-0"
+                    whileHover={{ x: 3 }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </motion.div>
+                </Link>
+              </motion.div>
 
-      {/* Footer */}
-      <footer className="py-20 border-t border-slate-50 bg-slate-50/50">
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-6">
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-white font-black text-sm italic">K</div>
-            <h1 className="text-xl font-black tracking-tighter text-slate-900 italic">KLINIK.AI</h1>
-          </div>
-          <div className="flex justify-center gap-10 text-xs font-bold uppercase tracking-widest text-slate-400">
-            <p className="flex items-center gap-2"><MapPin size={14} /> Jl. Merdeka No. 10</p>
-            <p className="flex items-center gap-2"><Phone size={14} /> 021-1234-567</p>
-          </div>
-          <p className="text-[10px] text-slate-300 font-bold uppercase tracking-[0.4em]">&copy; 2026 Klinik Sehat Sejahtera. All rights reserved.</p>
+              {/* Login */}
+              <motion.div whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+                <Link href="/login" className="flex items-center gap-5 rounded-[22px] p-6 relative overflow-hidden group"
+                  style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', boxShadow: '0 8px 32px rgba(15,23,42,0.3)' }}>
+                  <div className="absolute top-0 right-0 w-28 h-28 rounded-full" style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.08), transparent)', transform: 'translate(20px,-30px)' }} />
+                  <div className="w-[50px] h-[50px] rounded-[15px] bg-white/10 flex items-center justify-center flex-shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <rect x="3" y="3" width="18" height="18" rx="4" stroke="white" strokeWidth="2" />
+                      <path d="M15 12H9M12 9l3 3-3 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[17px] font-black text-white tracking-tight">Masuk ke Sistem</div>
+                    <div className="text-[12px] text-white/55 mt-0.5">Akses jadwal, rekam medis & kelola akun Anda</div>
+                  </div>
+                  <motion.div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0"
+                    whileHover={{ x: 3 }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </motion.div>
+                </Link>
+              </motion.div>
+            </div>
+
+            {/* Trust bar */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="flex items-center justify-center gap-5 pt-1"
+            >
+              <div className="flex items-center gap-[6px] text-[11px] font-semibold text-slate-400">
+                <ShieldCheck size={13} className="text-emerald-500" /> Data Terenkripsi
+              </div>
+              <div className="w-[3px] h-[3px] rounded-full bg-slate-200" />
+              <div className="flex items-center gap-[6px] text-[11px] font-semibold text-slate-400">
+                <Clock size={13} className="text-amber-400" /> 24/7 Support
+              </div>
+              <div className="w-[3px] h-[3px] rounded-full bg-slate-200" />
+              <div className="flex items-center gap-[6px] text-[11px] font-semibold text-slate-400">
+                <Activity size={13} className="text-sky-500" /> Dokter Spesialis
+              </div>
+            </motion.div>
+          </motion.div>
         </div>
-      </footer>
+
+        {/* Footer */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="border-t border-slate-100 py-5 text-center text-[11px] text-slate-400"
+        >
+          © 2024 Nauli Dental Care. All rights reserved. | Sistem Informasi Klinik Gigi Modern
+        </motion.div>
+      </div>
+
+      <style>{`
+        @keyframes scrollTrack {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
     </div>
   );
-}
+} 
