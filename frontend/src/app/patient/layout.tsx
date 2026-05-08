@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Cookies from 'js-cookie';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Bell, ChevronDown, LogOut, Settings, User, Sparkles,
+    Bell, ChevronDown, LogOut, Settings, User,
     Menu, X, UserPlus
 } from 'lucide-react';
 
@@ -23,7 +23,6 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     useEffect(() => {
         const token = localStorage.getItem('token') || Cookies.get('token');
         const role = localStorage.getItem('user_role') || Cookies.get('role');
-
         if (!token || role?.toLowerCase() !== 'patient') {
             router.push('/login');
         } else {
@@ -31,30 +30,27 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         }
     }, [router, pathname]);
 
-    // 2. SCROLL EFFECT - Navbar blur hijau tua saat scroll
+    // 2. SCROLL EFFECT — threshold 80px agar tidak terlalu sensitif
     useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 20);
-        };
-        window.addEventListener('scroll', handleScroll);
+        const handleScroll = () => setIsScrolled(window.scrollY > 80);
+        window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     const handleLogout = () => {
-        if (confirm("Yakin Keluar dari Portal Pasien?")) {
+        if (confirm('Yakin Keluar dari Portal Pasien?')) {
             localStorage.clear();
             Cookies.remove('token', { path: '/' });
             Cookies.remove('role', { path: '/' });
-            document.cookie.split(";").forEach(c => {
+            document.cookie.split(';').forEach(c => {
                 document.cookie = c
-                    .replace(/^ +/, "")
-                    .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                    .replace(/^ +/, '')
+                    .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
             });
             router.push('/login');
         }
     };
 
-    // Navigasi - HANYA TEKS, tanpa icon
     const navItems = [
         { name: 'Dashboard', href: '/patient/dashboard' },
         { name: 'Janji Temu', href: '/patient/appointments' },
@@ -65,79 +61,82 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
 
     if (!isAuthorized) return null;
 
-    // Cek apakah ini halaman dashboard (yang butuh fullscreen hero)
     const isHeroPage = pathname === '/patient/dashboard';
 
     return (
         <div className="min-h-screen font-sans overflow-x-hidden">
 
-            {/* --- NAVBAR DINAMIS (Blur hijau tua saat scroll) --- */}
+            {/* ── NAVBAR ──────────────────────────────────────────────────── */}
             <motion.nav
-                initial={{ y: -100 }}
-                animate={{ y: 0 }}
-                transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
-                className="fixed top-0 w-full z-[100] transition-all duration-500 py-3"
+                initial={{ y: -80, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.6, type: 'spring', stiffness: 120, damping: 20 }}
+                className="fixed top-0 left-0 right-0 z-[100]"
             >
-                <div className={`flex items-center justify-between gap-4 transition-all duration-500 ${isScrolled
-                        ? 'bg-white rounded-2xl shadow-xl shadow-black/10 px-5 py-2 border border-slate-100'
-                        : ''
+                {/*
+                  Wrapper luar: selalu full width, background transparan.
+                  Padding horizontal berubah smooth saat scroll.
+                */}
+                <div className={`w-full transition-all duration-500 ease-in-out ${isScrolled ? 'px-4 sm:px-8 pt-3 pb-1' : 'px-0 pt-0 pb-0'
                     }`}>
+                    {/*
+                      Inner bar: yang berubah bentuk.
+                      Belum scroll  → full width, border bawah tipis.
+                      Sudah scroll  → rounded pill, shadow, sedikit lebih kecil tingginya.
+                    */}
+                    <div className={`flex items-center justify-between gap-4 bg-white transition-all duration-500 ease-in-out ${isScrolled
+                            ? 'rounded-2xl shadow-lg shadow-black/8 border border-slate-200 px-5 py-2.5'
+                            : 'rounded-none border-b border-slate-100 shadow-sm px-6 sm:px-10 py-3.5'
+                        }`}>
 
-                        {/* Brand Section - KIRI */}
-                        <Link href="/patient/dashboard" className="flex items-center gap-3 shrink-0 group">
-                            <div className="relative">
-                                <div className={`w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center transition-all duration-300 ${isScrolled
-                                        ? 'bg-white shadow-md'
-                                        : 'bg-white shadow-lg'
-                                    }`}>
-                                    {!logoError ? (
-                                        <Image
-                                            src="/images/logo1.png"
-                                            alt="Nauli Dental Logo"
-                                            width={40}
-                                            height={40}
-                                            className="object-cover w-full h-full"
-                                            onError={() => setLogoError(true)}
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                                            <span className="text-white font-bold text-xl">N</span>
-                                        </div>
-                                    )}
-                                </div>
+                        {/* ── Brand ─────────────────────────────────────── */}
+                        <Link href="/patient/dashboard" className="flex items-center gap-3 shrink-0">
+                            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-white shadow-md flex-shrink-0">
+                                {!logoError ? (
+                                    <Image
+                                        src="/images/logo1.png"
+                                        alt="Nauli Dental Logo"
+                                        width={40} height={40}
+                                        className="object-cover w-full h-full"
+                                        onError={() => setLogoError(true)}
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                                        <span className="text-white font-bold text-xl">N</span>
+                                    </div>
+                                )}
                             </div>
                             <div className="flex flex-col leading-tight">
                                 <span className="text-lg font-black tracking-tight text-slate-800">
                                     Nauli<span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Dental</span>
                                 </span>
-                                <span className="text-[9px] font-semibold tracking-wider text-slate-400">
-                                    PATIENT PORTAL
+                                <span className="text-[9px] font-semibold tracking-wider text-slate-400 uppercase">
+                                    Patient Portal
                                 </span>
                             </div>
                         </Link>
 
-                        {/* Desktop Navigation - TENGAH (hanya teks, tanpa icon) */}
+                        {/* ── Nav Items Desktop ─────────────────────────── */}
                         <div className="hidden lg:flex items-center justify-center flex-1">
-                            <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-1">
                                 {navItems.map((item) => {
                                     const isActive = pathname === item.href;
                                     return (
                                         <Link key={item.href} href={item.href}>
                                             <motion.div
-                                                whileHover={{ scale: 1.05 }}
-                                                whileTap={{ scale: 0.98 }}
-                                                className={`relative px-3 py-2 text-sm font-medium transition-all duration-200 cursor-pointer
-    ${isActive
+                                                whileHover={{ scale: 1.04 }}
+                                                whileTap={{ scale: 0.97 }}
+                                                className={`relative px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 cursor-pointer ${isActive
                                                         ? 'text-emerald-600'
-                                                        : 'text-slate-600 hover:text-emerald-600'
+                                                        : 'text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/60'
                                                     }`}
                                             >
                                                 <span>{item.name}</span>
                                                 {isActive && (
                                                     <motion.div
                                                         layoutId="activeNav"
-                                                        className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-emerald-500 rounded-full"
-                                                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                                                        className="absolute bottom-0.5 left-3 right-3 h-0.5 bg-emerald-500 rounded-full"
+                                                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                                                     />
                                                 )}
                                             </motion.div>
@@ -147,94 +146,84 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                             </div>
                         </div>
 
-                        {/* Action Section - KANAN (rapat ke profil) */}
-                        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                            {/* Notification Bell */}
+                        {/* ── Action Kanan ──────────────────────────────── */}
+                        <div className="flex items-center gap-2 shrink-0">
+
+                            {/* Bell */}
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="relative p-2 rounded-full transition-all duration-200 text-slate-500 hover:bg-slate-100"
+                                className="relative p-2 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all"
                             >
                                 <Bell size={18} />
-                                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+                                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
                             </motion.button>
 
-                            {/* Profile Dropdown - LANGSUNG RAPAT */}
+                            {/* Profile Button */}
                             <div className="relative">
                                 <motion.button
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
                                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                    className="flex items-center gap-2 p-1 pl-2 rounded-full transition-all duration-200 bg-white border border-slate-200 shadow-sm hover:border-emerald-300"
+                                    className="flex items-center gap-2 pl-2 pr-2 py-1 rounded-full bg-white border border-slate-200 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200"
                                 >
-                                    <div className="relative">
-                                        <div className={`w-8 h-8 rounded-full ring-2 overflow-hidden flex items-center justify-center ${isScrolled
-                                                ? 'ring-emerald-500/50 bg-gradient-to-br from-emerald-500 to-teal-500'
-                                                : 'ring-white/30 bg-gradient-to-br from-emerald-600 to-teal-600'
-                                            }`}>
-                                            <span className="text-white font-bold text-xs">SA</span>
+                                    <div className="relative flex-shrink-0">
+                                        <div className="w-7 h-7 rounded-full ring-2 ring-emerald-400/50 flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-500">
+                                            <span className="text-white font-bold text-[10px]">SA</span>
                                         </div>
-                                        <div className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white" />
+                                        <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-white" />
                                     </div>
-                                    <div className="hidden sm:block text-left">
+                                    <div className="hidden sm:block text-left pr-1">
                                         <p className="text-[11px] font-semibold leading-tight text-slate-700">Septian Adi</p>
-                                        <p className="text-[8px] font-medium text-emerald-600">Member Gold</p>
+                                        <p className="text-[9px] font-medium text-emerald-600">Member Gold</p>
                                     </div>
-                                    <ChevronDown size={12} className={`transition-transform duration-200 mr-1 ${isProfileOpen ? 'rotate-180' : ''} ${isScrolled ? 'text-slate-400' : 'text-white'}`} />
+                                    <ChevronDown
+                                        size={12}
+                                        className={`text-slate-400 transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''}`}
+                                    />
                                 </motion.button>
 
+                                {/* Dropdown */}
                                 <AnimatePresence>
                                     {isProfileOpen && (
                                         <motion.div
-                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            initial={{ opacity: 0, y: 8, scale: 0.96 }}
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            transition={{ type: "spring", damping: 20 }}
-                                            className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden z-50"
+                                            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                                            transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+                                            className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50"
                                         >
-                                            {/* Profile Header */}
-                                            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 text-white">
+                                            <div className="bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-3 text-white">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                                                        <span className="text-white font-bold text-md">SA</span>
-                                                    </div>
+                                                    <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">SA</div>
                                                     <div>
-                                                        <p className="font-semibold text-sm">Septian Adi</p>
-                                                        <p className="text-[10px] text-emerald-100">septian@email.com</p>
+                                                        <p className="font-semibold text-sm leading-tight">Septian Adi</p>
+                                                        <p className="text-[10px] text-emerald-100 mt-0.5">septian@email.com</p>
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            {/* Menu Items */}
-                                            <div className="p-1">
+                                            <div className="p-1.5 space-y-0.5">
                                                 <Link href="/patient/profile" onClick={() => setIsProfileOpen(false)}>
-                                                    <button className="w-full px-3 py-2 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg flex items-center gap-3 transition-all">
-                                                        <User size={14} className="text-emerald-500" />
-                                                        <span>Profil Saya</span>
+                                                    <button className="w-full px-3 py-2 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-xl flex items-center gap-3 transition-all">
+                                                        <User size={14} className="text-emerald-500" /> Profil Saya
                                                     </button>
                                                 </Link>
                                                 <Link href="/patient/settings" onClick={() => setIsProfileOpen(false)}>
-                                                    <button className="w-full px-3 py-2 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg flex items-center gap-3 transition-all">
-                                                        <Settings size={14} className="text-emerald-500" />
-                                                        <span>Pengaturan</span>
+                                                    <button className="w-full px-3 py-2 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-xl flex items-center gap-3 transition-all">
+                                                        <Settings size={14} className="text-emerald-500" /> Pengaturan
                                                     </button>
                                                 </Link>
                                                 <Link href="/register" onClick={() => setIsProfileOpen(false)}>
-                                                    <button className="w-full px-3 py-2 text-left text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-3 transition-all">
-                                                        <UserPlus size={14} className="text-emerald-500" />
-                                                        <span>Daftar Akun Baru</span>
+                                                    <button className="w-full px-3 py-2 text-left text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-xl flex items-center gap-3 transition-all">
+                                                        <UserPlus size={14} className="text-emerald-500" /> Daftar Akun Baru
                                                     </button>
                                                 </Link>
-                                                <div className="h-px bg-slate-100 my-1" />
+                                                <div className="h-px bg-slate-100 mx-2" />
                                                 <button
-                                                    onClick={() => {
-                                                        setIsProfileOpen(false);
-                                                        handleLogout();
-                                                    }}
-                                                    className="w-full px-3 py-2 text-left text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-3 transition-all"
+                                                    onClick={() => { setIsProfileOpen(false); handleLogout(); }}
+                                                    className="w-full px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-50 rounded-xl flex items-center gap-3 transition-all"
                                                 >
-                                                    <LogOut size={14} />
-                                                    <span>Keluar Portal</span>
+                                                    <LogOut size={14} /> Keluar Portal
                                                 </button>
                                             </div>
                                         </motion.div>
@@ -242,115 +231,95 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                 </AnimatePresence>
                             </div>
 
-                            {/* Mobile Menu Button - HAPUS ICON GESER, LANGSUNG MENU */}
+                            {/* Mobile hamburger */}
                             <motion.button
                                 whileTap={{ scale: 0.9 }}
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                        className="lg:hidden p-2 rounded-lg transition-all text-slate-600 hover:bg-slate-100"
+                                className="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-all"
                             >
                                 {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
                             </motion.button>
                         </div>
                     </div>
+                </div>
 
-                {/* Mobile Menu */}
+                {/* ── Mobile Menu ───────────────────────────────────────── */}
                 <AnimatePresence>
                     {isMobileMenuOpen && (
                         <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="lg:hidden bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-lg"
+                            transition={{ duration: 0.25, ease: 'easeInOut' }}
+                            className="lg:hidden bg-white border-t border-slate-100 shadow-lg overflow-hidden"
                         >
-                            <div className="px-4 py-3 space-y-1">
+                            <div className="px-4 py-3 space-y-0.5">
                                 {navItems.map((item, idx) => {
                                     const isActive = pathname === item.href;
                                     return (
                                         <motion.div
                                             key={item.href}
-                                            initial={{ opacity: 0, x: -20 }}
+                                            initial={{ opacity: 0, x: -16 }}
                                             animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: idx * 0.05 }}
+                                            transition={{ delay: idx * 0.04 }}
                                         >
                                             <Link
                                                 href={item.href}
                                                 onClick={() => setIsMobileMenuOpen(false)}
-                                                className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all
-                                                    ${isActive
+                                                className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive
                                                         ? 'bg-emerald-50 text-emerald-600'
                                                         : 'text-slate-600 hover:bg-slate-50'
                                                     }`}
                                             >
                                                 <span>{item.name}</span>
-                                                {isActive && (
-                                                    <motion.div
-                                                        layoutId="mobileActive"
-                                                        className="ml-auto w-1 h-5 bg-gradient-to-b from-emerald-600 to-teal-600 rounded-full"
-                                                    />
-                                                )}
+                                                {isActive && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
                                             </Link>
                                         </motion.div>
                                     );
                                 })}
-                                {/* Menu Profile di mobile */}
-                                <div className="pt-3 mt-2 border-t border-slate-100">
+                                <div className="pt-3 mt-1 border-t border-slate-100 space-y-0.5">
                                     <Link href="/patient/profile" onClick={() => setIsMobileMenuOpen(false)}>
-                                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50">
-                                            <User size={18} className="text-slate-400" />
-                                            <span>Profil Saya</span>
+                                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all">
+                                            <User size={16} className="text-slate-400" /> Profil Saya
                                         </div>
                                     </Link>
                                     <Link href="/patient/settings" onClick={() => setIsMobileMenuOpen(false)}>
-                                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50">
-                                            <Settings size={18} className="text-slate-400" />
-                                            <span>Pengaturan</span>
+                                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-all">
+                                            <Settings size={16} className="text-slate-400" /> Pengaturan
                                         </div>
                                     </Link>
                                     <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-emerald-600 hover:bg-emerald-50">
-                                            <UserPlus size={18} className="text-emerald-500" />
-                                            <span>Daftar Akun Baru</span>
+                                        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-all">
+                                            <UserPlus size={16} className="text-emerald-500" /> Daftar Akun Baru
                                         </div>
                                     </Link>
                                     <button
-                                        onClick={() => {
-                                            setIsMobileMenuOpen(false);
-                                            handleLogout();
-                                        }}
-                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50"
+                                        onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }}
+                                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all"
                                     >
-                                        <LogOut size={18} />
-                                        <span>Keluar Portal</span>
+                                        <LogOut size={16} /> Keluar Portal
                                     </button>
                                 </div>
                             </div>
-
                         </motion.div>
                     )}
                 </AnimatePresence>
             </motion.nav>
 
-            {/* Backdrop for dropdowns */}
+            {/* Backdrop dropdown */}
             {isProfileOpen && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-40"
-                    onClick={() => setIsProfileOpen(false)}
-                />
+                <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)} />
             )}
 
-            {/* --- AREA KONTEN --- */}
-            <main className={`${isHeroPage ? 'pt-0' : 'pt-20'} transition-all duration-500`}>
+            {/* ── KONTEN ──────────────────────────────────────────────────── */}
+            <main className={`${isHeroPage ? 'pt-0' : 'pt-[72px]'} transition-all duration-500`}>
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={pathname}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                        transition={{ duration: 0.35, ease: 'easeInOut' }}
                     >
                         {children}
                     </motion.div>
