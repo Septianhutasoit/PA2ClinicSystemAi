@@ -9,7 +9,7 @@ import {
     Bell, ChevronDown, LogOut, Settings, User,
     Menu, X, UserPlus,
     LayoutDashboard, CalendarCheck, FileText,
-    Stethoscope, Users
+    Stethoscope, Users, ClipboardList, Info, Target
 } from 'lucide-react';
 
 export default function PatientLayout({ children }: { children: React.ReactNode }) {
@@ -20,6 +20,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const [logoError, setLogoError] = useState(false);
+    const [isQuickOpen, setIsQuickOpen] = useState(false);
 
     // 1. PROTEKSI ROLE PASIEN
     useEffect(() => {
@@ -55,19 +56,23 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
 
     const navItems = [
         { name: 'Dashboard', href: '/patient/dashboard', icon: LayoutDashboard },
-        { name: 'Janji Temu', href: '/patient/appointments', icon: CalendarCheck },
-        { name: 'Rekam Medis', href: '/patient/records', icon: FileText },
         { name: 'Layanan', href: '/patient/services', icon: Stethoscope },
+        { name: 'Nauli Dental', href: '/patient/about', icon: Info },
         { name: 'Tim Kami', href: '/patient/doctors', icon: Users },
+        { name: 'Visi & Misi', href: '/patient/vision', icon: Target },
+        // { name: 'Janji Temu',  href: '/patient/appointments', icon: CalendarCheck },
+        // { name: 'Rekam Medis', href: '/patient/records',      icon: FileText },
     ];
 
     if (!isAuthorized) return null;
 
     const isHeroPage = [
         '/patient/dashboard',
+        '/patient/about',
         '/patient/appointments',
         '/patient/records',
         '/patient/services',
+        '/patient/vision',
         '/patient/doctors',
     ].some(p => pathname.startsWith(p));
 
@@ -160,6 +165,71 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
 
                         {/* ── Action Kanan ──────────────────────────────── */}
                         <div className="flex items-center gap-2 shrink-0">
+
+                            {/* ── Quick Access: Janji Temu & Rekam Medis ── */}
+                            <div className="relative">
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setIsQuickOpen(!isQuickOpen)}
+                                    className={`relative p-2 rounded-xl transition-all ${isScrolled
+                                            ? 'text-slate-400 hover:bg-white/10 hover:text-white'
+                                            : 'text-white/70 hover:bg-white/10 hover:text-white'
+                                        }`}
+                                >
+                                    <ClipboardList size={18} />
+                                    {/* Dot indikator */}
+                                    <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                                </motion.button>
+
+                                {/* Dropdown */}
+                                <AnimatePresence>
+                                    {isQuickOpen && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                                            transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+                                            className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50"
+                                        >
+                                            {/* Header */}
+                                            <div className="bg-[#0A1C14] px-4 py-3">
+                                                <p className="text-xs font-black text-emerald-400 uppercase tracking-widest">Aktivitas Saya</p>
+                                            </div>
+                                            <div className="p-1.5 space-y-0.5">
+                                                <Link
+                                                    href="/patient/appointments"
+                                                    onClick={() => setIsQuickOpen(false)}
+                                                >
+                                                    <button className="w-full px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl flex items-center gap-3 transition-all">
+                                                        <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                                            <CalendarCheck size={15} className="text-emerald-600" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold leading-tight">Janji Temu</p>
+                                                            <p className="text-[10px] text-slate-400">Kelola reservasi Anda</p>
+                                                        </div>
+                                                    </button>
+                                                </Link>
+                                                <Link
+                                                    href="/patient/records"
+                                                    onClick={() => setIsQuickOpen(false)}
+                                                >
+                                                    <button className="w-full px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl flex items-center gap-3 transition-all">
+                                                        <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                                            <FileText size={15} className="text-emerald-600" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold leading-tight">Rekam Medis</p>
+                                                            <p className="text-[10px] text-slate-400">Riwayat perawatan Anda</p>
+                                                        </div>
+                                                    </button>
+                                                </Link>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
 
                             {/* Bell */}
                             <motion.button
@@ -313,7 +383,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                         onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }}
                                         className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all"
                                     >
-                                        <LogOut size={16} /> Keluar Portal
+                                        <LogOut size={16} /> Keluar
                                     </button>
                                 </div>
                             </div>
@@ -323,9 +393,13 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
             </motion.nav>
 
             {/* Backdrop dropdown */}
-            {isProfileOpen && (
-                <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)} />
+            {(isProfileOpen || isQuickOpen) && (
+                <div className="fixed inset-0 z-40" onClick={() => {
+                    setIsProfileOpen(false);
+                    setIsQuickOpen(false);
+                }} />
             )}
+
 
             {/* ── KONTEN ──────────────────────────────────────────────────── */}
             <main className={`${isHeroPage ? 'pt-0' : 'pt-[72px]'} transition-all duration-500`}>
