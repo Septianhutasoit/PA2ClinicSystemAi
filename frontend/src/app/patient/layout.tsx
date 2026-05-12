@@ -55,11 +55,11 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     };
 
     const navItems = [
-        { name: 'Dashboard', href: '/patient/dashboard', icon: LayoutDashboard },
+        { name: 'Beranda', href: '/patient/dashboard', icon: LayoutDashboard },
         { name: 'Layanan', href: '/patient/services', icon: Stethoscope },
         { name: 'Nauli Dental', href: '/patient/about', icon: Info },
         { name: 'Tim Kami', href: '/patient/doctors', icon: Users },
-        { name: 'Visi & Misi', href: '/patient/vision', icon: Target },
+        { name: 'Visi & Misi', href: '/patient/visiMisi', icon: Target },
         // { name: 'Janji Temu',  href: '/patient/appointments', icon: CalendarCheck },
         // { name: 'Rekam Medis', href: '/patient/records',      icon: FileText },
     ];
@@ -72,7 +72,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         '/patient/appointments',
         '/patient/records',
         '/patient/services',
-        '/patient/vision',
+        '/patient/visiMisi',
         '/patient/doctors',
     ].some(p => pathname.startsWith(p));
 
