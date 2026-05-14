@@ -22,7 +22,6 @@ app = FastAPI(
 if not os.path.exists("uploads"):
     os.makedirs("uploads")
 
-# 5. MOUNT STATIC FILES
 # Agar file di folder 'uploads' punya URL (misal: http://localhost:8000/uploads/foto.jpg)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
