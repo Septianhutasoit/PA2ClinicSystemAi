@@ -28,40 +28,44 @@ const fadeUp = (delay = 0) => ({
 
 export default function DoctorDashboard() {
     const [todayPatients, setTodayPatients] = useState<any[]>([]);
-    const [doctorName, setDoctorName] = useState<string>('');       // ← nama dari /auth/me
+    const [doctorName, setDoctorName] = useState<string>('');
     const [doctorRole, setDoctorRole] = useState<string>('doctor');
-    const [stats, setStats] = useState({ todayCount: 0, completedCount: 0 });
+    const [stats, setStats] = useState({
+        todayCount: 0,   // waiting_patients dari doctor-stats
+        completedCount: 0,   // completed_today  dari doctor-stats
+        totalAllPatients: 0,  // total_all_patients dari doctor-stats
+    });
     const [isLoading, setIsLoading] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const now = useLiveClock();
 
-    // ── Fetch: profil + pasien yang relevan ───────────────────────────────────
+    // ── Fetch semua data sekaligus ────────────────────────────────────────────
     useEffect(() => {
         const load = async () => {
             setIsLoading(true);
             setFetchError(null);
             try {
-                // 1. Siapa yang sedang login?
+                // 1. Ambil profil dokter yang login (/auth/me)
                 const resMe = await api.get('/auth/me');
                 const name: string = resMe.data.full_name ?? '';
                 const role: string = resMe.data.role ?? 'doctor';
                 setDoctorName(name);
                 setDoctorRole(role);
 
-                // 2. Ambil semua appointments, filter hanya milik dokter ini
-                const resApp = await api.get('/clinic/appointments/my-patients');
-                const all: any[] = resApp.data ?? [];
+                // 2. Ambil statistik dari server (sudah dihitung backend, bukan filter frontend)
+                //    Endpoint ini mengembalikan: waiting_patients, completed_today, total_all_patients
+                const resStats = await api.get('/clinic/appointments/doctor-stats');
+                setStats({
+                    todayCount: resStats.data.waiting_patients ?? 0,
+                    completedCount: resStats.data.completed_today ?? 0,
+                    totalAllPatients: resStats.data.total_all_patients ?? 0,
+                });
 
-                // Filter berdasarkan nama dokter (case-insensitive untuk toleransi typo ringan)
-                const mine = all.filter(
-                    (a) => a.doctor_name?.trim().toLowerCase() === name.trim().toLowerCase()
-                );
+                // 3. Ambil daftar pasien hari ini (untuk ditampilkan di tabel)
+                //    Menggunakan /my-today agar sudah difilter tanggal + status "confirmed"
+                const resToday = await api.get('/clinic/appointments/my-today');
+                setTodayPatients(resToday.data ?? []);
 
-                const confirmed = mine.filter((a) => a.status === 'confirmed');
-                const completed = mine.filter((a) => a.status === 'completed');
-
-                setTodayPatients(confirmed);
-                setStats({ todayCount: confirmed.length, completedCount: completed.length });
             } catch (err: any) {
                 console.error('Gagal memuat dashboard dokter:', err);
                 setFetchError('Gagal memuat data. Pastikan koneksi ke server aktif.');
@@ -79,12 +83,17 @@ export default function DoctorDashboard() {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     });
 
-    // Label ramah untuk role
     const roleLabel: Record<string, string> = {
         doctor: 'Dokter',
         nurse: 'Perawat / Staff Medis',
         admin: 'Administrator',
     };
+
+    // Progres: selesai / (antre + selesai)
+    const totalToday = stats.todayCount + stats.completedCount;
+    const progressPct = totalToday > 0
+        ? `${Math.round((stats.completedCount / totalToday) * 100)}%`
+        : '0%';
 
     const statCards = [
         {
@@ -101,15 +110,13 @@ export default function DoctorDashboard() {
         },
         {
             label: 'Total Pasien',
-            value: stats.todayCount + stats.completedCount,
+            value: stats.totalAllPatients,
             icon: <Users size={22} />,
             bg: 'bg-green-50', text: 'text-green-700', ring: 'ring-green-100',
         },
         {
             label: 'Progres Hari Ini',
-            value: stats.todayCount + stats.completedCount > 0
-                ? `${Math.round((stats.completedCount / (stats.todayCount + stats.completedCount)) * 100)}%`
-                : '0%',
+            value: progressPct,
             icon: <TrendingUp size={22} />,
             bg: 'bg-emerald-50', text: 'text-emerald-800', ring: 'ring-emerald-100',
         },
@@ -132,7 +139,7 @@ export default function DoctorDashboard() {
                 {/* Welcome — 2/3 */}
                 <div className="lg:col-span-2 relative overflow-hidden bg-gradient-to-br from-emerald-700 via-emerald-800 to-green-900 rounded-2xl p-8 shadow-xl shadow-emerald-900/20">
                     <div className="absolute -top-10 -right-10 w-52 h-52 bg-white/5 rounded-full pointer-events-none" />
-                    <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-white/5 rounded-full pointer-events-none" />
+                    <div className="absolute -bottom-8 -left-8  w-40 h-40 bg-white/5 rounded-full pointer-events-none" />
                     <Stethoscope size={160} className="absolute right-6 bottom-0 text-white/5 pointer-events-none" />
 
                     <div className="relative z-10">
@@ -145,13 +152,11 @@ export default function DoctorDashboard() {
 
                         <h1 className="text-3xl font-black italic uppercase tracking-tight text-white leading-tight">
                             Selamat Datang,<br />
-                            {/* ↓ Nama dokter diambil dari /auth/me, bukan hardcode */}
                             <span className="text-emerald-300">
                                 {isLoading ? '...' : (doctorName || 'Staff')}
                             </span>
                         </h1>
 
-                        {/* Role badge kecil */}
                         {!isLoading && doctorRole && (
                             <span className="inline-block mt-2 text-[9px] font-black uppercase tracking-widest bg-white/10 border border-white/20 text-emerald-200 px-3 py-1 rounded-full">
                                 {roleLabel[doctorRole] ?? doctorRole}
@@ -185,7 +190,8 @@ export default function DoctorDashboard() {
                         className="absolute inset-0 opacity-[0.03] pointer-events-none"
                         style={{
                             backgroundImage:
-                                'repeating-linear-gradient(0deg,#059669 0,#059669 1px,transparent 1px,transparent 28px),repeating-linear-gradient(90deg,#059669 0,#059669 1px,transparent 1px,transparent 28px)',
+                                'repeating-linear-gradient(0deg,#059669 0,#059669 1px,transparent 1px,transparent 28px),' +
+                                'repeating-linear-gradient(90deg,#059669 0,#059669 1px,transparent 1px,transparent 28px)',
                         }}
                     />
                     <div className="relative z-10">
@@ -257,7 +263,6 @@ export default function DoctorDashboard() {
                                 Antrian Pasien Saya
                             </h3>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                                {/* Tampilkan nama dokter yang sedang login sebagai konteks */}
                                 Pasien terdaftar ke: {isLoading ? '...' : (doctorName || '—')}
                             </p>
                         </div>
@@ -329,7 +334,6 @@ export default function DoctorDashboard() {
                             </motion.div>
                         ))
                     ) : (
-                        /* ── Empty state informatif ── */
                         <div className="py-20 text-center space-y-3">
                             <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto border border-emerald-100">
                                 <UserRound size={28} className="text-emerald-300" />
