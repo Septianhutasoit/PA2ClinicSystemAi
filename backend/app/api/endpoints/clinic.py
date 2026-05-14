@@ -21,6 +21,36 @@ import uuid
 
 router = APIRouter()
 
+@router.get("/profile/me")
+def get_my_profile(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    user = _get_user_by_token(current_user, db)
+    
+    # Ambil profil tambahan dari tabel Doctor (jika ada)
+    details = db.query(Doctor).filter(Doctor.email == user.email).first()
+    
+    # Hitung Pasien Selesai secara nyata (REAL)
+    total_completed = db.query(Appointment).filter(
+        Appointment.doctor_name == user.full_name,
+        Appointment.status == "completed"
+    ).count()
+
+    return {
+        "full_name": user.full_name,
+        "email": user.email,
+        "role": user.role,
+        "created_at": user.id, # Nanti ganti user.created_at jika sudah ada kolomnya
+        "details": {
+            "phone": details.phone if details else "-",
+            "specialty": details.specialty if details else "Staff Umum",
+            "experience": details.experience if details else "0",
+            "photo_url": details.photo_url if details else None,
+            "schedules": details.schedules if details else []
+        },
+        "stats": {
+            "total_handled": total_completed
+        }
+    }
+
 # ─────────────────────────────────────────────────────────────────────────────
 # KONVENSI STATUS (pegang teguh di seluruh file ini):
 #   pending   → baru dibuat pasien, belum dikonfirmasi admin
