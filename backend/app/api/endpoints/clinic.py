@@ -1,3 +1,4 @@
+from app.models.patient import Patient
 from fastapi import APIRouter, Depends, HTTPException, Body, File, UploadFile
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -509,6 +510,33 @@ def get_nurse_stats(
         "total_all_time": db.query(Appointment).count(),
     }
 
+@router.post("/log-feedback")
+async def log_feedback(payload: dict, db: Session = Depends(get_db)):
+    from app.models.clinic import ChatLog
+    log = ChatLog(
+        user_message=payload.get("user_message", ""),
+        bot_response=payload.get("bot_response", ""),
+        feedback=payload.get("feedback"),
+        session_id=payload.get("session_id", "")
+    )
+    db.add(log)
+    db.commit()
+    return {"status": "ok"}
+
+@router.get("/admin/stats")
+async def get_ai_stats(db: Session = Depends(get_db)):
+    from app.models.clinic import ChatLog
+    likes    = db.query(ChatLog).filter(ChatLog.feedback == True).count()
+    dislikes = db.query(ChatLog).filter(ChatLog.feedback == False).count()
+    total    = likes + dislikes
+    accuracy = round(likes / total * 100, 1) if total > 0 else 0
+    return {"likes": likes, "dislikes": dislikes, "accuracy": accuracy,
+            "total_interactions": db.query(ChatLog).count()}
+
+@router.get("/admin/history")
+async def get_ai_history(db: Session = Depends(get_db)):
+    from app.models.clinic import ChatLog
+    return db.query(ChatLog).order_by(ChatLog.created_at.desc()).limit(50).all()
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 7. UPDATE STATUS APPOINTMENT (dengan validasi kepemilikan)

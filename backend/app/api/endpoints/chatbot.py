@@ -8,7 +8,7 @@ from pathlib import Path
 # Service & Database
 from app.services.rag_service import ChatbotService
 from app.database.session import get_db
-from app.models.clinic import Doctor, Service
+from app.models.clinic import Doctor, Service, ChatLog
 from app.core.config import settings
 
 # AI & LangChain
@@ -43,6 +43,31 @@ async def chat_with_bot(request: ChatRequest):
     except Exception as e:
         print(f"DEBUG ERROR CHAT: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+    
+@router.get("/chat/history")
+async def get_chat_history(current_user: dict = Depends(get_current_user)):
+    return [] # Kembalikan list kosong agar tidak merah di console
+
+# 2. Endpoint untuk Statistik Dashboard Admin
+@router.get("/admin/stats")
+def get_ai_stats(db: Session = Depends(get_db)):
+    likes = db.query(ChatLog).filter(ChatLog.feedback == True).count()
+    dislikes = db.query(ChatLog).filter(ChatLog.feedback == False).count()
+    total = db.query(ChatLog).count()
+    
+    accuracy = (likes / (likes + dislikes) * 100) if (likes + dislikes) > 0 else 0
+    
+    return {
+        "likes": likes,
+        "dislikes": dislikes,
+        "accuracy": round(accuracy, 1),
+        "total_interactions": total
+    }
+
+# 3. Endpoint untuk Riwayat di Dashboard Admin
+@router.get("/admin/history")
+def get_ai_history(db: Session = Depends(get_db)):
+    return db.query(ChatLog).order_by(ChatLog.created_at.desc()).limit(10).all()
 
 # 2. Endpoint untuk Sinkronisasi Pengetahuan (Database + Folder Docs)
 @router.post("/ingest")

@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String, Text, JSON, ForeignKey, DateTime
+from xmlrpc.client import Boolean
+
+from sqlalchemy import Column, Integer, String, Text, JSON, ForeignKey, DateTime, Boolean
 from app.database.session import Base
 from datetime import datetime
 
@@ -32,3 +34,12 @@ class MedicalRecord(Base):
     treatment      = Column(Text)
     notes          = Column(Text, nullable=True)
     created_at     = Column(DateTime, default=datetime.utcnow)
+
+class ChatLog(Base):
+    __tablename__ = "chat_logs"
+    id           = Column(Integer, primary_key=True, index=True)
+    session_id   = Column(String, nullable=True)
+    user_message = Column(Text)
+    bot_response = Column(Text)
+    feedback     = Column(Boolean, nullable=True)  # True=suka, False=tidak suka
+    created_at   = Column(DateTime, default=datetime.utcnow)
