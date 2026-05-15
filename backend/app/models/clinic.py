@@ -37,9 +37,9 @@ class MedicalRecord(Base):
 
 class ChatLog(Base):
     __tablename__ = "chat_logs"
-    id           = Column(Integer, primary_key=True, index=True)
-    session_id   = Column(String, nullable=True)
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String, nullable=True)
     user_message = Column(Text)
     bot_response = Column(Text)
-    feedback     = Column(Boolean, nullable=True)  # True=suka, False=tidak suka
-    created_at   = Column(DateTime, default=datetime.utcnow)
+    feedback = Column(Boolean, nullable=True) # True=Suka, False=Tidak Suka
+    created_at = Column(DateTime, default=datetime.utcnow)

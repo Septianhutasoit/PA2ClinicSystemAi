@@ -56,7 +56,6 @@ def create_staff(
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     email_input = form_data.username.lower().strip()
     
-    # Cari User
     user = db.query(User).filter(User.email == email_input).first()
     
     # Validasi User & Password
@@ -105,25 +104,29 @@ def reset_password(
     try:
         db.commit()
         return {"message": "Password berhasil diperbarui!"}
-    except Exception:
+    except Exception as e:
         db.rollback()
         print(f"DEBUG ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail="Gagal menyimpan ke database.")
 
 @router.get("/me", response_model=UserResponse)
-def get_me(db: Session = Depends(get_db), token: str = Depends(security.oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=401, detail="Token tidak valid")
-            
-        user = db.query(User).filter(User.email == email).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User tidak ditemukan")
-        return user
-    except Exception:
-        raise HTTPException(status_code=401, detail="Sesi berakhir, silakan login ulang.")
+def get_me(
+    db: Session = Depends(get_db), 
+    current_user: dict = Depends(security.get_current_user) # MODIFIKASI: Gunakan dependency terpusat
+):
+    """
+    Mengambil data profil user yang sedang login secara dinamis dari database.
+    """
+    # Cari data user di database berdasarkan email (sub) yang ada di token
+    user = db.query(User).filter(User.email == current_user["email"]).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Data akun tidak ditemukan di database."
+        )
+        
+    return user
     
 @router.patch("/update-me")
 def update_profile(payload: dict, db: Session = Depends(get_db), current_user: User = Depends(get_me)):

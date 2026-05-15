@@ -109,12 +109,12 @@ export default function Chatbot() {
 
     // ── Like / Dislike per pesan ──
     const handleReaction = async (msgId: string, reaction: boolean) => {
-        // Cari pesan bot dan pesan user sebelumnya
+        // Cari pesan bot dan pesan user sebelumnya untuk log di Admin
         const botMsg = messages.find(m => m.id === msgId);
         const botIdx = messages.findIndex(m => m.id === msgId);
         const userMsg = botIdx > 0 ? messages[botIdx - 1] : null;
 
-        // Update UI lokal
+        // 1. Update tampilan jempol di UI Chatbot (Lokal)
         updateCurrentConversation(conv => ({
             ...conv,
             messages: conv.messages.map(m =>
@@ -122,17 +122,17 @@ export default function Chatbot() {
             )
         }));
 
-        // Kirim ke backend
-        if (botMsg) {
+        // 2. Kirim data ke Backend agar Dashboard Admin terisi secara otomatis
+        if (botMsg && reaction !== null) {
             try {
                 await api.post('/chatbot/log-feedback', {
-                    user_message: userMsg?.content || '',
+                    user_message: userMsg?.content || 'Pertanyaan awal',
                     bot_response: botMsg.content,
                     feedback: reaction,
                     session_id: currentConvId
                 });
-            } catch {
-                console.warn('Gagal kirim feedback ke server');
+            } catch (err) {
+                console.warn('Gagal mengirim feedback ke server');
             }
         }
     };
@@ -208,22 +208,37 @@ export default function Chatbot() {
     const handleSendMessage = async (text: string = input) => {
         const msg = text.trim();
         if (!msg || isLoading || streamingText) return;
+
         const userMsgId = Date.now().toString();
+
+        // Update UI Lokal
         updateCurrentConversation(conv => ({
             ...conv,
             messages: [...conv.messages, { id: userMsgId, role: 'user', content: msg }],
             title: (conv.title === 'Percakapan Baru' && conv.messages.length === 1)
                 ? msg.slice(0, 30) + (msg.length > 30 ? '...' : '') : conv.title
         }));
+
         setInput('');
         setIsLoading(true);
+
         try {
-            const controller = new AbortController();
-            setTimeout(() => controller.abort(), 10000);
-            const response = await api.post('/chatbot/chat', { message: msg, history: messages.slice(-6) }, { signal: controller.signal });
+            // --- PEMBERSIHAN DATA (AGAR TIDAK ERROR 422) ---
+            // Backend hanya mau menerima 'role' dan 'content'
+            const cleanHistory = messages.slice(-6).map(m => ({
+                role: m.role === 'bot' ? 'assistant' : 'user', // 'bot' diubah jadi 'assistant' sesuai standar AI
+                content: m.content
+            }));
+
+            const response = await api.post('/chatbot/chat', {
+                message: msg,
+                history: cleanHistory
+            });
+
             setIsLoading(false);
             simulateStreaming(response.data.reply);
-        } catch {
+        } catch (err) {
+            console.error("Chat Error:", err);
             setIsLoading(false);
             simulateStreaming(getFallbackResponse(msg));
         }

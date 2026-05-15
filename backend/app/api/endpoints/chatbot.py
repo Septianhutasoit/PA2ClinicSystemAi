@@ -9,6 +9,7 @@ from pathlib import Path
 from app.services.rag_service import ChatbotService
 from app.database.session import get_db
 from app.models.clinic import Doctor, Service, ChatLog
+from app.core.security import get_current_user
 from app.core.config import settings
 
 # AI & LangChain
@@ -44,31 +45,49 @@ async def chat_with_bot(request: ChatRequest):
         print(f"DEBUG ERROR CHAT: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
     
-@router.get("/chat/history")
-async def get_chat_history(current_user: dict = Depends(get_current_user)):
-    return [] # Kembalikan list kosong agar tidak merah di console
+class FeedbackRequest(BaseModel):
+    user_message: str
+    bot_response: str
+    feedback: bool
+    session_id: str
 
-# 2. Endpoint untuk Statistik Dashboard Admin
+# 1. FIX Error 404 History
+@router.get("/chat/history")
+async def get_chat_history(db: Session = Depends(get_db)):
+    return [] # List kosong agar browser tidak merah
+
+# 2. Simpan Feedback (Suka/Tidak Suka)
+@router.post("/log-feedback")
+async def log_feedback(data: FeedbackRequest, db: Session = Depends(get_db)):
+    new_log = ChatLog(
+        session_id=data.session_id,
+        user_message=data.user_message,
+        bot_response=data.bot_response,
+        feedback=data.feedback
+    )
+    db.add(new_log)
+    db.commit()
+    return {"status": "recorded"}
+
+# 3. Ambil Statistik untuk Dashboard Admin
 @router.get("/admin/stats")
 def get_ai_stats(db: Session = Depends(get_db)):
     likes = db.query(ChatLog).filter(ChatLog.feedback == True).count()
     dislikes = db.query(ChatLog).filter(ChatLog.feedback == False).count()
     total = db.query(ChatLog).count()
-    
-    accuracy = (likes / (likes + dislikes) * 100) if (likes + dislikes) > 0 else 0
+    accuracy = round((likes / (likes + dislikes) * 100), 1) if (likes + dislikes) > 0 else 0
     
     return {
         "likes": likes,
         "dislikes": dislikes,
-        "accuracy": round(accuracy, 1),
+        "accuracy": accuracy,
         "total_interactions": total
     }
 
-# 3. Endpoint untuk Riwayat di Dashboard Admin
+# 4. Ambil Riwayat untuk Dashboard Admin
 @router.get("/admin/history")
 def get_ai_history(db: Session = Depends(get_db)):
-    return db.query(ChatLog).order_by(ChatLog.created_at.desc()).limit(10).all()
-
+    return db.query(ChatLog).order_by(ChatLog.created_at.desc()).limit(20).all()
 # 2. Endpoint untuk Sinkronisasi Pengetahuan (Database + Folder Docs)
 @router.post("/ingest")
 async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
