@@ -3,168 +3,194 @@ import { useEffect, useState } from 'react';
 import api from '@/services/api';
 import {
     Users, Clock, ArrowRight, Loader2,
-    UserRound, Stethoscope, Sparkles, CalendarDays
+    UserRound, Stethoscope, Sparkles, CalendarDays,
+    X, FileText, Activity, Pill, CheckCircle2
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DoctorDashboard() {
     const [todayPatients, setTodayPatients] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    useEffect(() => {
-        api.get('/clinic/appointments').then(res => {
-            const filtered = res.data.filter((app: any) => app.status === 'confirmed');
-            setTodayPatients(filtered);
-        }).finally(() => setIsLoading(false));
+    // State untuk Proses Pemeriksaan
+    const [selectedAppt, setSelectedAppt] = useState<any>(null);
+    const [diagnosis, setDiagnosis] = useState('');
+    const [treatment, setTreatment] = useState('');
+    const [notes, setNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const fetchQueue = async () => {
+        setIsLoading(true);
+        try {
+            // Ambil data appointment status 'confirmed' milik dokter yang login
+            const res = await api.get('/clinic/appointments/my-today');
+            setTodayPatients(res.data);
+        } catch (err) {
+            console.error("Gagal mengambil antrean");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchQueue();
         const interval = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(interval);
     }, []);
 
+    // Fungsi Simpan Rekam Medis & Selesaikan Antrean
+    const handleFinishExamination = async () => {
+        if (!diagnosis || !treatment) return alert("Mohon isi diagnosa dan tindakan");
+
+        setIsSubmitting(true);
+        try {
+            await api.post('/clinic/medical-records', {
+                appointment_id: selectedAppt.id,
+                patient_name: selectedAppt.patient_name,
+                diagnosis: diagnosis,
+                treatment: treatment,
+                notes: notes
+            });
+
+            alert("Pemeriksaan Selesai! Data rekam medis telah disimpan.");
+            setSelectedAppt(null); // Tutup Modal
+            setDiagnosis(''); setTreatment(''); setNotes(''); // Reset Form
+            fetchQueue(); // Refresh Antrean (Angka akan berkurang)
+        } catch (err) {
+            alert("Gagal menyimpan data.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="space-y-6 animate-in fade-in duration-500 pb-10">
 
             {/* ── 1. WELCOME BANNER ─────────────────────────────────────── */}
-            <div className="bg-white rounded-2xl p-8 border border-[#D4EDE5] shadow-sm relative overflow-hidden">
+            <div className="bg-white rounded-2xl p-8 border border-[#D4EDE5] shadow-sm relative overflow-hidden text-slate-800">
                 <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500 rounded-l-2xl" />
-
                 <div className="relative z-10 pl-5">
                     <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full mb-4">
                         <Sparkles size={11} className="text-emerald-600" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">
-                            Sesi Kerja Aktif
-                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-700">Sesi Kerja Aktif</span>
                     </div>
-
-                    <h1 className="text-2xl font-bold text-slate-900 leading-tight">
-                        Selamat Pagi, Dokter
-                    </h1>
-                    <p className="text-slate-500 text-sm mt-1.5">
-                        Anda memiliki{' '}
-                        <span className="font-bold text-emerald-600">{todayPatients.length} pasien</span>
-                        {' '}yang sudah dikonfirmasi hari ini.
-                    </p>
+                    <h1 className="text-2xl font-bold leading-tight">Selamat Pagi, Dokter</h1>
+                    <p className="text-slate-500 text-sm mt-1.5">Ada <span className="font-bold text-emerald-600">{todayPatients.length} pasien</span> di antrean Anda.</p>
                 </div>
-
-                <Stethoscope
-                    size={160}
-                    className="absolute -right-8 -bottom-8 text-emerald-50 rotate-[-15deg] pointer-events-none"
-                />
+                <Stethoscope size={160} className="absolute -right-8 -bottom-8 text-emerald-50 rotate-[-15deg] pointer-events-none" />
             </div>
 
             {/* ── 2. STAT CARDS ─────────────────────────────────────────── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                {/* Pasien Antre */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-slate-800">
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex items-center justify-between hover:border-emerald-200 transition-all group">
                     <div>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                            Pasien Antre
-                        </p>
-                        <h3 className="text-4xl font-bold text-slate-800">
-                            {isLoading ? '—' : todayPatients.length}
-                        </h3>
-                        <p className="text-xs text-slate-400 mt-1">pasien menunggu pemeriksaan</p>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pasien Antre</p>
+                        <h3 className="text-4xl font-bold">{isLoading ? '—' : todayPatients.length}</h3>
+                        <p className="text-xs text-slate-400 mt-1 uppercase font-black tracking-tighter">Pasien Menunggu</p>
                     </div>
-                    <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform border border-emerald-100">
-                        <Users size={26} />
-                    </div>
+                    <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100"><Users size={26} /></div>
                 </div>
 
-                {/* Waktu Sekarang */}
                 <div className="bg-slate-900 rounded-2xl p-6 flex items-center justify-between shadow-lg">
                     <div>
-                        <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest mb-1">
-                            Waktu Sekarang
-                        </p>
-                        <h3 className="text-3xl font-bold text-white">
-                            {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                            <span className="text-emerald-400 text-base font-medium ml-2">WIB</span>
-                        </h3>
-                        <p className="text-slate-400 text-xs mt-1 capitalize">
-                            {currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                        </p>
+                        <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest mb-1">Waktu Sekarang</p>
+                        <h3 className="text-3xl font-bold text-white">{currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} <span className="text-emerald-400 text-base font-medium ml-2">WIB</span></h3>
+                        <p className="text-slate-400 text-xs mt-1 capitalize">{currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                     </div>
-                    <div className="w-14 h-14 bg-white/10 text-emerald-400 rounded-2xl flex items-center justify-center">
-                        <CalendarDays size={26} />
-                    </div>
+                    <div className="w-14 h-14 bg-white/10 text-emerald-400 rounded-2xl flex items-center justify-center"><CalendarDays size={26} /></div>
                 </div>
             </div>
 
             {/* ── 3. DAFTAR ANTREAN ─────────────────────────────────────── */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-
-                {/* Section Header */}
-                <div className="px-7 py-5 border-b border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center border border-emerald-100">
-                            <Users size={18} />
-                        </div>
-                        <div>
-                            <h3 className="text-base font-bold text-slate-900">
-                                Antrean Pasien Hari Ini
-                            </h3>
-                            <p className="text-[11px] text-slate-400 mt-0.5">
-                                Pasien yang sudah dikonfirmasi admin
-                            </p>
-                        </div>
-                    </div>
-                    {!isLoading && todayPatients.length > 0 && (
-                        <span className="text-[11px] font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1 rounded-full">
-                            {todayPatients.length} pasien
-                        </span>
-                    )}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden text-slate-800">
+                <div className="px-7 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <h3 className="text-base font-bold flex items-center gap-2 italic uppercase tracking-tighter"><Activity size={18} className="text-emerald-500" /> Antrean Pasien Hari Ini</h3>
+                    <span className="text-[10px] font-black bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1 rounded-full uppercase italic">Live Queue</span>
                 </div>
 
-                {/* List */}
                 <div className="p-5 space-y-3">
                     {isLoading ? (
-                        <div className="py-16 text-center">
-                            <Loader2 className="animate-spin mx-auto text-emerald-600 mb-3" size={28} />
-                            <p className="text-sm text-slate-400">Memuat data pasien...</p>
-                        </div>
+                        <div className="py-16 text-center"><Loader2 className="animate-spin mx-auto text-emerald-600" /></div>
                     ) : todayPatients.length > 0 ? (
                         todayPatients.map((app: any, i: number) => (
-                            <div
-                                key={app.id}
-                                className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-[#F5FAF7] rounded-xl border border-transparent hover:border-emerald-200 transition-all"
-                            >
+                            <div key={app.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-[#F5FAF7] rounded-2xl border border-emerald-50 hover:border-emerald-300 transition-all group">
                                 <div className="flex items-center gap-4">
-                                    {/* Nomor */}
-                                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-bold text-slate-700 text-sm shadow-sm border border-slate-100 flex-shrink-0">
-                                        {i + 1}
-                                    </div>
+                                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black text-emerald-600 text-sm shadow-sm border border-emerald-100">{i + 1}</div>
                                     <div>
-                                        <p className="font-semibold text-slate-800 text-sm">
-                                            {app.patient_name}
-                                        </p>
-                                        <p className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                                            <Clock size={10} className="text-emerald-500" />
-                                            Estimasi:{' '}
-                                            {new Date(app.appointment_date).toLocaleTimeString('id-ID', {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })} WIB
-                                        </p>
+                                        <p className="font-bold text-slate-800 uppercase italic">{app.patient_name}</p>
+                                        <p className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-1 font-bold"><Clock size={10} className="text-emerald-500" /> {new Date(app.appointment_date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</p>
                                     </div>
                                 </div>
-
-                                <button className="mt-3 sm:mt-0 bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-semibold hover:bg-emerald-700 transition-all flex items-center gap-2 group self-start sm:self-auto">
-                                    Mulai Periksa
-                                    <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                                <button
+                                    onClick={() => setSelectedAppt(app)}
+                                    className="mt-3 sm:mt-0 bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-900 transition-all flex items-center gap-2 group shadow-lg shadow-emerald-600/20 active:scale-95"
+                                >
+                                    Mulai Periksa <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                             </div>
                         ))
                     ) : (
-                        <div className="py-16 text-center space-y-2">
-                            <UserRound size={36} className="mx-auto text-slate-200" />
-                            <p className="text-sm font-medium text-slate-400">
-                                Belum ada pasien yang dikonfirmasi hari ini
-                            </p>
-                        </div>
+                        <div className="py-16 text-center opacity-30 italic font-bold uppercase text-slate-400 tracking-[0.3em]">Antrean Kosong</div>
                     )}
                 </div>
             </div>
+
+            {/* ── 4. MODAL PEMERIKSAAN (DINAMIS) ────────────────────────── */}
+            <AnimatePresence>
+                {selectedAppt && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9 }} className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative overflow-hidden border-[6px] border-white">
+                            <button onClick={() => setSelectedAppt(null)} className="absolute top-6 right-6 p-2 rounded-xl text-slate-300 hover:text-red-500 transition-all"><X size={24} /></button>
+
+                            <div className="p-8 md:p-10 space-y-6">
+                                <div className="flex items-center gap-4 mb-2">
+                                    <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center font-black text-xl italic uppercase">{(selectedAppt.patient_name).charAt(0)}</div>
+                                    <div>
+                                        <h2 className="text-xl font-black italic uppercase text-slate-800 tracking-tighter leading-none">{selectedAppt.patient_name}</h2>
+                                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-2">Form Pemeriksaan Medis</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2"><Activity size={12} className="text-emerald-500" /> Hasil Diagnosa (Analysis)</label>
+                                        <textarea
+                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all h-24 italic"
+                                            placeholder="Tulis diagnosa penyakit pasien di sini..."
+                                            value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2"><Pill size={12} className="text-emerald-500" /> Tindakan / Resep Obat (Treatment)</label>
+                                        <textarea
+                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all h-24 italic"
+                                            placeholder="Tulis tindakan medis atau resep obat..."
+                                            value={treatment} onChange={(e) => setTreatment(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2"><FileText size={12} className="text-emerald-500" /> Catatan Tambahan (Saran)</label>
+                                        <input
+                                            type="text" className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-emerald-500/10 italic"
+                                            placeholder="Saran untuk pasien (Contoh: Kontrol 2 minggu lagi)"
+                                            value={notes} onChange={(e) => setNotes(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleFinishExamination}
+                                    disabled={isSubmitting}
+                                    className="w-full bg-emerald-600 hover:bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all shadow-xl shadow-emerald-200 disabled:opacity-50 flex items-center justify-center gap-3"
+                                >
+                                    {isSubmitting ? <Loader2 className="animate-spin" /> : <><CheckCircle2 size={18} /> Selesaikan Pemeriksaan</>}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

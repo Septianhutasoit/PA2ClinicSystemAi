@@ -6,8 +6,8 @@ import Image from 'next/image';
 import Cookies from 'js-cookie';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Bell, ChevronDown, LogOut, Settings, User,
-    Menu, X, UserPlus,
+    Bell, ChevronDown, LogOut, Settings, User, Home,
+    Menu, X, UserPlus, Building2, UsersRound,
     LayoutDashboard, CalendarCheck, FileText,
     Stethoscope, Users, ClipboardList, Info, Target
 } from 'lucide-react';
@@ -55,10 +55,10 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     };
 
     const navItems = [
-        { name: 'Beranda', href: '/patient/dashboard', icon: LayoutDashboard },
+        { name: 'Beranda', href: '/patient/dashboard', icon: Home },
         { name: 'Layanan', href: '/patient/services', icon: Stethoscope },
-        { name: 'Nauli Dental', href: '/patient/about', icon: Info },
-        { name: 'Tim Kami', href: '/patient/doctors', icon: Users },
+        { name: 'Nauli Dental', href: '/patient/about', icon: Building2 }, 
+        { name: 'Tim Kami', href: '/patient/doctors', icon: UsersRound }, 
         { name: 'Visi & Misi', href: '/patient/visiMisi', icon: Target },
         // { name: 'Janji Temu',  href: '/patient/appointments', icon: CalendarCheck },
         // { name: 'Rekam Medis', href: '/patient/records',      icon: FileText },
@@ -107,7 +107,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                             <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center bg-white shadow-md flex-shrink-0">
                                 {!logoError ? (
                                     <Image
-                                        src="/images/logo1.png"
+                                        src="/images/Logo1.png"
                                         alt="Nauli Dental Logo"
                                         width={40} height={40}
                                         className="object-cover w-full h-full"
