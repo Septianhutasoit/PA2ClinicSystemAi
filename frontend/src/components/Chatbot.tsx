@@ -2,11 +2,10 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
 import {
-    MessageCircle, Send, X, Bot, User, Sparkles,
+    MessageCircle, Send, X, User, Sparkles,
     Maximize2, Minimize2, Trash2, ChevronRight,
     Plus, Search, Edit2, Menu,
     ThumbsUp, ThumbsDown, Copy, Check,
-    RotateCcw, Stethoscope
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -14,7 +13,7 @@ interface Message {
     role: string;
     content: string;
     id: string;
-    liked?: boolean | null; // null = belum, true = like, false = dislike
+    liked?: boolean | null;
     copied?: boolean;
 }
 
@@ -25,7 +24,7 @@ interface Conversation {
     createdAt: number;
 }
 
-// ── Custom Dental SVG Icon ──
+// ── Custom Dental SVG Icon ──────────────────────────────────────────────────
 function DentalIcon({ size = 16, className = '' }: { size?: number; className?: string }) {
     return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
@@ -38,7 +37,6 @@ function DentalIcon({ size = 16, className = '' }: { size?: number; className?: 
     );
 }
 
-// ── Divider tipis bergaya Google AI Studio ──
 function MessageDivider() {
     return (
         <div className="flex items-center gap-3 py-1">
@@ -48,6 +46,18 @@ function MessageDivider() {
         </div>
     );
 }
+
+// ── Konstanta ─────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'chatbot_conversations';
+
+const INITIAL_MSG = (suffix = ''): Message => ({
+    id: 'init-' + Date.now() + suffix,
+    role: 'bot',
+    content: 'Horas! Selamat datang di Nauli Dental Care Balige. Saya KlinikAI, asisten cerdas Anda. Ada yang bisa saya bantu hari ini?',
+    liked: null,
+});
+
+const SUGGESTIONS = ['Jadwal Dokter', 'Lokasi Klinik', 'Biaya Scaling', 'Langkah Pendaftaran', 'Informasi Layanan'];
 
 export default function Chatbot() {
     const [isOpen, setIsOpen] = useState(false);
@@ -65,242 +75,250 @@ export default function Chatbot() {
     const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
     const [editTitleValue, setEditTitleValue] = useState('');
 
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const resizeRef = useRef<HTMLDivElement>(null);
+    // FIX: track msgId yang sedang dikirim feedback-nya agar tidak double-send
+    const feedbackInFlight = useRef<Set<string>>(new Set());
 
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    // ── Init conversations dari localStorage ──────────────────────────────
     useEffect(() => {
-        const stored = localStorage.getItem('chatbot_conversations');
+        const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
-            const parsed = JSON.parse(stored) as Conversation[];
-            setConversations(parsed);
-            if (parsed.length > 0) setCurrentConvId(parsed[0].id);
-        } else {
-            const defaultConv: Conversation = {
-                id: Date.now().toString(),
-                title: 'Percakapan Baru',
-                messages: [{
-                    id: 'init',
-                    role: 'bot',
-                    content: 'Horas! Selamat datang di Nauli Dental Care Balige. Saya KlinikAIChatbot, asisten cerdas Anda. Ada yang bisa saya bantu hari ini?',
-                    liked: null
-                }],
-                createdAt: Date.now()
-            };
-            setConversations([defaultConv]);
-            setCurrentConvId(defaultConv.id);
+            try {
+                const parsed = JSON.parse(stored) as Conversation[];
+                if (parsed.length > 0) {
+                    setConversations(parsed);
+                    setCurrentConvId(parsed[0].id);
+                    return;
+                }
+            } catch { /* corrupt → buat baru */ }
         }
+        const def: Conversation = {
+            id: Date.now().toString(),
+            title: 'Percakapan Baru',
+            messages: [INITIAL_MSG()],
+            createdAt: Date.now(),
+        };
+        setConversations([def]);
+        setCurrentConvId(def.id);
     }, []);
 
     useEffect(() => {
-        if (conversations.length > 0) localStorage.setItem('chatbot_conversations', JSON.stringify(conversations));
+        if (conversations.length > 0)
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
     }, [conversations]);
 
     useEffect(() => {
         scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }, [currentConvId, conversations, streamingText, isLoading]);
 
-    const currentConv = conversations.find(c => c.id === currentConvId);
-    const messages = currentConv?.messages || [];
-
-    const updateCurrentConversation = (updater: (conv: Conversation) => Conversation) => {
-        if (!currentConvId) return;
-        setConversations(prev => prev.map(conv => conv.id === currentConvId ? updater(conv) : conv));
-    };
-
-    // ── Like / Dislike per pesan ──
-    const handleReaction = async (msgId: string, reaction: boolean) => {
-        // Cari pesan bot dan pesan user sebelumnya untuk log di Admin
-        const botMsg = messages.find(m => m.id === msgId);
-        const botIdx = messages.findIndex(m => m.id === msgId);
-        const userMsg = botIdx > 0 ? messages[botIdx - 1] : null;
-
-        // 1. Update tampilan jempol di UI Chatbot (Lokal)
-        updateCurrentConversation(conv => ({
-            ...conv,
-            messages: conv.messages.map(m =>
-                m.id === msgId ? { ...m, liked: m.liked === reaction ? null : reaction } : m
-            )
-        }));
-
-        // 2. Kirim data ke Backend agar Dashboard Admin terisi secara otomatis
-        if (botMsg && reaction !== null) {
-            try {
-                await api.post('/chatbot/log-feedback', {
-                    user_message: userMsg?.content || 'Pertanyaan awal',
-                    bot_response: botMsg.content,
-                    feedback: reaction,
-                    session_id: currentConvId
-                });
-            } catch (err) {
-                console.warn('Gagal mengirim feedback ke server');
-            }
-        }
-    };
-
-    // fallback copy
-    const fallbackCopy = (text: string) => {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        try {
-            document.execCommand('copy');
-        } catch (e) {
-            console.warn('Copy gagal:', e);
-        }
-        document.body.removeChild(textarea);
-    };
-
-    // ── Copy teks ──
-   const handleCopy = (msgId: string, text: string) => {
-    // Fallback untuk HTTP / clipboard tidak tersedia
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).catch(() => {
-            fallbackCopy(text);
-        });
-    } else {
-        fallbackCopy(text);
-    }
-    updateCurrentConversation(conv => ({
-            ...conv,
-            messages: conv.messages.map(m => m.id === msgId ? { ...m, copied: true } : m)
-        }));
-        setTimeout(() => {
-            updateCurrentConversation(conv => ({
-                ...conv,
-                messages: conv.messages.map(m => m.id === msgId ? { ...m, copied: false } : m)
-            }));
-        }, 2000);
-    };
-
-    const simulateStreaming = (fullText: string) => {
-        let index = 0, current = '';
-        const newMsgId = Date.now().toString();
-        const interval = setInterval(() => {
-            if (index < fullText.length) {
-                current += fullText[index];
-                setStreamingText(current);
-                index++;
-            } else {
-                clearInterval(interval);
-                updateCurrentConversation(conv => ({
-                    ...conv,
-                    messages: [...conv.messages, { id: newMsgId, role: 'bot', content: fullText, liked: null }]
-                }));
-                setStreamingText('');
-            }
-        }, 15);
-    };
-
-    const getFallbackResponse = (msg: string): string => {
-        const m = msg.toLowerCase();
-        if (m.includes('jadwal') || m.includes('dokter')) return 'Jadwal dokter praktek Senin–Sabtu pukul 09.00–17.00. Untuk jadwal spesifik, hubungi 0852-1234-5678.';
-        if (m.includes('lokasi') || m.includes('alamat')) return 'Nauli Dental Care di Jl. Balige No. 12, Toba, Sumatera Utara. Buka 08.00–20.00.';
-        if (m.includes('biaya') || m.includes('scaling')) return 'Biaya scaling Rp 250.000–450.000. Info lengkap: WA 0821-6352-6363.';
-        if (m.includes('daftar') || m.includes('pendaftaran')) return 'Pendaftaran via website atau langsung ke klinik. Bisa juga booking via WhatsApp.';
-        if (m.includes('layanan')) return 'Layanan: scaling, tambal, cabut, saluran akar, behel, veneer, dan implant.';
-        return 'Maaf, sedang ada gangguan koneksi. Hubungi WA 0821-6352-6363 untuk bantuan cepat.';
-    };
-
-    const handleSendMessage = async (text: string = input) => {
-        const msg = text.trim();
-        if (!msg || isLoading || streamingText) return;
-
-        const userMsgId = Date.now().toString();
-
-        // Update UI Lokal
-        updateCurrentConversation(conv => ({
-            ...conv,
-            messages: [...conv.messages, { id: userMsgId, role: 'user', content: msg }],
-            title: (conv.title === 'Percakapan Baru' && conv.messages.length === 1)
-                ? msg.slice(0, 30) + (msg.length > 30 ? '...' : '') : conv.title
-        }));
-
-        setInput('');
-        setIsLoading(true);
-
-        try {
-            // --- PEMBERSIHAN DATA (AGAR TIDAK ERROR 422) ---
-            // Backend hanya mau menerima 'role' dan 'content'
-            const cleanHistory = messages.slice(-6).map(m => ({
-                role: m.role === 'bot' ? 'assistant' : 'user', // 'bot' diubah jadi 'assistant' sesuai standar AI
-                content: m.content
-            }));
-
-            const response = await api.post('/chatbot/chat', {
-                message: msg,
-                history: cleanHistory
-            });
-
-            setIsLoading(false);
-            simulateStreaming(response.data.reply);
-        } catch (err) {
-            console.error("Chat Error:", err);
-            setIsLoading(false);
-            simulateStreaming(getFallbackResponse(msg));
-        }
-    };
-
-    const createNewChat = () => {
-        const newConv: Conversation = {
-            id: Date.now().toString(), title: 'Percakapan Baru',
-            messages: [{ id: 'init-' + Date.now(), role: 'bot', content: 'Horas! Saya KlinikAIChatbot. Ada yang bisa saya bantu hari ini?', liked: null }],
-            createdAt: Date.now()
-        };
-        setConversations(prev => [newConv, ...prev]);
-        setCurrentConvId(newConv.id);
-        setSearchQuery(''); setEditingTitleId(null);
-    };
-
-    const deleteConversation = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        const newConvs = conversations.filter(c => c.id !== id);
-        if (newConvs.length === 0) {
-            const d: Conversation = { id: Date.now().toString(), title: 'Percakapan Baru', messages: [{ id: 'init', role: 'bot', content: 'Horas! Saya KlinikAIChatbot. Ada yang bisa saya bantu?', liked: null }], createdAt: Date.now() };
-            setConversations([d]); setCurrentConvId(d.id);
-        } else {
-            setConversations(newConvs);
-            if (currentConvId === id) setCurrentConvId(newConvs[0].id);
-        }
-    };
-
-    const renameConversation = (id: string, newTitle: string) => {
-        setConversations(prev => prev.map(conv => conv.id === id ? { ...conv, title: newTitle.slice(0, 40) } : conv));
-        setEditingTitleId(null);
-    };
-
-    const filteredConversations = conversations.filter(conv =>
-        conv.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        conv.messages.some(m => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-
+    // ── Resize sidebar ────────────────────────────────────────────────────
     useEffect(() => {
-        const onMove = (e: MouseEvent) => { if (isResizing) setSidebarWidth(Math.min(500, Math.max(200, e.clientX))); };
+        const onMove = (e: MouseEvent) => {
+            if (isResizing) setSidebarWidth(Math.min(500, Math.max(200, e.clientX)));
+        };
         const onUp = () => setIsResizing(false);
         window.addEventListener('mousemove', onMove);
         window.addEventListener('mouseup', onUp);
         return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
     }, [isResizing]);
 
-    const suggestions = ['Jadwal Dokter', 'Lokasi Klinik', 'Biaya Scaling', 'Langkah Pendaftaran', 'Informasi Layanan'];
+    // ── Helpers ───────────────────────────────────────────────────────────
+    const currentConv = conversations.find(c => c.id === currentConvId);
+    const messages = currentConv?.messages ?? [];
 
-    // ─── FAB ────────────────────────────────────────────────────────
+    const updateCurrentConversation = (updater: (conv: Conversation) => Conversation) => {
+        if (!currentConvId) return;
+        setConversations(prev => prev.map(c => c.id === currentConvId ? updater(c) : c));
+    };
+
+    // ── Like / Dislike ────────────────────────────────────────────────────
+    const handleReaction = async (msgId: string, reaction: boolean) => {
+        // FIX: Cegah double-send (klik cepat dua kali)
+        if (feedbackInFlight.current.has(msgId)) return;
+
+        const botMsg = messages.find(m => m.id === msgId);
+        const botIdx = messages.findIndex(m => m.id === msgId);
+        const userMsg = botIdx > 0 ? messages[botIdx - 1] : null;
+
+        if (!botMsg) return;
+
+        // FIX: Toggle — jika sudah sama, batalkan (null) tanpa kirim ke server
+        const currentLiked = botMsg.liked;
+        const newLiked: boolean | null = currentLiked === reaction ? null : reaction;
+
+        // Update UI lokal terlebih dahulu (optimistic update)
+        updateCurrentConversation(conv => ({
+            ...conv,
+            messages: conv.messages.map(m =>
+                m.id === msgId ? { ...m, liked: newLiked } : m
+            ),
+        }));
+
+        // FIX: Hanya kirim ke server jika user memilih reaksi (bukan toggle-off / null)
+        if (newLiked !== null) {
+            feedbackInFlight.current.add(msgId);
+            try {
+                await api.post('/chatbot/log-feedback', {
+                    session_id: currentConvId,
+                    user_message: userMsg?.content ?? 'Pertanyaan awal',
+                    bot_response: botMsg.content,
+                    feedback: newLiked,   // true = suka, false = tidak suka
+                });
+            } catch (err) {
+                console.warn('Gagal mengirim feedback ke server:', err);
+                // Rollback UI jika gagal
+                updateCurrentConversation(conv => ({
+                    ...conv,
+                    messages: conv.messages.map(m =>
+                        m.id === msgId ? { ...m, liked: currentLiked } : m
+                    ),
+                }));
+            } finally {
+                feedbackInFlight.current.delete(msgId);
+            }
+        }
+    };
+
+    // ── Copy ──────────────────────────────────────────────────────────────
+    const fallbackCopy = (text: string) => {
+        const el = document.createElement('textarea');
+        el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
+        document.body.appendChild(el); el.focus(); el.select();
+        try { document.execCommand('copy'); } catch { /* noop */ }
+        document.body.removeChild(el);
+    };
+
+    const handleCopy = (msgId: string, text: string) => {
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+        } else {
+            fallbackCopy(text);
+        }
+        updateCurrentConversation(conv => ({
+            ...conv,
+            messages: conv.messages.map(m => m.id === msgId ? { ...m, copied: true } : m),
+        }));
+        setTimeout(() => {
+            updateCurrentConversation(conv => ({
+                ...conv,
+                messages: conv.messages.map(m => m.id === msgId ? { ...m, copied: false } : m),
+            }));
+        }, 2000);
+    };
+
+    // ── Streaming simulasi ────────────────────────────────────────────────
+    const simulateStreaming = (fullText: string) => {
+        const newMsgId = 'bot-' + Date.now();
+        let index = 0, current = '';
+        const interval = setInterval(() => {
+            if (index < fullText.length) {
+                current += fullText[index++];
+                setStreamingText(current);
+            } else {
+                clearInterval(interval);
+                updateCurrentConversation(conv => ({
+                    ...conv,
+                    messages: [...conv.messages, { id: newMsgId, role: 'bot', content: fullText, liked: null }],
+                }));
+                setStreamingText('');
+            }
+        }, 15);
+    };
+
+    // ── Fallback respons lokal (jika server error) ────────────────────────
+    const getFallbackResponse = (msg: string): string => {
+        const m = msg.toLowerCase();
+        if (m.includes('jadwal') || m.includes('dokter')) return 'Jadwal dokter praktek Senin–Sabtu pukul 09.00–17.00. Untuk jadwal spesifik, hubungi 0852-1234-5678.';
+        if (m.includes('lokasi') || m.includes('alamat')) return 'Nauli Dental Care di Jl. Balige No. 12, Toba, Sumatera Utara. Buka 08.00–20.00.';
+        if (m.includes('biaya') || m.includes('scaling')) return 'Biaya scaling Rp 250.000–450.000. Info lengkap: WA 0821-6352-6363.';
+        if (m.includes('daftar') || m.includes('booking')) return 'Pendaftaran via website atau langsung ke klinik. Bisa juga booking via WhatsApp.';
+        if (m.includes('layanan')) return 'Layanan: scaling, tambal, cabut, saluran akar, behel, veneer, dan implant.';
+        return 'Maaf, sedang ada gangguan koneksi. Hubungi WA 0821-6352-6363 untuk bantuan cepat.';
+    };
+
+    // ── Kirim pesan ───────────────────────────────────────────────────────
+    const handleSendMessage = async (text: string = input) => {
+        const msg = text.trim();
+        if (!msg || isLoading || streamingText) return;
+
+        const userMsgId = 'user-' + Date.now();
+
+        updateCurrentConversation(conv => ({
+            ...conv,
+            messages: [...conv.messages, { id: userMsgId, role: 'user', content: msg }],
+            title: (conv.title === 'Percakapan Baru' && conv.messages.length === 1)
+                ? msg.slice(0, 30) + (msg.length > 30 ? '...' : '')
+                : conv.title,
+        }));
+
+        setInput('');
+        setIsLoading(true);
+
+        try {
+            // Kirim hanya field yang dibutuhkan backend (role + content)
+            const cleanHistory = messages.slice(-6).map(m => ({
+                role: m.role === 'bot' ? 'assistant' : 'user',
+                content: m.content,
+            }));
+
+            const res = await api.post('/chatbot/chat', { message: msg, history: cleanHistory });
+            setIsLoading(false);
+            simulateStreaming(res.data.reply);
+        } catch {
+            setIsLoading(false);
+            simulateStreaming(getFallbackResponse(msg));
+        }
+    };
+
+    // ── Manajemen percakapan ──────────────────────────────────────────────
+    const createNewChat = () => {
+        const c: Conversation = {
+            id: Date.now().toString(),
+            title: 'Percakapan Baru',
+            messages: [INITIAL_MSG('-new')],
+            createdAt: Date.now(),
+        };
+        setConversations(prev => [c, ...prev]);
+        setCurrentConvId(c.id);
+        setSearchQuery('');
+        setEditingTitleId(null);
+    };
+
+    const deleteConversation = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const next = conversations.filter(c => c.id !== id);
+        if (next.length === 0) {
+            const d: Conversation = { id: Date.now().toString(), title: 'Percakapan Baru', messages: [INITIAL_MSG()], createdAt: Date.now() };
+            setConversations([d]); setCurrentConvId(d.id);
+        } else {
+            setConversations(next);
+            if (currentConvId === id) setCurrentConvId(next[0].id);
+        }
+    };
+
+    const renameConversation = (id: string, newTitle: string) => {
+        setConversations(prev => prev.map(c => c.id === id ? { ...c, title: newTitle.slice(0, 40) } : c));
+        setEditingTitleId(null);
+    };
+
+    const filteredConversations = conversations.filter(c =>
+        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.messages.some(m => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    // ─── FAB ─────────────────────────────────────────────────────────────
     if (!isOpen) {
         return (
             <motion.button
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                whileHover={{ scale: 1.07 }}
-                whileTap={{ scale: 0.95 }}
+                initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                whileHover={{ scale: 1.07 }} whileTap={{ scale: 0.95 }}
                 onClick={() => setIsOpen(true)}
                 className="fixed bottom-6 right-6 z-[999] flex items-center gap-2.5 pl-2 pr-5 py-2
                            bg-gradient-to-r from-emerald-500 to-teal-500
                            text-white rounded-2xl shadow-2xl shadow-emerald-600/25 font-bold text-sm"
             >
-                <div className="relative w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow flex-shrink-0">
+                <div className="relative w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow shrink-0">
                     <DentalIcon size={22} className="text-emerald-600" />
                     <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-400 rounded-full border-2 border-white animate-ping" />
                     <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-400 rounded-full border-2 border-white" />
@@ -310,7 +328,7 @@ export default function Chatbot() {
         );
     }
 
-    // ─── CHATBOT WINDOW ─────────────────────────────────────────────
+    // ─── CHATBOT WINDOW ───────────────────────────────────────────────────
     return (
         <AnimatePresence>
             <motion.div
@@ -320,20 +338,16 @@ export default function Chatbot() {
                 exit={{ opacity: 0, scale: 0.95, y: 16 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 className={`fixed z-[999] flex overflow-hidden
-                    shadow-[0_32px_80px_rgba(0,0,0,0.4)]
-                    border border-white/[0.08]
+                    shadow-[0_32px_80px_rgba(0,0,0,0.4)] border border-white/[0.08]
                     ${isFull ? 'inset-0 rounded-none' : 'bottom-6 right-6 w-[95vw] md:w-[900px] h-[640px] rounded-[1.5rem]'}`}
                 style={{ background: 'linear-gradient(135deg, #0f1117 0%, #141820 100%)' }}
             >
-
                 {/* ── SIDEBAR ── */}
                 <AnimatePresence>
                     {isSidebarOpen && (
                         <motion.div
-                            initial={{ width: 0, opacity: 0 }}
-                            animate={{ width: sidebarWidth, opacity: 1 }}
-                            exit={{ width: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
+                            initial={{ width: 0, opacity: 0 }} animate={{ width: sidebarWidth, opacity: 1 }}
+                            exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.2 }}
                             style={{ width: sidebarWidth, borderRight: '1px solid rgba(255,255,255,0.06)' }}
                             className="h-full flex flex-col overflow-hidden shrink-0 relative bg-white/[0.02]"
                         >
@@ -368,7 +382,7 @@ export default function Chatbot() {
                                                 ? <input type="text" value={editTitleValue} autoFocus
                                                     onChange={e => setEditTitleValue(e.target.value)}
                                                     onBlur={() => renameConversation(conv.id, editTitleValue)}
-                                                    onKeyPress={e => e.key === 'Enter' && renameConversation(conv.id, editTitleValue)}
+                                                    onKeyDown={e => e.key === 'Enter' && renameConversation(conv.id, editTitleValue)}
                                                     className="w-full text-xs bg-white/10 text-white border border-emerald-500/40 rounded px-1 py-0.5 outline-none" />
                                                 : <p className={`text-xs font-semibold truncate ${currentConvId === conv.id ? 'text-white' : 'text-white/45'}`}>{conv.title}</p>
                                             }
@@ -388,8 +402,8 @@ export default function Chatbot() {
                                     <p className="text-center py-10 text-white/18 text-xs">Tidak ada percakapan</p>
                                 )}
                             </div>
-
-                            <div ref={resizeRef} onMouseDown={() => setIsResizing(true)}
+                            {/* Resize handle */}
+                            <div onMouseDown={() => setIsResizing(true)}
                                 className="absolute top-0 -right-1 w-2 h-full cursor-ew-resize hover:bg-emerald-500/25 z-50" />
                         </motion.div>
                     )}
@@ -416,7 +430,7 @@ export default function Chatbot() {
                                             ? <input type="text" value={editTitleValue} autoFocus
                                                 onChange={e => setEditTitleValue(e.target.value)}
                                                 onBlur={() => { renameConversation(currentConvId!, editTitleValue); setEditingTitleId(null); }}
-                                                onKeyPress={e => e.key === 'Enter' && renameConversation(currentConvId!, editTitleValue)}
+                                                onKeyDown={e => e.key === 'Enter' && renameConversation(currentConvId!, editTitleValue)}
                                                 className="bg-white/10 text-white px-2 py-0.5 rounded text-xs font-bold border border-emerald-500/40 outline-none" />
                                             : <>
                                                 <h3 className="font-bold text-xs text-white/90">{currentConv.title}</h3>
@@ -444,88 +458,58 @@ export default function Chatbot() {
                         </div>
                     </div>
 
-                    {/* ── MESSAGES — Google AI Studio style ── */}
+                    {/* Messages */}
                     <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-smooth"
                         style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.08) transparent' }}>
 
                         {messages.map((msg, i) => (
                             <div key={msg.id || i}>
-                                {/* Divider tipis antara setiap pesan (kecuali pertama) */}
                                 {i > 0 && <MessageDivider />}
-
                                 {msg.role === 'user' ? (
-                                    /* ── User message ── */
                                     <div className="px-6 py-4 flex justify-end">
                                         <div className="flex items-end gap-2.5 max-w-[75%]">
-                                            <div className="bg-emerald-600/20 border border-emerald-500/20
-                                                            text-white/90 text-sm leading-relaxed px-4 py-3
-                                                            rounded-2xl rounded-br-sm whitespace-pre-wrap">
+                                            <div className="bg-emerald-600/20 border border-emerald-500/20 text-white/90 text-sm leading-relaxed px-4 py-3 rounded-2xl rounded-br-sm whitespace-pre-wrap">
                                                 {msg.content}
                                             </div>
-                                            <div className="w-6 h-6 rounded-lg bg-white/8 border border-white/10
-                                                            flex items-center justify-center shrink-0 mb-0.5">
+                                            <div className="w-6 h-6 rounded-lg bg-white/8 border border-white/10 flex items-center justify-center shrink-0 mb-0.5">
                                                 <User size={12} className="text-white/50" />
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    /* ── Bot message — dengan action bar ── */
                                     <div className="px-6 py-4">
                                         <div className="flex items-start gap-3">
-                                            {/* Avatar */}
-                                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600
-                                                            flex items-center justify-center shrink-0 mt-0.5 shadow shadow-emerald-900/30">
+                                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 mt-0.5 shadow shadow-emerald-900/30">
                                                 <DentalIcon size={15} className="text-white" />
                                             </div>
-
                                             <div className="flex-1 min-w-0">
-                                                {/* Teks jawaban */}
                                                 <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap mb-3">
                                                     {msg.content}
                                                 </p>
-
-                                                {/* ── Action bar: like, dislike, copy — Google AI Studio style ── */}
+                                                {/* Action bar */}
                                                 <div className="flex items-center gap-1">
-                                                    {/* Like */}
-                                                    <button
-                                                        onClick={() => handleReaction(msg.id, true)}
+                                                    <button onClick={() => handleReaction(msg.id, true)}
                                                         className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium transition-all
                                                             ${msg.liked === true
                                                                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
-                                                                : 'text-white/25 hover:text-white/60 hover:bg-white/5 border border-transparent'}`}
-                                                        title="Jawaban membantu"
-                                                    >
+                                                                : 'text-white/25 hover:text-white/60 hover:bg-white/5 border border-transparent'}`}>
                                                         <ThumbsUp size={12} className={msg.liked === true ? 'fill-emerald-400' : ''} />
                                                         {msg.liked === true && <span className="text-emerald-400">Membantu</span>}
                                                     </button>
-
-                                                    {/* Dislike */}
-                                                    <button
-                                                        onClick={() => handleReaction(msg.id, false)}
+                                                    <button onClick={() => handleReaction(msg.id, false)}
                                                         className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium transition-all
                                                             ${msg.liked === false
                                                                 ? 'bg-red-500/15 text-red-400 border border-red-500/25'
-                                                                : 'text-white/25 hover:text-white/60 hover:bg-white/5 border border-transparent'}`}
-                                                        title="Jawaban tidak membantu"
-                                                    >
+                                                                : 'text-white/25 hover:text-white/60 hover:bg-white/5 border border-transparent'}`}>
                                                         <ThumbsDown size={12} className={msg.liked === false ? 'fill-red-400' : ''} />
                                                         {msg.liked === false && <span className="text-red-400">Tidak membantu</span>}
                                                     </button>
-
-                                                    {/* Divider dot */}
                                                     <span className="w-1 h-1 rounded-full bg-white/10 mx-1" />
-
-                                                    {/* Copy */}
-                                                    <button
-                                                        onClick={() => handleCopy(msg.id, msg.content)}
-                                                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium
-                                                                   text-white/25 hover:text-white/60 hover:bg-white/5 border border-transparent transition-all"
-                                                        title="Salin teks"
-                                                    >
+                                                    <button onClick={() => handleCopy(msg.id, msg.content)}
+                                                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-white/25 hover:text-white/60 hover:bg-white/5 border border-transparent transition-all">
                                                         {msg.copied
                                                             ? <><Check size={12} className="text-emerald-400" /><span className="text-emerald-400">Tersalin</span></>
-                                                            : <><Copy size={12} /></>
-                                                        }
+                                                            : <Copy size={12} />}
                                                     </button>
                                                 </div>
                                             </div>
@@ -535,14 +519,12 @@ export default function Chatbot() {
                             </div>
                         ))}
 
-                        {/* Streaming text */}
                         {streamingText && (
                             <>
                                 {messages.length > 0 && <MessageDivider />}
                                 <div className="px-6 py-4">
                                     <div className="flex items-start gap-3">
-                                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600
-                                                        flex items-center justify-center shrink-0 mt-0.5 shadow shadow-emerald-900/30">
+                                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 mt-0.5">
                                             <DentalIcon size={15} className="text-white" />
                                         </div>
                                         <p className="flex-1 text-sm text-white/80 leading-relaxed whitespace-pre-wrap pt-0.5">
@@ -554,14 +536,12 @@ export default function Chatbot() {
                             </>
                         )}
 
-                        {/* Loading dots */}
                         {isLoading && !streamingText && (
                             <>
                                 {messages.length > 0 && <MessageDivider />}
                                 <div className="px-6 py-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600
-                                                        flex items-center justify-center shrink-0 shadow shadow-emerald-900/30">
+                                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
                                             <DentalIcon size={15} className="text-white" />
                                         </div>
                                         <div className="flex gap-1.5">
@@ -573,18 +553,14 @@ export default function Chatbot() {
                                 </div>
                             </>
                         )}
-
-                        {/* Spacer bawah */}
                         <div className="h-4" />
                     </div>
 
-                    {/* ── INPUT AREA ── */}
+                    {/* Input area */}
                     <div className="px-4 pb-4 pt-2 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-
-                        {/* Suggestions */}
                         {!isLoading && !streamingText && (
                             <div className="flex gap-1.5 overflow-x-auto mb-3 pb-0.5" style={{ scrollbarWidth: 'none' }}>
-                                {suggestions.map(text => (
+                                {SUGGESTIONS.map(text => (
                                     <button key={text} onClick={() => handleSendMessage(text)}
                                         className="flex items-center gap-1 whitespace-nowrap px-3 py-1.5
                                                    bg-white/[0.04] hover:bg-emerald-500/10
@@ -596,31 +572,21 @@ export default function Chatbot() {
                                 ))}
                             </div>
                         )}
-
-                        {/* Input */}
                         <div className="relative flex items-center"
                             style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.08)' }}>
                             <div className="absolute left-4 text-emerald-500/50"><Sparkles size={15} /></div>
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={e => setInput(e.target.value)}
-                                onKeyPress={e => e.key === 'Enter' && handleSendMessage()}
+                            <input type="text" value={input} onChange={e => setInput(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
                                 placeholder="Tanyakan jadwal, layanan, atau lokasi klinik..."
-                                className="w-full pl-10 pr-14 py-3.5 text-sm text-white/75 placeholder-white/20
-                                           bg-transparent outline-none"
-                            />
+                                className="w-full pl-10 pr-14 py-3.5 text-sm text-white/75 placeholder-white/20 bg-transparent outline-none" />
                             <button onClick={() => handleSendMessage()} disabled={isLoading || !!streamingText}
                                 className="absolute right-2 w-8 h-8 rounded-xl flex items-center justify-center
                                            bg-gradient-to-br from-emerald-500 to-teal-600 text-white
                                            hover:scale-105 active:scale-95 transition-all
-                                           disabled:opacity-30 disabled:cursor-not-allowed disabled:scale-100
-                                           shadow shadow-emerald-900/40">
+                                           disabled:opacity-30 disabled:cursor-not-allowed disabled:scale-100">
                                 <Send size={14} />
                             </button>
                         </div>
-
-                        {/* Footer note */}
                         <p className="text-center text-[10px] text-white/15 mt-2 font-medium">
                             KlinikAI dapat membuat kesalahan. Verifikasi info penting dengan tim medis.
                         </p>

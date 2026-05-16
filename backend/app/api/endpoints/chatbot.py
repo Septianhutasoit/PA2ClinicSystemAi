@@ -72,21 +72,26 @@ async def log_feedback(data: FeedbackRequest, db: Session = Depends(get_db)):
 # 3. Ambil Statistik untuk Dashboard Admin
 @router.get("/admin/stats")
 def get_ai_stats(db: Session = Depends(get_db)):
+    # Hitung jumlah nyata dari database Neon
     likes = db.query(ChatLog).filter(ChatLog.feedback == True).count()
     dislikes = db.query(ChatLog).filter(ChatLog.feedback == False).count()
-    total = db.query(ChatLog).count()
-    accuracy = round((likes / (likes + dislikes) * 100), 1) if (likes + dislikes) > 0 else 0
+    total_chat = db.query(ChatLog).count()
+    
+    # Hitung Akurasi
+    accuracy = 0
+    if (likes + dislikes) > 0:
+        accuracy = round((likes / (likes + dislikes)) * 100, 1)
     
     return {
         "likes": likes,
         "dislikes": dislikes,
         "accuracy": accuracy,
-        "total_interactions": total
+        "total_interactions": total_chat
     }
 
-# 4. Ambil Riwayat untuk Dashboard Admin
 @router.get("/admin/history")
 def get_ai_history(db: Session = Depends(get_db)):
+    # Ambil 20 riwayat chat terbaru
     return db.query(ChatLog).order_by(ChatLog.created_at.desc()).limit(20).all()
 # 2. Endpoint untuk Sinkronisasi Pengetahuan (Database + Folder Docs)
 @router.post("/ingest")

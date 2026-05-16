@@ -136,7 +136,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: 'Reservations', href: '/admin/appointments', icon: <CalendarCheck2 size={16} />, color: 'text-teal-600' },
         { name: 'Daftar Pasien', href: '/admin/patients', icon: <Users2 size={16} />, color: 'text-green-600' },
         { name: 'Manajemen Dokter', href: '/admin/doctors', icon: <UserRoundCog size={16} />, color: 'text-cyan-600' },
-        { name: 'AI Data', href: '/admin/schedules', icon: <MessageSquare size={16} />, color: 'text-green-600' },
+        { name: 'AI Data', href: '/admin/ai-data', icon: <MessageSquare size={16} />, color: 'text-green-600' },
         { name: 'AI Knowledge', href: '/admin/knowledge', icon: <BrainCircuit size={16} />, color: 'text-teal-600' },
         { name: 'Layanan Klinik', href: '/admin/services', icon: <Stethoscope size={16} />, color: 'text-green-600' },
         { name: 'Pengaturan', href: '/admin/settings', icon: <Settings2 size={16} />, color: 'text-slate-600' },
