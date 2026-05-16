@@ -728,42 +728,54 @@ def update_patient(
 @router.get("/medical-records", response_model=List[schemas.MedicalRecordResponse])
 def read_medical_records(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_staff_or_admin),
+    current_user: dict = Depends(require_staff_or_admin)
 ):
-    try:
-        results = (
-            db.query(
-                MedicalRecord.id,
-                MedicalRecord.diagnosis,
-                MedicalRecord.treatment,
-                MedicalRecord.notes,
-                MedicalRecord.created_at,
-                Appointment.patient_name,
-                MedicalRecord.appointment_id,
-            )
-            .join(Appointment, MedicalRecord.appointment_id == Appointment.id)
-            .all()
-        )
-        return results
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Gagal mengambil rekam medis: {str(e)}")
+    # Kita lakukan JOIN agar mendapatkan nama pasien dan dokter dari tabel Appointment
+    results = db.query(
+        MedicalRecord.id,
+        MedicalRecord.appointment_id,
+        MedicalRecord.diagnosis,
+        MedicalRecord.treatment,
+        MedicalRecord.notes,
+        MedicalRecord.created_at,
+        Appointment.patient_name,
+        Appointment.doctor_name
+    ).join(Appointment, MedicalRecord.appointment_id == Appointment.id).all()
+    
+    return results
 
 
 @router.post("/medical-records")
 def create_medical_record(
     data: schemas.MedicalRecordCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_doctor_or_admin),
+    current_user: dict = Depends(require_doctor_or_admin)
 ):
     try:
+        # 1. Simpan data ke tabel medical_records
         new_record = MedicalRecord(**data.model_dump())
         db.add(new_record)
 
         appt = db.query(Appointment).filter(Appointment.id == data.appointment_id).first()
         if appt:
             appt.status = "completed"
+
         db.commit()
-        return {"message": "Rekam medis tersimpan & Pemeriksaan selesai"}
+        return {"message": "Rekam medis tersimpan & Antrean diperbarui"}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/appointments/my-medical-history", response_model=List[schemas.MedicalRecordResponse])
+def get_patient_medical_history(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user) 
+):
+    # Ambil rekam medis yang terhubung dengan appointment milik user ini
+    user = _get_user_by_token(current_user, db)
+    
+    results = db.query(MedicalRecord).join(
+        Appointment, MedicalRecord.appointment_id == Appointment.id
+    ).filter(Appointment.user_id == user.id).all()
+    
+    return results

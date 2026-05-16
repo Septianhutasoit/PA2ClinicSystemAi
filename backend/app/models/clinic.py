@@ -28,12 +28,14 @@ class Service(Base):
 
 class MedicalRecord(Base):
     __tablename__ = "medical_records"
-    id             = Column(Integer, primary_key=True, index=True)
-    appointment_id = Column(Integer, ForeignKey("appointments.id"), nullable=True)
-    diagnosis      = Column(Text)
-    treatment      = Column(Text)
-    notes          = Column(Text, nullable=True)
-    created_at     = Column(DateTime, default=datetime.utcnow)
+
+    id = Column(Integer, primary_key=True, index=True)
+    appointment_id = Column(Integer, ForeignKey("appointments.id")) # Link ke Janji Temu
+    diagnosis = Column(Text)
+    treatment = Column(Text)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    appointment = relationship("Appointment", back_populates="medical_record")
 
 class ChatLog(Base):
     __tablename__ = "chat_logs"

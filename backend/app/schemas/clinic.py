@@ -77,10 +77,15 @@ class MedicalRecordBase(BaseModel):
 class MedicalRecordCreate(MedicalRecordBase):
     pass
 
-class MedicalRecordResponse(MedicalRecordBase):
+class MedicalRecordResponse(BaseModel): # Gunakan BaseModel agar fleksibel menerima hasil JOIN
     id: int
-    patient_name: str # Kita ambil dari join table nanti
+    appointment_id: int
+    diagnosis: str
+    treatment: str
+    notes: Optional[str] = None
     created_at: datetime
+    patient_name: str # <--- WAJIB ADA karena hasil JOIN
+    doctor_name: str  # <--- WAJIB ADA karena hasil JOIN
 
     class Config:
-        from_attributes = True
+        from_attributes = True # Agar bisa membaca data dari SQLAlchemy row
