@@ -120,7 +120,7 @@ export default function WelcomePage() {
                                         bg-gradient-to-br from-emerald-500 to-teal-600 shadow-md shadow-emerald-200 shrink-0">
               {!logoError ? (
                 <Image
-                  src="/images/logo1.png"
+                  src="/images/Logo1.png"
                   alt="Nauli Dental Logo"
                   width={40}
                   height={40}

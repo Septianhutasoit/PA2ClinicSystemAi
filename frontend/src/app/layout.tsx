@@ -6,10 +6,10 @@ const inter = Inter({ subsets: ["latin"] });
 
 // METADATA DITARUH DI SINI (Di luar fungsi & di Server Component)
 export const metadata = {
-    title: "Klinik.AI | Sistem Informasi Klinik Gigi",
+    title: "Klinik Nauli Dental Care | Sistem Informasi Klinik Gigi",
     description: "Sistem Klinik Gigi Modern Terintegrasi AI",
     icons: {
-        icon: "/iconn.png", 
+        icon: "/icon1.png", 
     },
 };
 

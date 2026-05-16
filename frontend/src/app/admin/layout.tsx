@@ -5,6 +5,7 @@ import api from '@/services/api';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Cookies from 'js-cookie';
+import Image from 'next/image';
 import {
     LayoutDashboard, Users2, UserRoundCog, CalendarCheck2,
     BellRing, BrainCircuit, Stethoscope, Search, LogOut,
@@ -166,28 +167,51 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 fixed lg:sticky lg:top-0 z-50 h-screen
                 bg-white border-r border-emerald-50/50 shadow-sm
                 flex flex-col
-                transition-all duration-300
+                transition-all duration-150
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                ${isSidebarOpen ? 'w-60' : 'w-[72px]'}
+                ${isSidebarOpen ? 'w-64' : 'w-[72px]'}
             `}>
                 <div className="flex flex-col h-full">
 
                     {/* Logo */}
-                    <div className="p-4 flex items-center gap-2.5 border-b border-emerald-50/50 shrink-0">
-                        <div className="w-8 h-8 bg-emerald-700 rounded-lg flex items-center justify-center text-white shadow-lg shadow-emerald-200 font-black italic text-xs shrink-0">
-                            K
+                    <div className="p-6 flex items-center gap-3 border-b border-emerald-50/50 shrink-0 min-w-0">
+                        {/* Box Logo K - Dibuat lebih besar (w-12 h-12) */}
+                        <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center bg-white ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-200/60 shrink-0 p-1">
+                            <Image
+                                src="/images/Logo1.png"
+                                alt="Nauli Dental Logo"
+                                width={44}
+                                height={44}
+                                className="object-contain w-full h-full"
+                                onError={(e) => {
+                                    // fallback jika gambar gagal load
+                                    const el = e.currentTarget as HTMLImageElement;
+                                    el.style.display = 'none';
+                                    const parent = el.parentElement;
+                                    if (parent) {
+                                        parent.classList.add('bg-[#006D44]');
+                                        parent.innerHTML = '<span class="text-white font-black italic text-xl">K</span>';
+                                    }
+                                }}
+                            />
                         </div>
+
                         <AnimatePresence>
                             {isSidebarOpen && (
-                                <motion.h1
-                                    initial={{ opacity: 0, x: -8 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -8 }}
+                                <motion.div
+                                    initial={{ opacity: 0, width: 0 }}
+                                    animate={{ opacity: 1, width: 'auto' }}
+                                    exit={{ opacity: 0, width: 0 }}
                                     transition={{ duration: 0.15 }}
-                                    className="text-base font-black tracking-tighter text-slate-800 whitespace-nowrap"
+                                    className="flex flex-col leading-none overflow-hidden"
                                 >
-                                    Klinik.<span className="text-emerald-700">AI</span>
-                                </motion.h1>
+                                    <h1 className="text-[17px] font-black tracking-tighter text-slate-800 whitespace-nowrap">
+                                        Nauli <span className="text-[#006D44]">Dental</span>
+                                    </h1>
+                                    <p className="text-[9px] text-emerald-600 font-bold uppercase tracking-[0.2em] mt-1 whitespace-nowrap">
+                                        Clinic Care
+                                    </p>
+                                </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
@@ -307,7 +331,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <div className="flex items-center gap-3">
                         {/* Toggle sidebar — desktop */}
                         <button
-                            onClick={() => setIsSidebarOpen(v => !v)}
+                            onClick={(e) => { e.preventDefault(); setIsSidebarOpen(v => !v); }}
                             className="hidden lg:flex p-2 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all"
                         >
                             <Menu size={18} />
