@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
 from app.database.session import Base
+from sqlalchemy.orm import relationship
 from datetime import datetime 
 
 class Appointment(Base):
@@ -15,4 +16,5 @@ class Appointment(Base):
     notes = Column(String, nullable=True)
     status = Column(String, default="Scheduled")
     patient_address = Column(String, nullable=True) 
-    patient_gender = Column(String, nullable=True)
+    patient_gender = Column(String, nullable=True)  
+    medical_record = relationship("MedicalRecord", back_populates="appointment", uselist=False)

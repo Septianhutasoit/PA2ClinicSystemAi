@@ -174,9 +174,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="flex flex-col h-full">
 
                     {/* Logo */}
-                    <div className="p-6 flex items-center gap-3 border-b border-emerald-50/50 shrink-0 min-w-0">
+                    <div className={`border-b border-emerald-50/50 shrink-0 flex items-center transition-all duration-150 ${isSidebarOpen ? 'p-5 gap-3 justify-start' : 'p-3 justify-center'
+                        }`}>
                         {/* Box Logo K - Dibuat lebih besar (w-12 h-12) */}
-                        <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center bg-white ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-200/60 shrink-0 p-1">
+                        <div className={`rounded-2xl overflow-hidden flex items-center justify-center bg-white ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-200/60 p-1 shrink-0 transition-all duration-150 ${isSidebarOpen ? 'w-11 h-11' : 'w-12 h-12 mx-auto'
+                            }`}>
                             <Image
                                 src="/images/Logo1.png"
                                 alt="Nauli Dental Logo"

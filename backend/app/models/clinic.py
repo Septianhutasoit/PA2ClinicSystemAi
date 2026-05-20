@@ -2,6 +2,7 @@ from xmlrpc.client import Boolean
 
 from sqlalchemy import Column, Integer, String, Text, JSON, ForeignKey, DateTime, Boolean
 from app.database.session import Base
+from sqlalchemy.orm import relationship
 from datetime import datetime
 
 class Doctor(Base):

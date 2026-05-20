@@ -779,3 +779,28 @@ def get_patient_medical_history(
     ).filter(Appointment.user_id == user.id).all()
     
     return results
+
+@router.get("/admin/notifications/reservations")
+def get_recent_reservations(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_admin)
+):
+    # Ambil 10 janji temu terbaru yang dibuat oleh pasien
+    appointments = db.query(Appointment).order_by(Appointment.id.desc()).limit(10).all()
+    
+    notif_list = []
+    for app in appointments:
+        # Tentukan status warna/judul berdasarkan status reservasi
+        title = "Reservasi Baru" if app.status == "pending" else "Status Diperbarui"
+        
+        notif_list.append({
+            "id": app.id,
+            "patient_name": app.patient_name,
+            "consultation_time": app.appointment_date.strftime("%H:%M"), # Jam: 14:00
+            "consultation_date": app.appointment_date.strftime("%d %B %Y"), # Tanggal: 16 Mei 2026
+            "title": title,
+            "status": app.status,
+            "created_at": app.appointment_date # Digunakan untuk pengurutan
+        })
+        
+    return notif_list
