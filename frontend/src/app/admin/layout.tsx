@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, use } from 'react';
 import api from '@/services/api';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -61,7 +61,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
-    const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [pendingCount, setPendingCount] = useState(0);
 
     // ── sidebar collapse (desktop)
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -72,6 +73,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     const pathname = usePathname();
     const router = useRouter();
+
+    // fetch notifications dari backend
+    const refreshNotifications = async () => {
+        try {
+            const res = await.api.get ('/clinic/admin/notifications/reservations');
+            const dynamic = res.data.map((n: any) => ({
+                id: item.id,
+                icon: item.status === 'pending'
+                    ? <CalendarClock size={14} />
+                    : <CheckCheck size={14} />,
+                color: item.status === 'pending'
+                    ? 'text-amber-600 bg-amber-50'
+                    : 'text-emerald-600 bg-emerald-50',
+                title: item.title,
+                desc: `${item.patient_name} — ${item.consultation_time}`,
+                time: item.consultation_date,
+                read: item.status !== 'pending',
+            }));
+            setNotifications(dynamic);
+            setPendingCount(res.data.filter((a: any) => a.status === 'pending').length);
+        } catch {
+            // silent — tetap tampilkan kosong
+        }
+    };
 
     // 1. PROTEKSI RUTE
     useEffect(() => {
@@ -97,6 +122,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Notifikasi
+    useEffect(() => {
+        api.get('/clinic/appointments').then(res => {
+            const waiting = res.data.filter((a: any) => a.status === 'pending').length;
+            setPendingCount(waiting);
+        });
     }, []);
 
     // 3. LOGOUT
@@ -135,12 +168,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const navItems = [
         { name: 'Dashboard', href: '/admin', icon: <LayoutDashboard size={16} />, color: 'text-emerald-600' },
         { name: 'Reservations', href: '/admin/appointments', icon: <CalendarCheck2 size={16} />, color: 'text-teal-600' },
+        { name: 'Notifikasi', href: '/admin/notifications', icon: <BellRing size={16} />, color: 'text-emerald-500' },
         { name: 'Daftar Pasien', href: '/admin/patients', icon: <Users2 size={16} />, color: 'text-green-600' },
-        { name: 'Manajemen Dokter', href: '/admin/doctors', icon: <UserRoundCog size={16} />, color: 'text-cyan-600' },
+        { name: 'Manajemen Dokter', href: '/admin/doctors', icon: <UserRoundCog size={16} />, color: 'text-emerald-600' },
         { name: 'AI Data', href: '/admin/ai-data', icon: <MessageSquare size={16} />, color: 'text-green-600' },
         { name: 'AI Knowledge', href: '/admin/knowledge', icon: <BrainCircuit size={16} />, color: 'text-teal-600' },
         { name: 'Layanan Klinik', href: '/admin/services', icon: <Stethoscope size={16} />, color: 'text-green-600' },
-        { name: 'Pengaturan', href: '/admin/settings', icon: <Settings2 size={16} />, color: 'text-slate-600' },
+        { name: 'Pengaturan', href: '/admin/settings', icon: <Settings2 size={16} />, color: 'text-emerald-600' },
     ];
 
     const profileMenuItems = [
