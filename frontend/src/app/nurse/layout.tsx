@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
+import api from '@/services/api'; // handle api calls
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Cookies from 'js-cookie';
@@ -27,13 +28,7 @@ import {
     Shield,
 } from 'lucide-react';
 
-// ─── Dummy notifikasi perawat ───────────────────────────────────────────────
-const INITIAL_NOTIFICATIONS = [
-    { id: 1, icon: <CalendarClock size={14} />, color: 'text-teal-600 bg-teal-50', title: 'Pasien Baru', desc: 'Budi Santoso baru saja mendaftar', time: '5 mnt lalu', read: false },
-    { id: 2, icon: <UserPlus size={14} />, color: 'text-emerald-600 bg-emerald-50', title: 'Antrian Hari Ini', desc: '8 pasien menunggu konfirmasi', time: '20 mnt lalu', read: false },
-    { id: 3, icon: <AlertCircle size={14} />, color: 'text-amber-600 bg-amber-50', title: 'Data Belum Lengkap', desc: 'Rekam medis Siti belum diisi', time: '1 jam lalu', read: false },
-    { id: 4, icon: <CheckCheck size={14} />, color: 'text-slate-500 bg-slate-100', title: 'Konfirmasi Selesai', desc: '12 pasien berhasil dikonfirmasi hari ini', time: '2 jam lalu', read: true },
-];
+
 
 export default function NurseLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -49,9 +44,9 @@ export default function NurseLayout({ children }: { children: React.ReactNode })
 
     // ── Notifikasi dropdown
     const [isNotifOpen, setIsNotifOpen] = useState(false);
-    const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
     const notifRef = useRef<HTMLDivElement>(null);
-    const unreadCount = notifications.filter(n => !n.read).length;
 
     // ── Dark mode
     const [isDarkMode, setIsDarkMode] = useState(false);
@@ -84,6 +79,38 @@ export default function NurseLayout({ children }: { children: React.ReactNode })
         document.documentElement.classList.toggle('dark', isDarkMode);
     }, [isDarkMode]);
 
+    const fetchNotifications = async () => {
+        try {
+            const res = await api.get('/clinic/appointments');
+            const pendingPatients = res.data.filter((appt: any) => appt.status === 'pending');
+
+            const dynamicNotifs = pendingPatients.map((appt: any) => ({
+                id: appt.id,
+                icon: <UserPlus size={14} />,
+                color: 'text-emerald-600 bg-emerald-50',
+                title: 'Pendaftaran Baru',
+                desc: `${app.patient_name} menunggu verifikasi Anda`,
+                time: 'Baru saja',
+                read: false,
+            }));
+
+            setNotifications(dynamicNotifs);
+            setUnreadCount(dynamicNotifs.length);
+        } catch (err) {
+            console.error('Gagal mengambil notifikasi perawat:', err);
+        }
+    };
+
+    // Polling setiap 30 detik
+    useEffect(() => {
+        if (isAuthorized) {
+            fetchNotifications();
+            const interval = setInterval(fetchNotifications, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [isAuthorized]);
+        }
+
     // 4. LOGOUT
     const handleLogout = () => {
         Cookies.remove('token');
@@ -92,8 +119,6 @@ export default function NurseLayout({ children }: { children: React.ReactNode })
         router.push('/login');
     };
 
-    const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    const markRead = (id: number) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
 
     const menuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', href: '/nurse' },
@@ -345,49 +370,44 @@ export default function NurseLayout({ children }: { children: React.ReactNode })
                                                     {unreadCount} belum dibaca
                                                 </p>
                                             </div>
-                                            {unreadCount > 0 && (
-                                                <button
-                                                    onClick={markAllRead}
-                                                    className="flex items-center gap-1 px-2 py-1 bg-white/15
-                                                               hover:bg-white/25 text-white text-[9px] font-black
-                                                               rounded-lg transition-all uppercase tracking-wide"
-                                                >
-                                                    <CheckCheck size={11} /> Tandai semua
-                                                </button>
-                                            )}
                                         </div>
                                         <div className="divide-y divide-slate-50 max-h-72 overflow-y-auto">
-                                            {notifications.map(notif => (
-                                                <button
-                                                    key={notif.id}
-                                                    onClick={() => markRead(notif.id)}
-                                                    className={`w-full flex items-start gap-3 px-4 py-3 text-left
-                                                        transition-all hover:bg-teal-50/60
-                                                        ${!notif.read ? 'bg-teal-50/30' : ''}`}
-                                                >
-                                                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center
-                                                                    shrink-0 mt-0.5 ${notif.color}`}>
-                                                        {notif.icon}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <p className={`text-[11px] font-black truncate
-                                                                ${!notif.read ? 'text-slate-800' : 'text-slate-500'}`}>
+                                            {notifications.length === 0 ? (
+                                                <div className="p-10 text-center">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase italic tracking-widest">
+                                                        Semua pasien sudah terverifikasi ✓
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                notifications.map(notif => (
+                                                    <button
+                                                        key={notif.id}
+                                                        onClick={() => {
+                                                            setIsNotifOpen(false);
+                                                            router.push('/nurse/queue');
+                                                        }}
+                                                        className="w-full flex items-start gap-3 px-4 py-3 text-left
+                           transition-all hover:bg-emerald-50/60 bg-teal-50/30"
+                                                    >
+                                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center
+                                 shrink-0 mt-0.5 ${notif.color}`}>
+                                                            {notif.icon}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-[11px] font-black truncate text-slate-800 uppercase">
                                                                 {notif.title}
                                                             </p>
-                                                            {!notif.read && (
-                                                                <span className="w-1.5 h-1.5 bg-teal-500 rounded-full shrink-0" />
-                                                            )}
+                                                            <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                                                                {notif.desc}
+                                                            </p>
+                                                            <p className="text-[9px] text-slate-400 mt-1 font-bold">
+                                                                {notif.time}
+                                                            </p>
                                                         </div>
-                                                        <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                                                            {notif.desc}
-                                                        </p>
-                                                        <p className="text-[9px] text-slate-400 mt-1 font-bold">
-                                                            {notif.time}
-                                                        </p>
-                                                    </div>
-                                                </button>
-                                            ))}
+                                                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mt-2 shrink-0" />
+                                                    </button>
+                                                ))
+                                            )}
                                         </div>
                                         <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/50">
                                             <button
