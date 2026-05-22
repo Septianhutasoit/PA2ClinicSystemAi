@@ -74,12 +74,6 @@ export default function DoctorDashboard() {
     const completed = appointments.filter((a: any) => a.status?.toLowerCase() === 'completed');
     const total = appointments.length;
 
-    const vitals = [
-        { label: 'Tek. Darah Rata-rata', value: '120/80', unit: 'mmHg', icon: <Heart size={18} />, bar: 75, color: 'bg-rose-400', iconBg: 'bg-rose-50 text-rose-500' },
-        { label: 'Suhu Pasien', value: '36.5', unit: '°C', icon: <Thermometer size={18} />, bar: 55, color: 'bg-amber-400', iconBg: 'bg-amber-50 text-amber-500' },
-        { label: 'Stok Obat', value: 'Stabil', unit: '', icon: <Pill size={18} />, bar: 90, color: 'bg-emerald-400', iconBg: 'bg-emerald-50 text-emerald-500' },
-    ];
-
     const quickMenus = [
         { label: 'Rekam Medis', icon: <FileText size={22} />, href: '/doctor/medical-records', color: 'from-emerald-500 to-teal-600' },
         { label: 'Jadwal', icon: <Calendar size={22} />, href: '/doctor/schedule', color: 'from-teal-500 to-emerald-600' },
@@ -273,38 +267,6 @@ export default function DoctorDashboard() {
                 {/* Sidebar Panel — 1 col */}
                 <div className="space-y-6">
 
-                    {/* Health Vitals (dengan aksen hijau) */}
-                    <div className="bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500">
-                                <Stethoscope size={18} />
-                            </div>
-                            <h4 className="font-black text-slate-800 text-sm uppercase tracking-wider">Health Insights</h4>
-                        </div>
-                        <div className="space-y-5">
-                            {vitals.map((v, i) => (
-                                <div key={i} className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${v.iconBg}`}>
-                                        {v.icon}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-end mb-1.5">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase">{v.label}</span>
-                                            <span className="text-sm font-black text-slate-700">{v.value}<span className="text-[10px] text-slate-400 ml-0.5">{v.unit}</span></span>
-                                        </div>
-                                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${v.bar}%` }}
-                                                transition={{ delay: 0.3 + i * 0.1, duration: 0.8, ease: 'easeOut' }}
-                                                className={`h-full ${v.color} rounded-full`}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
 
                     {/* Progress Harian (warna gelap dengan aksen emerald) */}
                     <div className="bg-slate-900 p-7 rounded-[2rem] shadow-xl shadow-slate-200 relative overflow-hidden">

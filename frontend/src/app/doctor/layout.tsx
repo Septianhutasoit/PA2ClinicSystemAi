@@ -58,11 +58,6 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
-    // 3. DARK MODE
-    useEffect(() => {
-        document.documentElement.classList.toggle('dark', isDarkMode);
-    }, [isDarkMode]);
-
     //notif dinamisnya
     const fetchNotifications = async () => {
         try {
@@ -368,40 +363,6 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
                                 )}
                             </AnimatePresence>
                         </div>
-
-                        {/* ════ IKON 2 — DARK MODE ═════════════════════════ */}
-                        <button
-                            onClick={() => setIsDarkMode(v => !v)}
-                            title={isDarkMode ? 'Matikan Dark Mode' : 'Aktifkan Dark Mode'}
-                            className={`relative p-2 rounded-lg transition-all duration-200 overflow-hidden ${isDarkMode
-                                    ? 'bg-emerald-800 text-white shadow-md shadow-emerald-900/20'
-                                    : 'text-slate-400 hover:text-white hover:bg-emerald-800 hover:shadow-md hover:shadow-emerald-900/10'
-                                }`}
-                        >
-                            <AnimatePresence mode="wait">
-                                {isDarkMode ? (
-                                    <motion.span key="sun"
-                                        initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
-                                        animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                                        exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="flex"
-                                    >
-                                        <Sun size={16} />
-                                    </motion.span>
-                                ) : (
-                                    <motion.span key="moon"
-                                        initial={{ rotate: 90, opacity: 0, scale: 0.5 }}
-                                        animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                                        exit={{ rotate: -90, opacity: 0, scale: 0.5 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="flex"
-                                    >
-                                        <Moon size={16} />
-                                    </motion.span>
-                                )}
-                            </AnimatePresence>
-                        </button>
 
                         <div className="h-5 w-[1px] bg-emerald-100 mx-1" />
 
