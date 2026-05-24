@@ -58,7 +58,7 @@ const INITIAL_NOTIFICATIONS = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [isSyncing, setIsSyncing] = useState(false);
     const [showSyncModal, setShowSyncModal] = useState(false);
-    const [syncRews]
+    const [syncResult, setSyncResult] = useState<{ success: boolean; message: string } | null>(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -146,19 +146,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     // 4. SYNC AI
     const handleSyncAI = () => setShowSyncModal(true);
 
-const executeSyncAI = async () => {
-    setShowSyncModal(false);
-    setIsSyncing(true);
-    try {
-        const res = await api.post('/chatbot/ingest', {}, { timeout: 60000 });
-        alert("✅ " + res.data.message);
-    } catch (err: any) {
-        console.error("Error Detail:", err.response?.data);
-        alert("❌ Gagal Sinkron: Cek terminal Python kamu.");
-    } finally {
-        setIsSyncing(false);
-    }
-};
+    const executeSyncAI = async () => {
+        setShowSyncModal(false);
+        setIsSyncing(true);
+        try {
+            const res = await api.post('/chatbot/ingest', {}, { timeout: 60000 });
+            setSyncResult({ success: true, message: res.data.message || 'AI telah mempelajari database dan folder PDF terbaru.' });
+        } catch (err: any) {
+            console.error("Error Detail:", err.response?.data);
+            setSyncResult({ success: false, message: 'Gagal Sinkron. Cek terminal Python untuk melihat detail error.' });
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     const markAllRead = () =>
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
@@ -649,6 +649,84 @@ const executeSyncAI = async () => {
         </>
     )}
 </AnimatePresence>
+            {/* ── SYNC RESULT MODAL ──────────────────────────────────── */}
+            <AnimatePresence>
+                {syncResult && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]"
+                            onClick={() => setSyncResult(null)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.92, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+                            className="fixed inset-0 z-[101] flex items-center justify-center p-4"
+                        >
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-emerald-100">
+
+                                {/* Header */}
+                                <div className={`px-6 py-4 flex items-center gap-3 ${syncResult.success
+                                        ? 'bg-gradient-to-r from-emerald-700 to-emerald-600'
+                                        : 'bg-gradient-to-r from-red-600 to-red-500'
+                                    }`}>
+                                    <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
+                                        <Database size={18} className="text-white" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-black text-white uppercase tracking-wide">
+                                            {syncResult.success ? 'Sinkronisasi Berhasil' : 'Sinkronisasi Gagal'}
+                                        </p>
+                                        <p className="text-[10px] text-white/70 font-bold">
+                                            Knowledge Base Update
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Body */}
+                                <div className="px-6 py-5">
+                                    <div className={`flex items-start gap-3 rounded-xl p-4 border ${syncResult.success
+                                            ? 'bg-emerald-50 border-emerald-200'
+                                            : 'bg-red-50 border-red-200'
+                                        }`}>
+                                        {/* Icon */}
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${syncResult.success ? 'bg-emerald-100' : 'bg-red-100'
+                                            }`}>
+                                            {syncResult.success
+                                                ? <CheckCheck size={16} className="text-emerald-600" />
+                                                : <AlertCircle size={16} className="text-red-500" />
+                                            }
+                                        </div>
+                                        <p className={`text-sm font-medium leading-relaxed ${syncResult.success ? 'text-emerald-700' : 'text-red-600'
+                                            }`}>
+                                            {syncResult.message}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Footer */}
+                                <div className="px-6 pb-5">
+                                    <button
+                                        onClick={() => setSyncResult(null)}
+                                        className={`w-full py-2.5 rounded-xl text-white text-sm font-black uppercase
+                                        tracking-wide transition-all shadow-sm active:scale-95
+                                        ${syncResult.success
+                                                ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'
+                                                : 'bg-red-500 hover:bg-red-600 shadow-red-200'
+                                            }`}
+                                    >
+                                        Oke, Tutup
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
