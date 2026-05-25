@@ -308,25 +308,24 @@ export default function Chatbot() {
     );
 
     // ─── FAB ─────────────────────────────────────────────────────────────
-    if (!isOpen) {
-        return (
-            <motion.button
-                initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                whileHover={{ scale: 1.07 }} whileTap={{ scale: 0.95 }}
-                onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 right-6 z-[999] flex items-center gap-2.5 pl-2 pr-5 py-2
-                           bg-gradient-to-r from-emerald-500 to-teal-500
-                           text-white rounded-2xl shadow-2xl shadow-emerald-600/25 font-bold text-sm"
-            >
-                <div className="relative w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow shrink-0">
-                    <DentalIcon size={22} className="text-emerald-600" />
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-400 rounded-full border-2 border-white animate-ping" />
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-400 rounded-full border-2 border-white" />
-                </div>
-                <span>Tanya KlinikAI</span>
-            </motion.button>
-        );
-    }
+   if (!isOpen) return (
+    <motion.button 
+        initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-6 right-6 z-[999] bg-[#1a1c23] text-white pl-2 pr-6 py-2 rounded-2xl shadow-2xl flex items-center gap-3 font-bold border border-white/10"
+    >
+        {/* Container Logo ala "Ask AI" */}
+        <div className="relative w-11 h-11 rounded-xl bg-white flex items-center justify-center shadow-lg p-1.5 shrink-0 ring-2 ring-emerald-500/20">
+            <img src="/images/Logo.png" className="w-full h-full object-contain" alt="Klinik AI" />
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+        </div>
+        <div className="flex flex-col items-start leading-tight">
+            <span className="text-[13px]">Tanya AI</span>
+            <span className="text-[9px] text-emerald-400 uppercase tracking-widest">Online</span>
+        </div>
+    </motion.button>
+);
 
     // ─── CHATBOT WINDOW ───────────────────────────────────────────────────
     return (
