@@ -24,32 +24,38 @@ export default function AdminDashboard() {
     const [recentBookings, setRecentBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const loadAllData = async () => {
-            try {
-                const mode = viewMode.toLowerCase();
-                const [summary, chart, recent] = await Promise.all([
-                    api.get('/clinic/stats/summary'),
-                    api.get(`/clinic/stats/analytics?period=${mode}`),
-                    api.get('/clinic/stats/recent-bookings')
-                ]);
-                setStatsData(summary.data);
+        useEffect(() => {
+            const loadAllData = async () => {
+                setIsLoading(true); // Mulai loading
+                try {
+                    const mode = viewMode.toLowerCase();
+                    // Ambil data dari API
+                    const resChart = await api.get(`/clinic/stats/analytics?period=${mode}`);
 
-                // Transform data untuk grafik
-                const chartData = chart.data.map((item: any) => ({
-                    name: item.name,
-                    online: item.online || item.ai || item.total || 0
-                }));
-                setAnalytics(chartData);
-                setRecentBookings(recent.data);
-            } catch (err) {
-                console.error("Gagal sinkronisasi dashboard:", err);
-                // Biarkan analytics kosong — grafik akan tampil kosong, bukan data palsu
-                setAnalytics([]);
-            }
-        };
-        loadAllData();
-    }, [viewMode]);
+                    // Pastikan data yang masuk adalah Array
+                    if (resChart.data && Array.isArray(resChart.data)) {
+                        setAnalytics(resChart.data);
+                    } else {
+                        setAnalytics([]);
+                    }
+
+                    // Ambil Summary & Recent (Opsional dalam blok terpisah agar jika satu gagal, grafik tetap jalan)
+                    const [resSum, resRecent] = await Promise.all([
+                        api.get('/clinic/stats/summary'),
+                        api.get('/clinic/stats/recent-bookings')
+                    ]);
+                    setStatsData(resSum.data);
+                    setRecentBookings(resRecent.data);
+
+                } catch (err) {
+                    console.error("Gagal memuat data grafik:", err);
+                    setAnalytics([]); // Set kosong jika gagal agar loading berhenti
+                } finally {
+                    setIsLoading(false); // <--- WAJIB: Pastikan loading berhenti apa pun yang terjadi
+                }
+            };
+            loadAllData();
+        }, [viewMode]);
 
     // Data kalender statis
     const weekDays = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];

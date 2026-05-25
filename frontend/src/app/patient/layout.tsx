@@ -21,7 +21,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     const [isScrolled, setIsScrolled] = useState(false);
     const [logoError, setLogoError] = useState(false);
     const [isQuickOpen, setIsQuickOpen] = useState(false);
-    const [ShowLog]
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     // 1. PROTEKSI ROLE PASIEN
     useEffect(() => {
@@ -41,19 +41,20 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const handleLogout = () => {
-        if (confirm('Yakin Keluar dari Portal Pasien?')) {
-            localStorage.clear();
-            Cookies.remove('token', { path: '/' });
-            Cookies.remove('role', { path: '/' });
-            Cookies.remove('user_role', { path: '/' });
-            document.cookie.split(';').forEach(c => {
-                document.cookie = c
-                    .replace(/^ +/, '')
-                    .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
-            });
-            router.push('/login');
-        }
+    const handleLogout = () => setShowLogoutModal(true);
+
+    const executeLogout = () => {
+        setShowLogoutModal(false);
+        localStorage.clear();
+        Cookies.remove('token', { path: '/' });
+        Cookies.remove('role', { path: '/' });
+        Cookies.remove('user_role', { path: '/' });
+        document.cookie.split(';').forEach(c => {
+            document.cookie = c
+                .replace(/^ +/, '')
+                .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+        });
+        router.push('/login');
     };
 
     const navItems = [
@@ -417,6 +418,78 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                     </motion.div>
                 </AnimatePresence>
             </main>
+            {/* ── LOGOUT CONFIRMATION MODAL ───────────────────────── */}
+            <AnimatePresence>
+                {showLogoutModal && (
+                    <>
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200]"
+                            onClick={() => setShowLogoutModal(false)}
+                        />
+
+                        {/* Modal */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.92, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.92, y: 20 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+                            className="fixed inset-0 z-[201] flex items-center justify-center p-4"
+                        >
+                            <div className="bg-[#0D1F16] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+
+                                {/* Header */}
+                                <div className="bg-gradient-to-r from-emerald-700 to-teal-700 px-6 py-4 flex items-center gap-3">
+                                    <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
+                                        <LogOut size={17} className="text-white" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-black text-white uppercase tracking-wide">Keluar Portal</p>
+                                        <p className="text-[10px] text-emerald-200 font-bold">Nauli Dental Patient Portal</p>
+                                    </div>
+                                </div>
+
+                                {/* Body */}
+                                <div className="px-6 py-5 space-y-4">
+                                    {/* Avatar pasien */}
+                                    <div className="flex items-center gap-3 bg-white/5 border border-white/8 rounded-xl p-4">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-black text-base shrink-0">
+                                            SA
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-black text-white">Septian Adi</p>
+                                            <p className="text-[10px] text-white/40 mt-0.5">septian@email.com</p>
+                                        </div>
+                                    </div>
+
+                                    <p className="text-sm text-white/60 leading-relaxed">
+                                        Anda akan keluar dari <span className="text-emerald-400 font-bold">Portal Pasien</span>. Sesi Anda akan diakhiri dan diarahkan ke halaman login.
+                                    </p>
+                                </div>
+
+                                {/* Footer */}
+                                <div className="px-6 pb-5 flex gap-3">
+                                    <button
+                                        onClick={() => setShowLogoutModal(false)}
+                                        className="flex-1 py-2.5 rounded-xl border border-white/15 text-white/70 text-sm font-bold hover:bg-white/8 transition-all"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        onClick={executeLogout}
+                                        className="flex-1 py-2.5 rounded-xl bg-red-500/90 hover:bg-red-600 text-white text-sm font-black uppercase tracking-wide transition-all shadow-lg shadow-red-900/30 active:scale-95"
+                                    >
+                                        Ya, Keluar
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
