@@ -1,9 +1,9 @@
 from app.models.patient import Patient
 from fastapi import APIRouter, Depends, HTTPException, Body, File, UploadFile
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, Date, cast
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from pydantic import BaseModel, EmailStr
 from app.database.session import get_db
 from app.schemas import clinic as schemas
@@ -19,6 +19,7 @@ from app.models.clinic import Doctor, Service, MedicalRecord
 from app.models.user import User
 import os
 import uuid
+import pytz
 
 router = APIRouter()
 
@@ -669,30 +670,63 @@ def get_recent_bookings(
 
 
 @router.get("/stats/analytics")
-def get_stats_analytics(period: str = "weekly", db: Session = Depends(get_db), admin: dict = Depends(require_admin)):
-    today = date.today()
+def get_stats_analytics(
+    period: str = "weekly",
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin),
+):
     data_points = []
 
+    # ✅ PERBAIKAN UTAMA: Gunakan timezone WIB bukan UTC
+    WIB = pytz.timezone("Asia/Jakarta")
+    now_wib = datetime.now(WIB)
+    today_wib = now_wib.date()  # Tanggal HARI INI versi WIB
+
     if period == "weekly":
-        # Iterasi 7 hari ke belakang
         for i in range(6, -1, -1):
-            target_date = today - timedelta(days=i)
-            
-            # PENTING: Gunakan func.date agar Jam (14:00) tidak mengganggu pencarian Tanggal
+            target_date = today_wib - timedelta(days=i)
+
+            # Konversi target_date ke range datetime WIB
+            start_wib = WIB.localize(datetime.combine(target_date, datetime.min.time()))
+            end_wib   = WIB.localize(datetime.combine(target_date, datetime.max.time()))
+
+            # Konversi ke UTC untuk query database
+            start_utc = start_wib.astimezone(pytz.utc).replace(tzinfo=None)
+            end_utc   = end_wib.astimezone(pytz.utc).replace(tzinfo=None)
+
             count = db.query(Appointment).filter(
-                func.date(Appointment.appointment_date) == target_date
+                Appointment.appointment_date >= start_utc,
+                Appointment.appointment_date <= end_utc,
             ).count()
-            
-            days_map = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"]
+
+            names = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
             data_points.append({
-                "name": days_map[target_date.weekday()],
-                "online": count
+                "name": names[target_date.weekday()],
+                "online": count,
+                "full_date": target_date.strftime("%Y-%m-%d"),
             })
-    else:
-        # Logika Bulanan (Bisa disederhanakan dulu untuk tes)
-        # Ambil total pendaftaran 30 hari terakhir dibagi 4 minggu
-        total_month = db.query(Appointment).filter(Appointment.appointment_date >= today - timedelta(days=30)).count()
-        data_points = [{"name": "Minggu 1", "online": total_month}]
+
+    else:  # Bulanan — per minggu
+        for i in range(3, -1, -1):
+            # Start dan end dalam WIB
+            start_date = today_wib - timedelta(days=(i + 1) * 7)
+            end_date   = today_wib - timedelta(days=i * 7)
+
+            start_wib = WIB.localize(datetime.combine(start_date, datetime.min.time()))
+            end_wib   = WIB.localize(datetime.combine(end_date, datetime.max.time()))
+
+            start_utc = start_wib.astimezone(pytz.utc).replace(tzinfo=None)
+            end_utc   = end_wib.astimezone(pytz.utc).replace(tzinfo=None)
+
+            count = db.query(Appointment).filter(
+                Appointment.appointment_date >= start_utc,
+                Appointment.appointment_date <= end_utc,
+            ).count()
+
+            data_points.append({
+                "name": f"Minggu {4 - i}",
+                "online": count,
+            })
 
     return data_points
 

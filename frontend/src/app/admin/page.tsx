@@ -24,38 +24,44 @@ export default function AdminDashboard() {
     const [recentBookings, setRecentBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
-        useEffect(() => {
-            const loadAllData = async () => {
-                setIsLoading(true); // Mulai loading
-                try {
-                    const mode = viewMode.toLowerCase();
-                    // Ambil data dari API
-                    const resChart = await api.get(`/clinic/stats/analytics?period=${mode}`);
+    useEffect(() => {
+        const loadAllData = async () => {
+            setIsLoading(true);
+            try {
+                const mode = viewMode.toLowerCase();
 
-                    // Pastikan data yang masuk adalah Array
-                    if (resChart.data && Array.isArray(resChart.data)) {
-                        setAnalytics(resChart.data);
-                    } else {
-                        setAnalytics([]);
-                    }
+                // Chart dulu — prioritas utama
+                const resChart = await api.get(`/clinic/stats/analytics?period=${mode}`);
+                const chartData = Array.isArray(resChart.data)
+                    ? resChart.data.map((item: any) => ({
+                        name: item.name,
+                        online: item.online ?? 0,
+                    }))
+                    : [];
+                setAnalytics(chartData);
 
-                    // Ambil Summary & Recent (Opsional dalam blok terpisah agar jika satu gagal, grafik tetap jalan)
-                    const [resSum, resRecent] = await Promise.all([
-                        api.get('/clinic/stats/summary'),
-                        api.get('/clinic/stats/recent-bookings')
-                    ]);
-                    setStatsData(resSum.data);
-                    setRecentBookings(resRecent.data);
+            } catch (err) {
+                console.error("Gagal memuat grafik:", err);
+                setAnalytics([]);
+            } finally {
+                setIsLoading(false); // Chart selesai, loading hilang
+            }
 
-                } catch (err) {
-                    console.error("Gagal memuat data grafik:", err);
-                    setAnalytics([]); // Set kosong jika gagal agar loading berhenti
-                } finally {
-                    setIsLoading(false); // <--- WAJIB: Pastikan loading berhenti apa pun yang terjadi
-                }
-            };
-            loadAllData();
-        }, [viewMode]);
+            // Summary & Recent — di luar try utama agar chart tidak terblokir
+            try {
+                const [resSum, resRecent] = await Promise.all([
+                    api.get('/clinic/stats/summary'),
+                    api.get('/clinic/stats/recent-bookings'),
+                ]);
+                setStatsData(resSum.data);
+                setRecentBookings(resRecent.data);
+            } catch (err) {
+                console.error("Gagal memuat summary:", err);
+            }
+        };
+
+        loadAllData();
+    }, [viewMode]);
 
     // Data kalender statis
     const weekDays = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
@@ -99,14 +105,17 @@ export default function AdminDashboard() {
         return events.find(e => e.date === date);
     };
 
-    // Custom Tooltip untuk grafik
+    // ✅ GANTI JADI — tampilkan label hari + jumlah
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-white p-3 rounded-xl shadow-lg border border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">{label}</p>
-                    <p className="text-lg font-black text-emerald-600">
-                        {payload[0].value} Reservasi
+                <div className="bg-white px-4 py-3 rounded-xl shadow-xl border border-emerald-50">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                        {viewMode === 'Weekly' ? `Hari ${label}` : label}
+                    </p>
+                    <p className="text-2xl font-black text-emerald-600 leading-none">
+                        {payload[0].value}
+                        <span className="text-xs font-bold text-slate-400 ml-1">Pasien</span>
                     </p>
                 </div>
             );
@@ -173,7 +182,7 @@ export default function AdminDashboard() {
                 <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                     <div className="flex justify-between items-start mb-6">
                         <div>
-                            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Tren Reservasi Online</h3>
+                            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Grafik Reservasi Online</h3>
                             <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Jumlah pendaftaran via website</p>
                         </div>
                         <div className="flex bg-slate-50 p-1 rounded-lg gap-1">
@@ -220,8 +229,8 @@ export default function AdminDashboard() {
                                     name="Pendaftaran Online"
                                     fill="#059669"
                                     radius={[6, 6, 0, 0]}
-                                    barSize={40}
-                                    animationDuration={1000}
+                                    barSize={viewMode === 'Weekly' ? 36 : 60}
+                                    animationDuration={800}
                                 />
                             </BarChart>
                         </ResponsiveContainer>
@@ -301,23 +310,6 @@ export default function AdminDashboard() {
                                 </div>
                             );
                         })}
-                    </div>
-
-                    {/* Legend Events */}
-                    <div className="mt-5 pt-4 border-t border-slate-100">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-3">Jadwal Hari Ini</p>
-                        <div className="space-y-2">
-                            {events.slice(0, 3).map((event, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded-xl">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                                        <span className="text-[11px] font-bold text-slate-700">{event.title}</span>
-                                        <span className="text-[9px] text-slate-400">- {event.patient}</span>
-                                    </div>
-                                    <span className="text-[9px] font-bold text-slate-500">{event.time}</span>
-                                </div>
-                            ))}
-                        </div>
                     </div>
                 </div>
             </div>
