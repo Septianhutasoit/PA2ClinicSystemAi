@@ -114,6 +114,7 @@ export default function Chatbot() {
     const [streamingText, setStreamingText] = useState('');
     const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
     const [editTitleValue, setEditTitleValue] = useState('');
+    const [isHovered, setIsHovered] = useState(false);
 
     const feedbackInFlight = useRef<Set<string>>(new Set());
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -267,41 +268,71 @@ export default function Chatbot() {
             animate={{ scale: 1, opacity: 1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
+            // Tambahkan trigger state hover
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             style={{
-                position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: 8,
-                width: 76, padding: '14px 10px 12px',
-                borderRadius: 16,
-                backgroundColor: '#1a1d2e',
-                border: '1px solid rgba(255,255,255,0.06)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                position: 'fixed',
+                bottom: 24,
+                right: 24,
+                zIndex: 9999,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4,
+                width: 80,
+                height: 80,
+                borderRadius: 12,
+                // WARNA BACKGROUND: Biru Gelap saat diam, Putih saat Hover (agar ikon hijaunya terlihat)
+                backgroundColor: isHovered ? '#ffffff' : '#2e324d',
+                border: isHovered ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+                boxShadow: isHovered ? '0 10px 25px rgba(16,185,129,0.3)' : '0 8px 24px rgba(0,0,0,0.2)',
                 cursor: 'pointer',
-                transition: 'background-color 0.2s ease',
+                transition: 'all 0.3s ease',
             }}
-            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#4f46e5'}
-            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1a1d2e'}
         >
-            <img
-                src="/images/icon.png"
-                alt="Nauli Dental Care"
-                width={52}
-                height={52}
-                style={{
-                    width: 52,
-                    height: 52,
-                    objectFit: 'contain',
-                    display: 'block',
-                    flexShrink: 0,
-                    mixBlendMode: 'multiply',
-                }}
-            />
-            <span style={{
-                fontSize: 13, fontWeight: 700,
-                color: 'rgba(255,255,255,0.9)',
-                letterSpacing: '0.01em', lineHeight: 1,
+            <div style={{
+                width: 45,
+                height: 45,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.3s ease',
+
+                // --- LOGIKA BLENDING AGAR KOTAK HILANG TOTAL ---
+                // multiply menghapus putih (saat hover), screen menghapus hitam (saat diam)
+                mixBlendMode: isHovered ? 'multiply' : 'screen',
+
+                // --- FILTER UNTUK MENYEMBUNYIKAN RESIDU KOTAK ---
+                filter: isHovered
+                    ? 'contrast(1.1)' // Menampilkan warna asli dengan tajam
+                    : 'invert(1) grayscale(1) brightness(2) contrast(9)',
+                // contrast(9) akan memaksa area abu-abu disekitar ikon menjadi hitam pekat,
+                // sehingga mode 'screen' akan menghapusnya 100% tanpa sisa bayangan.
             }}>
-                Tanya AI
+                <img
+                    src="/images/icon.png"
+                    alt="AI"
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        display: 'block',
+                    }}
+                />
+            </div>
+
+            <span style={{
+                fontSize: 10,
+                fontWeight: 800,
+                // WARNA TEKS: Putih saat diam, Hijau saat Hover
+                color: isHovered ? '#10b981' : '#ffffff',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                transition: 'all 0.3s ease',
+            }}>
+                Ask AI
             </span>
         </motion.button>
     );
@@ -532,7 +563,7 @@ export default function Chatbot() {
                                 <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                                     <BotAvatar size={34} />
                                     <div style={{ paddingTop: 6 }}>
-                                        <WaveText text="Mencari jawaban..." />
+                                        <WaveText text="Thinking..." />
                                     </div>
                                 </div>
                             </>
