@@ -2,9 +2,9 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
 import {
-    MessageCircle, ArrowUp, X, User,
+    ArrowUp, X, User,
     Maximize2, Minimize2, Trash2, ChevronRight,
-    Plus, Search, Edit2, Menu,
+    Plus, Search, Edit2,
     ThumbsUp, ThumbsDown, Copy, Check,
     RotateCcw, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
@@ -25,7 +25,6 @@ interface Conversation {
     createdAt: number;
 }
 
-// ── Konstanta ──────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'chatbot_conversations';
 
 const INITIAL_MSG = (suffix = ''): Message => ({
@@ -35,9 +34,13 @@ const INITIAL_MSG = (suffix = ''): Message => ({
     liked: null,
 });
 
-const SUGGESTIONS = ['Jadwal Dokter', 'Lokasi Klinik', 'Biaya Scaling', 'Langkah Pendaftaran', 'Informasi Layanan'];
+const SUGGESTIONS = [
+    'Bagaimana cara merawat gigi yang benar?',
+    'Harga tambal gigi terbaru?',
+    'Biaya Scaling di Nauli Dental Care?',
+    'Langkah Pendaftaran Nauli Dental Care?',
+];
 
-// ── Klinik Logo (pakai file asli dari public/images/) ─────────────────────
 function ClinicLogo({ size = 32, className = '' }: { size?: number; className?: string }) {
     return (
         <img
@@ -45,23 +48,55 @@ function ClinicLogo({ size = 32, className = '' }: { size?: number; className?: 
             alt="Nauli Dental Care"
             width={size}
             height={size}
-            className={`object-contain ${className}`}
+            className={`object-contain block ${className}`}
+            style={{ width: size, height: size, flexShrink: 0 }}
         />
     );
 }
 
-// ── Avatar bot kecil (logo dalam lingkaran teal) ──────────────────────────
 function BotAvatar({ size = 32 }: { size?: number }) {
     return (
-        <div className="shrink-0 rounded-xl bg-transparent border border-slate-100 ...">
-            <ClinicLogo size={size} />   {/* ← size penuh, tanpa dikurangi */}
+        <div style={{
+            width: size, height: size, flexShrink: 0,
+            borderRadius: 10, overflow: 'hidden',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+            <ClinicLogo size={size} />
         </div>
     );
 }
 
-// ── Divider antar pesan ───────────────────────────────────────────────────
 function MessageDivider() {
-    return <div className="h-px bg-slate-100 mx-6" />;
+    return <div style={{ height: 1, backgroundColor: '#f1f5f9', margin: '0 24px' }} />;
+}
+
+// Efek gelombang teks loading
+function WaveText({ text }: { text: string }) {
+    return (
+        <span style={{ display: 'inline-flex', gap: 1 }}>
+            {text.split('').map((char, i) => (
+                <span
+                    key={i}
+                    style={{
+                        display: 'inline-block',
+                        animation: `wave 1.4s ease-in-out infinite`,
+                        animationDelay: `${i * 0.07}s`,
+                        color: '#0f766e',
+                        fontWeight: 600,
+                        fontSize: 14,
+                    }}
+                >
+                    {char === ' ' ? '\u00a0' : char}
+                </span>
+            ))}
+            <style>{`
+                @keyframes wave {
+                    0%, 60%, 100% { transform: translateY(0); }
+                    30% { transform: translateY(-5px); }
+                }
+            `}</style>
+        </span>
+    );
 }
 
 export default function Chatbot() {
@@ -84,7 +119,6 @@ export default function Chatbot() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // ── Init ─────────────────────────────────────────────────────────────
     useEffect(() => {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
@@ -106,7 +140,6 @@ export default function Chatbot() {
         scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }, [currentConvId, conversations, streamingText, isLoading]);
 
-    // ── Resize sidebar ────────────────────────────────────────────────────
     useEffect(() => {
         const onMove = (e: MouseEvent) => { if (isResizing) setSidebarWidth(Math.min(320, Math.max(180, e.clientX))); };
         const onUp = () => setIsResizing(false);
@@ -116,35 +149,20 @@ export default function Chatbot() {
     }, [isResizing]);
 
     useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
+        if (isOpen) { document.body.style.overflow = 'hidden'; }
+        else { document.body.style.overflow = ''; }
         return () => { document.body.style.overflow = ''; };
     }, [isOpen]);
 
-    // ── Lock scroll halaman saat chatbot terbuka ──────────────────────────────
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
-        // cleanup saat komponen unmount
-        return () => { document.body.style.overflow = ''; };
-    }, [isOpen]);
-
-    // ── Helpers ───────────────────────────────────────────────────────────
     const currentConv = conversations.find(c => c.id === currentConvId);
     const messages = currentConv?.messages ?? [];
+    const isNewChat = messages.length === 1 && messages[0].role === 'bot';
 
     const updateCurrentConversation = (updater: (conv: Conversation) => Conversation) => {
         if (!currentConvId) return;
         setConversations(prev => prev.map(c => c.id === currentConvId ? updater(c) : c));
     };
 
-    // ── Reaction ──────────────────────────────────────────────────────────
     const handleReaction = async (msgId: string, reaction: boolean) => {
         if (feedbackInFlight.current.has(msgId)) return;
         const botMsg = messages.find(m => m.id === msgId);
@@ -165,20 +183,19 @@ export default function Chatbot() {
         }
     };
 
-    // ── Copy ──────────────────────────────────────────────────────────────
     const fallbackCopy = (text: string) => {
         const el = document.createElement('textarea'); el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
         document.body.appendChild(el); el.focus(); el.select();
         try { document.execCommand('copy'); } catch { /* noop */ }
         document.body.removeChild(el);
     };
+
     const handleCopy = (msgId: string, text: string) => {
         navigator.clipboard?.writeText(text).catch(() => fallbackCopy(text)) ?? fallbackCopy(text);
         updateCurrentConversation(conv => ({ ...conv, messages: conv.messages.map(m => m.id === msgId ? { ...m, copied: true } : m) }));
         setTimeout(() => updateCurrentConversation(conv => ({ ...conv, messages: conv.messages.map(m => m.id === msgId ? { ...m, copied: false } : m) })), 2000);
     };
 
-    // ── Streaming ─────────────────────────────────────────────────────────
     const simulateStreaming = (fullText: string) => {
         const newMsgId = 'bot-' + Date.now();
         let index = 0, current = '';
@@ -192,7 +209,6 @@ export default function Chatbot() {
         }, 15);
     };
 
-    // ── Fallback ──────────────────────────────────────────────────────────
     const getFallbackResponse = (msg: string) => {
         const m = msg.toLowerCase();
         if (m.includes('jadwal') || m.includes('dokter')) return 'Jadwal dokter praktek Senin–Sabtu pukul 09.00–17.00. Untuk jadwal spesifik, hubungi 0852-1234-5678.';
@@ -203,7 +219,6 @@ export default function Chatbot() {
         return 'Maaf, sedang ada gangguan koneksi. Hubungi WA 0821-6352-6363 untuk bantuan cepat.';
     };
 
-    // ── Kirim pesan ───────────────────────────────────────────────────────
     const handleSendMessage = async (text: string = input) => {
         const msg = text.trim();
         if (!msg || isLoading || streamingText) return;
@@ -223,84 +238,76 @@ export default function Chatbot() {
         } catch { setIsLoading(false); simulateStreaming(getFallbackResponse(msg)); }
     };
 
-    // ── Manajemen percakapan ──────────────────────────────────────────────
     const createNewChat = () => {
         const c: Conversation = { id: Date.now().toString(), title: 'Percakapan Baru', messages: [INITIAL_MSG('-new')], createdAt: Date.now() };
         setConversations(prev => [c, ...prev]); setCurrentConvId(c.id); setSearchQuery(''); setEditingTitleId(null);
     };
+
     const deleteConversation = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
         const next = conversations.filter(c => c.id !== id);
-        if (next.length === 0) { const d: Conversation = { id: Date.now().toString(), title: 'Percakapan Baru', messages: [INITIAL_MSG()], createdAt: Date.now() }; setConversations([d]); setCurrentConvId(d.id); }
-        else { setConversations(next); if (currentConvId === id) setCurrentConvId(next[0].id); }
+        if (next.length === 0) {
+            const d: Conversation = { id: Date.now().toString(), title: 'Percakapan Baru', messages: [INITIAL_MSG()], createdAt: Date.now() };
+            setConversations([d]); setCurrentConvId(d.id);
+        } else { setConversations(next); if (currentConvId === id) setCurrentConvId(next[0].id); }
     };
+
     const renameConversation = (id: string, newTitle: string) => {
         setConversations(prev => prev.map(c => c.id === id ? { ...c, title: newTitle.slice(0, 40) } : c)); setEditingTitleId(null);
     };
+
     const filteredConversations = conversations.filter(c =>
         c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.messages.some(m => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
-    // ══════════════════════════════════════════════════════════════════════
-    // FAB — mirip "Ask AI" di referensi
-    // ══════════════════════════════════════════════════════════════════════
+    // ── FAB ──
     if (!isOpen) return (
         <motion.button
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 right-6 z-[9999] group
-                   flex flex-col items-center gap-2
-                   w-[88px] py-4 px-3 rounded-[22px]
-                   shadow-2xl transition-all duration-250
-                   bg-[#0f1a14] hover:bg-emerald-600
-                   border border-white/8 hover:border-emerald-400/40"
+            style={{
+                position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                width: 88, padding: '16px 12px', borderRadius: 22,
+                backgroundColor: '#0f1a14', border: '1px solid rgba(255,255,255,0.08)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4)', cursor: 'pointer',
+                transition: 'background-color 0.25s',
+            }}
+            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#059669'}
+            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0f1a14'}
         >
-            {/* ── Icon box — gelap default, putih/teal saat hover ── */}
-            <div className="relative w-14 h-14 rounded-2xl overflow-hidden
-                        flex items-center justify-center
-                        bg-emerald-600 group-hover:bg-white/20
-                        transition-all duration-250 shadow-lg">
-
-                {/* Logo klinik */}
-                <ClinicLogo size={44} />
-
-                {/* Status dot online — pojok kanan atas */}
-                <span className="absolute top-1 right-1 flex items-center justify-center">
-                    <span className="animate-ping absolute w-2.5 h-2.5 rounded-full bg-emerald-300 opacity-60" />
-                    <span className="relative w-2 h-2 rounded-full bg-emerald-400 border border-white/60" />
-                </span>
+            <div style={{
+                position: 'relative', width: 56, height: 56, borderRadius: 16,
+                overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                backgroundColor: '#059669', boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            }}>
+                <ClinicLogo size={40} />
+                <span style={{
+                    position: 'absolute', top: 4, right: 4,
+                    width: 8, height: 8, borderRadius: '50%',
+                    backgroundColor: '#6ee7b7', border: '1.5px solid rgba(255,255,255,0.7)',
+                }} />
             </div>
-
-            {/* Label */}
-            <span className="text-[12px] font-black text-white/90 group-hover:text-white
-                         tracking-wide leading-none transition-colors duration-200">
+            <span style={{ fontSize: 12, fontWeight: 900, color: 'rgba(255,255,255,0.9)', letterSpacing: '0.05em', lineHeight: 1 }}>
                 Tanya AI
             </span>
-
-            {/* Online indicator teks */}
-            <span className="text-[9px] font-bold text-emerald-400 group-hover:text-emerald-200
-                         uppercase tracking-widest leading-none transition-colors duration-200">
+            <span style={{ fontSize: 9, fontWeight: 700, color: '#6ee7b7', letterSpacing: '0.15em', lineHeight: 1, textTransform: 'uppercase' }}>
                 ONLINE
             </span>
         </motion.button>
     );
 
-    // ══════════════════════════════════════════════════════════════════════
-    // CHATBOT WINDOW — light/white modal seperti referensi
-    // ══════════════════════════════════════════════════════════════════════
+    // ── CHATBOT WINDOW ──
     return (
         <AnimatePresence>
-            {/* Backdrop overlay — HANYA untuk estetik, tidak menutup chatbot saat diklik */}
             {!isFull && (
                 <motion.div
                     key="backdrop"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[9990] bg-black/30 backdrop-blur-[2px] pointer-events-none"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    style={{ position: 'fixed', inset: 0, zIndex: 9990, backgroundColor: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(2px)', pointerEvents: 'none' }}
                 />
             )}
 
@@ -310,15 +317,17 @@ export default function Chatbot() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.97, y: 20 }}
                 transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-                className={`fixed z-[9999] flex bg-white overflow-hidden
-                    ${isFull
-                        ? 'inset-0 rounded-none shadow-none'
-                        : 'bottom-6 right-6 w-[95vw] md:w-[860px] h-[600px] rounded-2xl shadow-2xl border border-slate-200'
-                    }`}
-                /* ← kunci: pointer-events aktif agar tidak ikut scroll */
-                style={{ touchAction: 'none' }}
+                style={{
+                    position: 'fixed', zIndex: 9999,
+                    display: 'flex', backgroundColor: '#ffffff',
+                    overflow: 'hidden', touchAction: 'none',
+                    ...(isFull
+                        ? { inset: 0, borderRadius: 0 }
+                        : { bottom: 24, right: 24, width: 'min(95vw, 860px)', height: 600, borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.15)', border: '1px solid #e2e8f0' }
+                    ),
+                }}
             >
-                {/* ══ SIDEBAR riwayat ══════════════════════════════════════ */}
+                {/* SIDEBAR */}
                 <AnimatePresence>
                     {isSidebarOpen && (
                         <motion.aside
@@ -326,210 +335,180 @@ export default function Chatbot() {
                             animate={{ width: sidebarWidth, opacity: 1 }}
                             exit={{ width: 0, opacity: 0 }}
                             transition={{ duration: 0.18 }}
-                            style={{ width: sidebarWidth, borderRight: '1px solid #e2e8f0', minWidth: 0 }}
-                            className="h-full flex flex-col overflow-hidden shrink-0 relative bg-slate-50"
+                            style={{
+                                width: sidebarWidth, minWidth: 0, height: '100%',
+                                display: 'flex', flexDirection: 'column', overflow: 'hidden',
+                                flexShrink: 0, position: 'relative',
+                                backgroundColor: '#f8fafc', borderRight: '1px solid #e2e8f0',
+                            }}
                         >
-                            {/* Sidebar header */}
-                            <div className="px-3 py-3 border-b border-slate-200 flex flex-col gap-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Riwayat</span>
-                                    <button
-                                        onClick={createNewChat}
-                                        className="w-6 h-6 rounded-lg bg-teal-50 text-teal-600 hover:bg-teal-100 transition flex items-center justify-center"
-                                        title="Chat baru"
-                                    >
+                            <div style={{ padding: 12, borderBottom: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <span style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Riwayat</span>
+                                    <button onClick={createNewChat} title="Chat baru" style={{ width: 24, height: 24, borderRadius: 8, backgroundColor: '#f0fdfa', color: '#0d9488', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <Plus size={13} />
                                     </button>
                                 </div>
-                                <div className="relative">
-                                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <div style={{ position: 'relative' }}>
+                                    <Search size={12} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                                     <input
-                                        type="text"
-                                        placeholder="Cari percakapan..."
-                                        value={searchQuery}
+                                        type="text" placeholder="Cari percakapan..." value={searchQuery}
                                         onChange={e => setSearchQuery(e.target.value)}
-                                        className="w-full pl-8 pr-3 py-1.5 text-xs text-slate-600 placeholder-slate-400
-                                                   bg-white border border-slate-200 rounded-lg
-                                                   focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                                        style={{ width: '100%', paddingLeft: 28, paddingRight: 12, paddingTop: 6, paddingBottom: 6, fontSize: 12, color: '#475569', backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, outline: 'none', boxSizing: 'border-box' }}
                                     />
                                 </div>
                             </div>
-
-                            {/* Daftar percakapan */}
-                            <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
+                            <div style={{ flex: 1, overflowY: 'auto', padding: 6 }}>
                                 {filteredConversations.map(conv => (
                                     <div
                                         key={conv.id}
                                         onClick={() => setCurrentConvId(conv.id)}
-                                        className={`group flex items-start gap-2 px-2.5 py-2 rounded-xl cursor-pointer transition-all
-                                            ${currentConvId === conv.id
-                                                ? 'bg-teal-50 border border-teal-200'
-                                                : 'hover:bg-white border border-transparent'}`}
+                                        style={{
+                                            display: 'flex', alignItems: 'flex-start', gap: 8,
+                                            padding: '8px 10px', borderRadius: 12, cursor: 'pointer', marginBottom: 2,
+                                            backgroundColor: currentConvId === conv.id ? '#f0fdfa' : 'transparent',
+                                            border: currentConvId === conv.id ? '1px solid #99f6e4' : '1px solid transparent',
+                                        }}
+                                        onMouseEnter={e => { if (currentConvId !== conv.id) (e.currentTarget as HTMLDivElement).style.backgroundColor = '#fff'; }}
+                                        onMouseLeave={e => { if (currentConvId !== conv.id) (e.currentTarget as HTMLDivElement).style.backgroundColor = 'transparent'; }}
+                                        className="group"
                                     >
-                                        <div className={`shrink-0 mt-0.5 rounded-md overflow-hidden transition-all ${currentConvId === conv.id ? 'opacity-100' : 'opacity-40'}`}>
-                                            <ClinicLogo size={16} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
+                                        <ClinicLogo size={16} style={{ marginTop: 2, opacity: currentConvId === conv.id ? 1 : 0.4 } as React.CSSProperties} />
+                                        <div style={{ flex: 1, minWidth: 0 }}>
                                             {editingTitleId === conv.id
                                                 ? <input type="text" value={editTitleValue} autoFocus
                                                     onChange={e => setEditTitleValue(e.target.value)}
                                                     onBlur={() => renameConversation(conv.id, editTitleValue)}
                                                     onKeyDown={e => e.key === 'Enter' && renameConversation(conv.id, editTitleValue)}
-                                                    className="w-full text-xs bg-white text-slate-700 border border-teal-300 rounded px-1 py-0.5 outline-none"
+                                                    style={{ width: '100%', fontSize: 12, backgroundColor: '#fff', color: '#334155', border: '1px solid #5eead4', borderRadius: 4, padding: '2px 4px', outline: 'none' }}
                                                 />
-                                                : <p className={`text-xs font-semibold truncate ${currentConvId === conv.id ? 'text-teal-800' : 'text-slate-600'}`}>{conv.title}</p>
+                                                : <p style={{ fontSize: 12, fontWeight: 600, color: currentConvId === conv.id ? '#134e4a' : '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{conv.title}</p>
                                             }
-                                            <p className="text-[10px] text-slate-400 mt-0.5">
+                                            <p style={{ fontSize: 10, color: '#94a3b8', margin: '2px 0 0 0' }}>
                                                 {new Date(conv.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                                             </p>
                                         </div>
-                                        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition shrink-0">
-                                            <button onClick={e => { e.stopPropagation(); setEditingTitleId(conv.id); setEditTitleValue(conv.title); }}
-                                                className="p-1 text-slate-400 hover:text-teal-500"><Edit2 size={10} /></button>
-                                            <button onClick={e => deleteConversation(conv.id, e)}
-                                                className="p-1 text-slate-400 hover:text-red-500"><Trash2 size={10} /></button>
+                                        <div className="opacity-0 group-hover:opacity-100" style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                                            <button onClick={e => { e.stopPropagation(); setEditingTitleId(conv.id); setEditTitleValue(conv.title); }} style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><Edit2 size={10} /></button>
+                                            <button onClick={e => deleteConversation(conv.id, e)} style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><Trash2 size={10} /></button>
                                         </div>
                                     </div>
                                 ))}
                                 {filteredConversations.length === 0 && (
-                                    <p className="text-center py-10 text-slate-400 text-xs">Tidak ada percakapan</p>
+                                    <p style={{ textAlign: 'center', padding: '40px 0', color: '#94a3b8', fontSize: 12 }}>Tidak ada percakapan</p>
                                 )}
                             </div>
-
-                            {/* Resize handle */}
-                            <div
-                                onMouseDown={() => setIsResizing(true)}
-                                className="absolute top-0 -right-1 w-2 h-full cursor-ew-resize hover:bg-teal-300/40 z-50"
-                            />
+                            <div onMouseDown={() => setIsResizing(true)} style={{ position: 'absolute', top: 0, right: -4, width: 8, height: '100%', cursor: 'ew-resize', zIndex: 50 }} />
                         </motion.aside>
                     )}
                 </AnimatePresence>
 
-                {/* ══ AREA CHAT UTAMA ══════════════════════════════════════ */}
-                <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+                {/* AREA CHAT UTAMA */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
-                    {/* ── Header (seperti referensi) ── */}
-                    <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-white shrink-0">
-                        <div className="flex items-center gap-3">
-                            {/* Toggle sidebar */}
-                            <button
-                                onClick={() => setIsSidebarOpen(v => !v)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-                                title={isSidebarOpen ? 'Sembunyikan riwayat' : 'Tampilkan riwayat'}
-                            >
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid #e2e8f0', backgroundColor: '#fff', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <button onClick={() => setIsSidebarOpen(v => !v)} title={isSidebarOpen ? 'Sembunyikan' : 'Tampilkan'} style={{ padding: 6, borderRadius: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
                                 {isSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
                             </button>
-
-                            {/* Logo klinik di header */}
-                            <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center">
-                                <ClinicLogo size={36} />
-                            </div>
-
+                            <ClinicLogo size={36} className="rounded-xl" />
                             <div>
-                                <h2 className="text-[14px] font-bold text-slate-800 leading-none">
+                                <p style={{ fontSize: 14, fontWeight: 700, color: '#1e293b', lineHeight: 1, margin: 0 }}>
                                     {currentConv?.title === 'Percakapan Baru' ? 'Tanyakan pertanyaan Anda' : (currentConv?.title ?? 'KlinikAI')}
-                                </h2>
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="text-[10px] text-slate-400 font-medium">KlinikAI · Nauli Dental Care</span>
+                                </p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
+                                    <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 500 }}>KlinikAI · Nauli Dental Care</span>
                                 </div>
                             </div>
                         </div>
-
-                        {/* Aksi kanan */}
-                        <div className="flex items-center gap-1">
-                            <button
-                                onClick={createNewChat}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 text-[12px] font-semibold transition"
-                                title="Percakapan baru"
-                            >
-                                <RotateCcw size={13} /> <span className="hidden sm:inline">Chat Baru</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <button onClick={createNewChat} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontSize: 12, fontWeight: 600 }}>
+                                <RotateCcw size={13} /><span>Chat Baru</span>
                             </button>
-                            <button
-                                onClick={() => setIsFull(v => !v)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-                                title={isFull ? 'Perkecil' : 'Perbesar'}
-                            >
+                            <button onClick={() => setIsFull(v => !v)} style={{ padding: 6, borderRadius: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
                                 {isFull ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
                             </button>
-                            <button
-                                onClick={() => { setIsOpen(false); setIsFull(false); }}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition"
-                                title="Tutup"
-                            >
+                            <button onClick={() => { setIsOpen(false); setIsFull(false); }} style={{ padding: 6, borderRadius: 8, background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
                                 <X size={15} />
                             </button>
                         </div>
                     </div>
 
-                    {/* ── Pesan ── */}
-                    <div
-                        ref={scrollRef}
-                        className="flex-1 overflow-y-auto bg-white"
-                        style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}
-                    >
+                    {/* Area Pesan */}
+                    <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', backgroundColor: '#fff', scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
+
+                        {/* 4 kotak suggestion — hanya tampil saat chat baru */}
+                        {isNewChat && !isLoading && !streamingText && (
+                            <div style={{ padding: '20px 24px 8px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                                    {SUGGESTIONS.map(text => (
+                                        <button
+                                            key={text}
+                                            onClick={() => handleSendMessage(text)}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                padding: '0 16px', backgroundColor: '#fff',
+                                                border: '1px solid #e2e8f0', borderRadius: 10,
+                                                fontSize: 13, fontWeight: 500, color: '#334155',
+                                                cursor: 'pointer', transition: 'all 0.15s',
+                                                height: 44, width: '100%',
+                                            }}
+                                            onMouseEnter={e => {
+                                                (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#f0fdfa';
+                                                (e.currentTarget as HTMLButtonElement).style.borderColor = '#5eead4';
+                                                (e.currentTarget as HTMLButtonElement).style.color = '#0f766e';
+                                            }}
+                                            onMouseLeave={e => {
+                                                (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#fff';
+                                                (e.currentTarget as HTMLButtonElement).style.borderColor = '#e2e8f0';
+                                                (e.currentTarget as HTMLButtonElement).style.color = '#334155';
+                                            }}
+                                        >
+                                            <span style={{ flex: 1, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{text}</span>
+                                            <ChevronRight size={13} style={{ flexShrink: 0, opacity: 0.3 }} />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Pesan */}
                         {messages.map((msg, i) => (
                             <div key={msg.id || i}>
                                 {i > 0 && <MessageDivider />}
-
                                 {msg.role === 'user' ? (
-                                    /* ── Pesan user (kanan) ── */
-                                    <div className="px-6 py-4 flex justify-end">
-                                        <div className="flex items-end gap-2.5 max-w-[75%]">
-                                            <div className="bg-teal-600 text-white text-sm leading-relaxed px-4 py-3 rounded-2xl rounded-br-sm whitespace-pre-wrap shadow-sm">
+                                    <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end' }}>
+                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, maxWidth: '75%' }}>
+                                            <div style={{ backgroundColor: '#0d9488', color: '#fff', fontSize: 14, lineHeight: 1.6, padding: '12px 16px', borderRadius: '16px 16px 4px 16px', whiteSpace: 'pre-wrap', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                                                 {msg.content}
                                             </div>
-                                            <div className="w-7 h-7 rounded-xl bg-slate-200 flex items-center justify-center shrink-0 mb-0.5">
-                                                <User size={14} className="text-slate-500" />
+                                            <div style={{ width: 28, height: 28, borderRadius: 10, backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginBottom: 2 }}>
+                                                <User size={14} color="#64748b" />
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    /* ── Pesan bot (kiri) ── */
-                                    <div className="px-6 py-4">
-                                        <div className="flex items-start gap-3">
+                                    <div style={{ padding: '16px 24px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                                             <BotAvatar size={34} />
-                                            <div className="flex-1 min-w-0">
-                                                {/* Nama bot */}
-                                                <p className="text-[11px] font-bold text-teal-700 mb-1.5 flex items-center gap-1.5">
-                                                    KlinikAI
-                                                    <span className="text-slate-300">·</span>
-                                                    <span className="text-slate-400 font-normal">Nauli Dental Care</span>
-                                                </p>
-                                                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap mb-3">
-                                                    {msg.content}
-                                                </p>
-
-                                                {/* ── Action bar (Good / Bad / Copy) seperti referensi ── */}
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <button
-                                                        onClick={() => handleReaction(msg.id, true)}
-                                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all
-                                                            ${msg.liked === true
-                                                                ? 'bg-teal-50 text-teal-700 border-teal-200'
-                                                                : 'text-slate-500 border-slate-200 hover:border-teal-200 hover:text-teal-600 hover:bg-teal-50'}`}
-                                                    >
-                                                        <ThumbsUp size={12} className={msg.liked === true ? 'fill-teal-600' : ''} />
-                                                        Jawaban baik
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                                    <span style={{ fontSize: 11, fontWeight: 700, color: '#0f766e' }}>KlinikAI</span>
+                                                    <span style={{ color: '#cbd5e1' }}>·</span>
+                                                    <span style={{ fontSize: 11, color: '#94a3b8' }}>Nauli Dental Care</span>
+                                                </div>
+                                                <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: '0 0 12px 0' }}>{msg.content}</p>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                                    <button onClick={() => handleReaction(msg.id, true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', backgroundColor: msg.liked === true ? '#f0fdfa' : 'transparent', color: msg.liked === true ? '#0f766e' : '#64748b', border: msg.liked === true ? '1px solid #99f6e4' : '1px solid #e2e8f0' }}>
+                                                        <ThumbsUp size={12} style={{ fill: msg.liked === true ? '#0d9488' : 'none' }} /> Jawaban baik
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleReaction(msg.id, false)}
-                                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all
-                                                            ${msg.liked === false
-                                                                ? 'bg-red-50 text-red-600 border-red-200'
-                                                                : 'text-slate-500 border-slate-200 hover:border-red-200 hover:text-red-500 hover:bg-red-50'}`}
-                                                    >
-                                                        <ThumbsDown size={12} className={msg.liked === false ? 'fill-red-500' : ''} />
-                                                        Kurang tepat
+                                                    <button onClick={() => handleReaction(msg.id, false)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', backgroundColor: msg.liked === false ? '#fff1f2' : 'transparent', color: msg.liked === false ? '#e11d48' : '#64748b', border: msg.liked === false ? '1px solid #fecdd3' : '1px solid #e2e8f0' }}>
+                                                        <ThumbsDown size={12} style={{ fill: msg.liked === false ? '#e11d48' : 'none' }} /> Kurang tepat
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleCopy(msg.id, msg.content)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50 transition-all"
-                                                    >
-                                                        {msg.copied
-                                                            ? <><Check size={12} className="text-teal-600" /><span className="text-teal-600">Tersalin</span></>
-                                                            : <><Copy size={12} /> Salin</>
-                                                        }
+                                                    <button onClick={() => handleCopy(msg.id, msg.content)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', backgroundColor: 'transparent', color: '#64748b', border: '1px solid #e2e8f0' }}>
+                                                        {msg.copied ? <><Check size={12} color="#0d9488" /><span style={{ color: '#0d9488' }}>Tersalin</span></> : <><Copy size={12} /> Salin</>}
                                                     </button>
                                                 </div>
                                             </div>
@@ -539,95 +518,91 @@ export default function Chatbot() {
                             </div>
                         ))}
 
+                        {/* Loading — teks bergelombang */}
+                        {isLoading && !streamingText && (
+                            <>
+                                {messages.length > 0 && <MessageDivider />}
+                                <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                                    <BotAvatar size={34} />
+                                    <div style={{ paddingTop: 6 }}>
+                                        <WaveText text="Mencari jawaban..." />
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
                         {/* Streaming */}
                         {streamingText && (
                             <>
                                 {messages.length > 0 && <MessageDivider />}
-                                <div className="px-6 py-4">
-                                    <div className="flex items-start gap-3">
+                                <div style={{ padding: '16px 24px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                                         <BotAvatar size={34} />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-[11px] font-bold text-teal-700 mb-1.5">KlinikAI</p>
-                                            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <p style={{ fontSize: 11, fontWeight: 700, color: '#0f766e', margin: '0 0 6px 0' }}>KlinikAI</p>
+                                            <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0 }}>
                                                 {streamingText}
-                                                <span className="inline-block w-1 h-4 ml-0.5 bg-teal-500 animate-pulse align-middle rounded-sm" />
+                                                <span style={{ display: 'inline-block', width: 4, height: 16, marginLeft: 2, backgroundColor: '#0d9488', borderRadius: 2, verticalAlign: 'middle', animation: 'pulse 1s infinite' }} />
                                             </p>
                                         </div>
                                     </div>
                                 </div>
                             </>
                         )}
-
-                        {/* Loading dots */}
-                        {isLoading && !streamingText && (
-                            <>
-                                {messages.length > 0 && <MessageDivider />}
-                                <div className="px-6 py-4 flex items-center gap-3">
-                                    <BotAvatar size={34} />
-                                    <div className="flex gap-1.5 py-1">
-                                        <span className="w-2 h-2 bg-teal-400 rounded-full animate-bounce" />
-                                        <span className="w-2 h-2 bg-teal-400 rounded-full animate-bounce [animation-delay:0.15s]" />
-                                        <span className="w-2 h-2 bg-teal-400 rounded-full animate-bounce [animation-delay:0.3s]" />
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                        <div className="h-4" />
+                        <div style={{ height: 16 }} />
                     </div>
 
-                    {/* ── Input area (seperti referensi) ── */}
-                    <div className="px-5 pb-4 pt-3 border-t border-slate-200 bg-white shrink-0">
-                        {/* Suggestions chips */}
-                        {!isLoading && !streamingText && (
-                            <div className="flex gap-2 overflow-x-auto mb-3 pb-0.5" style={{ scrollbarWidth: 'none' }}>
-                                {SUGGESTIONS.map(text => (
-                                    <button
-                                        key={text}
-                                        onClick={() => handleSendMessage(text)}
-                                        className="flex items-center gap-1 whitespace-nowrap px-3 py-1.5
-                                                   bg-slate-50 hover:bg-teal-50
-                                                   border border-slate-200 hover:border-teal-300
-                                                   text-slate-500 hover:text-teal-700
-                                                   text-[11px] font-semibold rounded-full transition-all"
-                                    >
-                                        {text} <ChevronRight size={10} />
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Input box */}
-                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100 transition-all">
+                    {/* Input area */}
+                    <div style={{ padding: '12px 20px 16px', borderTop: '1px solid #e2e8f0', backgroundColor: '#fff', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '8px 8px 8px 16px' }}>
                             <input
                                 ref={inputRef}
-                                type="text"
-                                value={input}
+                                type="text" value={input}
                                 onChange={e => setInput(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                                placeholder="Tanyakan sesuatu..."
-                                className="flex-1 text-sm text-slate-700 placeholder-slate-400 bg-transparent outline-none py-1"
+                                placeholder={isLoading ? 'Menunggu jawaban...' : 'Tanyakan sesuatu...'}
+                                disabled={isLoading || !!streamingText}
+                                style={{ flex: 1, fontSize: 14, color: '#334155', backgroundColor: 'transparent', border: 'none', outline: 'none', padding: '4px 0' }}
                             />
-                            <button
-                                onClick={() => handleSendMessage()}
-                                disabled={isLoading || !!streamingText || !input.trim()}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center
-                                           bg-teal-600 text-white hover:bg-teal-700
-                                           disabled:opacity-40 disabled:cursor-not-allowed
-                                           transition-all hover:scale-105 active:scale-95"
-                            >
-                                <ArrowUp size={15} strokeWidth={2.5} />
-                            </button>
+                            {/* Tombol kirim / loading box */}
+                            {isLoading || !!streamingText ? (
+                                <div style={{
+                                    width: 36, height: 36, borderRadius: 10,
+                                    backgroundColor: '#059669',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    flexShrink: 0,
+                                }}>
+                                    <div style={{
+                                        width: 14, height: 14,
+                                        backgroundColor: 'white',
+                                        borderRadius: 3,
+                                        animation: 'pulse 1.2s ease-in-out infinite',
+                                    }} />
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => handleSendMessage()}
+                                    disabled={!input.trim()}
+                                    style={{
+                                        width: 36, height: 36, borderRadius: 10,
+                                        backgroundColor: input.trim() ? '#059669' : '#e2e8f0',
+                                        color: '#fff', border: 'none', cursor: input.trim() ? 'pointer' : 'default',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        flexShrink: 0, transition: 'all 0.15s',
+                                    }}
+                                >
+                                    <ArrowUp size={16} strokeWidth={2.5} />
+                                </button>
+                            )}
                         </div>
 
                         {/* Footer */}
-                        <div className="flex items-center justify-between mt-2">
-                            <div className="flex items-center gap-1.5">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <ClinicLogo size={14} />
-                                <p className="text-[10px] text-slate-400 font-medium">Nauli Dental Care</p>
+                                <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 500 }}>Nauli Dental Care</span>
                             </div>
-                            <p className="text-[10px] text-slate-400">
-                                KlinikAI dapat membuat kesalahan. Verifikasi info penting.
-                            </p>
+                            <span style={{ fontSize: 10, color: '#94a3b8' }}>KlinikAI dapat membuat kesalahan. Verifikasi info penting.</span>
                         </div>
                     </div>
                 </div>
