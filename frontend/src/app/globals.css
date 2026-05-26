@@ -37,3 +37,35 @@ html {
   filter: invert(1);
   cursor: pointer;
 }
+
+@keyframes textShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.wave-loading-text {
+  background: linear-gradient(90deg,
+      #064e3b 0%,
+      /* Emerald 900 */
+      #059669 25%,
+      /* Emerald 600 */
+      #34d399 50%,
+      /* Emerald 400 */
+      #059669 75%,
+      /* Emerald 600 */
+      #064e3b 100%
+      /* Emerald 900 */
+    );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textShimmer 3s linear infinite;
+  /* Sedikit lebih lambat agar elegan */
+  font-weight: 700;
+  display: inline-block;
+}

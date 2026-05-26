@@ -6,7 +6,7 @@ import {
     Maximize2, Minimize2, Trash2, ChevronRight,
     Plus, Search, Edit2,
     ThumbsUp, ThumbsDown, Copy, Check,
-    RotateCcw, PanelLeftClose, PanelLeftOpen,
+    RotateCcw, PanelLeftClose, PanelLeftOpen, Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -559,11 +559,30 @@ export default function Chatbot() {
                         {/* Loading — teks bergelombang */}
                         {isLoading && !streamingText && (
                             <>
-                                {messages.length > 0 && <MessageDivider />}
-                                <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                                    <BotAvatar size={34} />
-                                    <div style={{ paddingTop: 6 }}>
-                                        <WaveText text="Thinking..." />
+                                {messages.length > 0 && <div className="h-px bg-slate-50 my-2 mx-6" />}
+
+                                <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    {/* Ikon Bintang Berputar Warna Hijau */}
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                                        className="text-emerald-500 opacity-70"
+                                    >
+                                        <Sparkles size={18} />
+                                    </motion.div>
+
+                                    {/* Teks dengan Efek Gelombang Hijau */}
+                                    <div className="flex items-end gap-1">
+                                        <span className="wave-loading-text text-sm tracking-tight">
+                                            Gathering sources
+                                        </span>
+
+                                        {/* Titik Bouncing Warna Hijau */}
+                                        <span className="flex gap-0.5 mb-1 ml-0.5">
+                                            <span className="w-0.5 h-0.5 bg-emerald-400 rounded-full animate-bounce"></span>
+                                            <span className="w-0.5 h-0.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                                            <span className="w-0.5 h-0.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                                        </span>
                                     </div>
                                 </div>
                             </>
