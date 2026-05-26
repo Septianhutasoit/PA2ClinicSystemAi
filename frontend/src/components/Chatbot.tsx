@@ -261,7 +261,6 @@ export default function Chatbot() {
         c.messages.some(m => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
-    // ── FAB ──
     if (!isOpen) return (
         <motion.button
             initial={{ scale: 0, opacity: 0 }}
@@ -270,32 +269,39 @@ export default function Chatbot() {
             onClick={() => setIsOpen(true)}
             style={{
                 position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-                width: 88, padding: '16px 12px', borderRadius: 22,
-                backgroundColor: '#0f1a14', border: '1px solid rgba(255,255,255,0.08)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.4)', cursor: 'pointer',
-                transition: 'background-color 0.25s',
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: 8,
+                width: 76, padding: '14px 10px 12px',
+                borderRadius: 16,
+                backgroundColor: '#1a1d2e',
+                border: '1px solid rgba(255,255,255,0.06)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s ease',
             }}
-            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#059669'}
-            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0f1a14'}
+            onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#4f46e5'}
+            onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1a1d2e'}
         >
-            <div style={{
-                position: 'relative', width: 56, height: 56, borderRadius: 16,
-                overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                backgroundColor: '#059669', boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            <img
+                src="/images/icon.png"
+                alt="Nauli Dental Care"
+                width={52}
+                height={52}
+                style={{
+                    width: 52,
+                    height: 52,
+                    objectFit: 'contain',
+                    display: 'block',
+                    flexShrink: 0,
+                    mixBlendMode: 'multiply',
+                }}
+            />
+            <span style={{
+                fontSize: 13, fontWeight: 700,
+                color: 'rgba(255,255,255,0.9)',
+                letterSpacing: '0.01em', lineHeight: 1,
             }}>
-                <ClinicLogo size={40} />
-                <span style={{
-                    position: 'absolute', top: 4, right: 4,
-                    width: 8, height: 8, borderRadius: '50%',
-                    backgroundColor: '#6ee7b7', border: '1.5px solid rgba(255,255,255,0.7)',
-                }} />
-            </div>
-            <span style={{ fontSize: 12, fontWeight: 900, color: 'rgba(255,255,255,0.9)', letterSpacing: '0.05em', lineHeight: 1 }}>
                 Tanya AI
-            </span>
-            <span style={{ fontSize: 9, fontWeight: 700, color: '#6ee7b7', letterSpacing: '0.15em', lineHeight: 1, textTransform: 'uppercase' }}>
-                ONLINE
             </span>
         </motion.button>
     );
@@ -453,7 +459,8 @@ export default function Chatbot() {
                                                 border: '1px solid #e2e8f0', borderRadius: 10,
                                                 fontSize: 13, fontWeight: 500, color: '#334155',
                                                 cursor: 'pointer', transition: 'all 0.15s',
-                                                height: 44, width: '100%',
+                                                minHeight: 52, width: '100%', height: 'auto',
+                                                alignItems: 'flex-start', paddingTop: 14, paddingBottom: 14, paddingLeft: 16, paddingRight: 12,
                                             }}
                                             onMouseEnter={e => {
                                                 (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#f0fdfa';
