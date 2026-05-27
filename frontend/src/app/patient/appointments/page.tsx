@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Calendar, Clock, User, Stethoscope, CheckCircle,
     XCircle, AlertCircle, Plus, Search,
-    ChevronRight, Phone, CalendarDays, Sparkles
+    ChevronRight, Phone, CalendarDays, Sparkles,
+    MapPin, Heart, Star, BadgeCheck, Award, ShieldCheck
 } from 'lucide-react';
 import { useState, useEffect, Suspense } from 'react';
 import api from '@/services/api';
@@ -20,21 +21,17 @@ interface Appointment {
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string; dot: string }> = {
     confirmed: { label: 'Dikonfirmasi', bg: '#f0fdf4', text: '#15803d', border: '#bbf7d0', dot: '#22c55e' },
-    pending:   { label: 'Menunggu',     bg: '#fffbeb', text: '#b45309', border: '#fde68a', dot: '#f59e0b' },
-    completed: { label: 'Selesai',      bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe', dot: '#3b82f6' },
-    cancelled: { label: 'Dibatalkan',   bg: '#fef2f2', text: '#b91c1c', border: '#fecaca', dot: '#ef4444' },
+    pending: { label: 'Menunggu', bg: '#fffbeb', text: '#b45309', border: '#fde68a', dot: '#f59e0b' },
+    completed: { label: 'Selesai', bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe', dot: '#3b82f6' },
+    cancelled: { label: 'Dibatalkan', bg: '#fef2f2', text: '#b91c1c', border: '#fecaca', dot: '#ef4444' },
 };
 
 function StatusBadge({ status }: { status: string }) {
     const cfg = STATUS_CONFIG[status] ?? { label: status || 'Pending', bg: '#f8fafc', text: '#475569', border: '#e2e8f0', dot: '#94a3b8' };
     return (
-        <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '5px 12px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-            backgroundColor: cfg.bg, color: cfg.text, border: `1px solid ${cfg.border}`,
-            letterSpacing: '0.01em',
-        }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: cfg.dot, flexShrink: 0 }} />
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold"
+            style={{ backgroundColor: cfg.bg, color: cfg.text, border: `1px solid ${cfg.border}` }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.dot }} />
             {cfg.label}
         </span>
     );
@@ -44,11 +41,99 @@ function formatDate(dateStr: string) {
     try { return new Date(dateStr).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
     catch { return dateStr; }
 }
+
 function formatTime(dateStr: string) {
     try { return new Date(dateStr).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }); }
     catch { return ''; }
 }
 
+// ── Hero Section dengan Background Slider ─────────────────────────────────
+function HeroSection() {
+    const [currentSlide, setCurrentSlide] = useState(0);
+
+    const images = [
+        { src: '/images/bg/galery5.png', alt: 'Nauli Dental Care Gallery' },
+        { src: '/images/bg/keunggulan.png', alt: 'Keunggulan Nauli Dental' },
+    ];
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentSlide((prev) => (prev + 1) % images.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [images.length]);
+
+    return (
+        <div className="relative h-[500px] md:h-[550px] w-full overflow-hidden">
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={currentSlide}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.8, ease: "easeInOut" }}
+                    className="absolute inset-0 w-full h-full"
+                >
+                    <img
+                        src={images[currentSlide].src}
+                        alt={images[currentSlide].alt}
+                        className="w-full h-full object-cover object-center"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/20" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-50/80 via-transparent to-transparent" />
+                </motion.div>
+            </AnimatePresence>
+
+            {/* Slide Indicators */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                {images.map((_, idx) => (
+                    <button
+                        key={idx}
+                        onClick={() => setCurrentSlide(idx)}
+                        className={`transition-all duration-300 rounded-full ${currentSlide === idx
+                                ? 'w-8 h-1.5 bg-white'
+                                : 'w-1.5 h-1.5 bg-white/40 hover:bg-white/70'
+                            }`}
+                    />
+                ))}
+            </div>
+
+            {/* Content Overlay */}
+            <div className="relative h-full flex items-center z-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                    <motion.div
+                        key={currentSlide}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className="max-w-2xl"
+                    >
+                        <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md rounded-full px-4 py-1.5 mb-5 border border-white/30">
+                            <CalendarDays size={14} className="text-emerald-300" />
+                            <span className="text-[10px] font-bold text-white tracking-wider">MANAJEMEN JANJI TEMU</span>
+                        </div>
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-4">
+                            Janji Temu{' '}
+                            <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">
+                                Saya
+                            </span>
+                        </h1>
+                        <p className="text-white/80 text-sm sm:text-base md:text-lg max-w-md leading-relaxed">
+                            Kelola semua jadwal kunjungan Anda dengan mudah dan cepat
+                        </p>
+                        <div className="mt-6 flex items-center gap-2">
+                            <div className="w-12 h-0.5 bg-emerald-400 rounded-full" />
+                            <div className="w-3 h-3 rounded-full bg-emerald-400" />
+                            <div className="w-24 h-0.5 bg-emerald-400/50 rounded-full" />
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────
 function AppointmentsContent() {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
@@ -88,10 +173,10 @@ function AppointmentsContent() {
     };
 
     const tabs = [
-        { id: 'all',       label: 'Semua',        count: appointments.length },
-        { id: 'pending',   label: 'Menunggu',      count: appointments.filter(a => a.status === 'pending').length },
-        { id: 'confirmed', label: 'Dikonfirmasi',  count: appointments.filter(a => a.status === 'confirmed').length },
-        { id: 'completed', label: 'Selesai',       count: appointments.filter(a => a.status === 'completed').length },
+        { id: 'all', label: 'Semua', count: appointments.length, icon: CalendarDays },
+        { id: 'pending', label: 'Menunggu', count: appointments.filter(a => a.status === 'pending').length, icon: AlertCircle },
+        { id: 'confirmed', label: 'Dikonfirmasi', count: appointments.filter(a => a.status === 'confirmed').length, icon: CheckCircle },
+        { id: 'completed', label: 'Selesai', count: appointments.filter(a => a.status === 'completed').length, icon: Star },
     ];
 
     const filtered = appointments.filter(apt => {
@@ -100,240 +185,344 @@ function AppointmentsContent() {
         return true;
     });
 
-    const inputStyle: React.CSSProperties = {
-        width: '100%', padding: '11px 14px 11px 42px',
-        fontSize: 13, fontWeight: 500, color: '#1e293b',
-        backgroundColor: '#f8fafc', border: '1.5px solid #e2e8f0',
-        borderRadius: 10, outline: 'none', boxSizing: 'border-box',
-        transition: 'border-color 0.15s',
-    };
+    const stats = [
+        { label: 'Total', value: appointments.length, color: '#3b82f6', bg: '#eff6ff' },
+        { label: 'Menunggu', value: appointments.filter(a => a.status === 'pending').length, color: '#f59e0b', bg: '#fffbeb' },
+        { label: 'Dikonfirmasi', value: appointments.filter(a => a.status === 'confirmed').length, color: '#059669', bg: '#f0fdf4' },
+        { label: 'Selesai', value: appointments.filter(a => a.status === 'completed').length, color: '#0d9488', bg: '#f0fdfa' },
+    ];
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30">
 
-            {/* ── HERO HEADER ── */}
-            <div style={{
-                background: 'linear-gradient(135deg, #064e3b 0%, #065f46 40%, #047857 100%)',
-                padding: '40px 24px 56px',
-                position: 'relative', overflow: 'hidden',
-            }}>
-                {/* Decorative circles */}
-                <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.04)' }} />
-                <div style={{ position: 'absolute', bottom: -20, left: 60, width: 120, height: 120, borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.03)' }} />
+            {/* Hero Section */}
+            <HeroSection />
 
-                <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative' }}>
-                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-                        {/* Badge */}
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', padding: '5px 12px', borderRadius: 999, marginBottom: 14, border: '1px solid rgba(255,255,255,0.15)' }}>
-                            <CalendarDays size={11} color="#6ee7b7" />
-                            <span style={{ fontSize: 10, fontWeight: 800, color: '#a7f3d0', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Manajemen Janji Temu</span>
-                        </div>
+            {/* Main Container */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
 
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                            <div>
-                                <h1 style={{ fontSize: 28, fontWeight: 900, color: '#fff', margin: 0, lineHeight: 1.2 }}>Janji Temu Saya</h1>
-                                <p style={{ fontSize: 13, color: '#a7f3d0', margin: '6px 0 0', fontWeight: 400 }}>Kelola semua jadwal kunjungan Anda dengan mudah</p>
-                            </div>
-                            <motion.button
-                                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                                onClick={() => setShowForm(!showForm)}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: 8,
-                                    padding: '11px 20px', backgroundColor: '#fff',
-                                    color: '#065f46', border: 'none', borderRadius: 12,
-                                    fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                                    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                                    flexShrink: 0,
-                                }}
-                            >
-                                <Plus size={15} /> Buat Janji Baru
-                            </motion.button>
-                        </div>
+                {/* Grid 2 Kolom */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
 
-                        {/* Stats row */}
-                        <div style={{ display: 'flex', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
-                            {[
-                                { label: 'Total', value: appointments.length, color: '#6ee7b7' },
-                                { label: 'Menunggu', value: appointments.filter(a => a.status === 'pending').length, color: '#fcd34d' },
-                                { label: 'Dikonfirmasi', value: appointments.filter(a => a.status === 'confirmed').length, color: '#6ee7b7' },
-                                { label: 'Selesai', value: appointments.filter(a => a.status === 'completed').length, color: '#93c5fd' },
-                            ].map(stat => (
-                                <div key={stat.label} style={{ backgroundColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', padding: '8px 16px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)' }}>
-                                    <div style={{ fontSize: 18, fontWeight: 900, color: stat.color, lineHeight: 1 }}>{stat.value}</div>
-                                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 2, fontWeight: 500 }}>{stat.label}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </motion.div>
-                </div>
-            </div>
-
-            <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 24px 40px' }}>
-
-                {/* ── FORM ── */}
-                <AnimatePresence>
-                    {showForm && (
+                    {/* ========== KOLOM KIRI ========== */}
+                    <div className="space-y-6">
+                        {/* Info Klinik Card */}
                         <motion.div
-                            initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.2 }}
-                            style={{ marginBottom: 24 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                            className="bg-white rounded-2xl shadow-lg border border-emerald-100 overflow-hidden"
                         >
-                            <div style={{ backgroundColor: '#fff', borderRadius: 16, border: '1.5px solid #e2e8f0', padding: 24, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                                    <div style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Sparkles size={16} color="#059669" />
+                            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur">
+                                        <img
+                                            src="/images/Logo.png"
+                                            alt="Nauli Dental"
+                                            className="w-8 h-8 object-contain"
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                        />
                                     </div>
                                     <div>
-                                        <p style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', margin: 0 }}>Formulir Janji Temu Baru</p>
-                                        <p style={{ fontSize: 11, color: '#94a3b8', margin: 0 }}>Isi semua kolom dengan lengkap</p>
+                                        <h3 className="text-white font-bold text-lg">Nauli Dental Care</h3>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <BadgeCheck size={12} className="text-emerald-300" />
+                                            <span className="text-[10px] text-emerald-100">Klinik Gigi Terpercaya</span>
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <form onSubmit={handleSubmit}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-                                        {/* Nama */}
-                                        <div style={{ position: 'relative' }}>
-                                            <User size={14} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                            <input type="text" placeholder="Nama Lengkap" required value={formData.patient_name} onChange={e => setFormData({ ...formData, patient_name: e.target.value })} style={inputStyle} />
+                            <div className="px-5 py-4 border-b border-slate-100">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <Star key={star} size={14} className="fill-amber-400 text-amber-400" />
+                                            ))}
                                         </div>
-                                        {/* Telepon */}
-                                        <div style={{ position: 'relative' }}>
-                                            <Phone size={14} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                            <input type="text" placeholder="Nomor WhatsApp" required value={formData.patient_phone} onChange={e => setFormData({ ...formData, patient_phone: e.target.value })} style={inputStyle} />
+                                        <span className="text-xs font-semibold text-slate-700">4.9</span>
+                                        <span className="text-xs text-slate-400">(1,000+ pasien)</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <Award size={14} className="text-emerald-500" />
+                                        <span className="text-xs text-emerald-600 font-medium">Bersertifikat</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="divide-y divide-slate-100">
+                                {[
+                                    { icon: MapPin, label: 'Alamat', value: 'Jl. Balige No. 12, Toba, Sumatera Utara', color: '#059669' },
+                                    { icon: Phone, label: 'WhatsApp', value: '0821-6352-6363', color: '#0d9488' },
+                                    { icon: Clock, label: 'Jam Buka', value: 'Senin–Sabtu | 08.00–20.00 WIB', color: '#0891b2' },
+                                ].map((item) => (
+                                    <div key={item.label} className="px-5 py-3 flex items-start gap-3 hover:bg-slate-50 transition-colors">
+                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                                            <item.icon size={14} color={item.color} />
                                         </div>
-                                        {/* Dokter */}
-                                        <div style={{ position: 'relative' }}>
-                                            <Stethoscope size={14} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', zIndex: 1 }} />
-                                            <select required value={formData.doctor_name} onChange={e => setFormData({ ...formData, doctor_name: e.target.value })} style={{ ...inputStyle, appearance: 'none', cursor: 'pointer' }}>
-                                                <option value="">-- Pilih Dokter --</option>
-                                                {doctors.map((d: any) => <option key={d.id} value={d.name}>{d.name} — {d.specialty}</option>)}
-                                            </select>
-                                        </div>
-                                        {/* Tanggal */}
-                                        <div style={{ position: 'relative' }}>
-                                            <Clock size={14} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                                            <input type="datetime-local" required value={formData.appointment_date} onChange={e => setFormData({ ...formData, appointment_date: e.target.value })} style={inputStyle} />
+                                        <div className="flex-1">
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.label}</p>
+                                            <p className="text-sm font-medium text-slate-700">{item.value}</p>
                                         </div>
                                     </div>
-
-                                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                                        <button type="submit" style={{ padding: '10px 22px', background: 'linear-gradient(135deg, #059669, #0d9488)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(5,150,105,0.3)' }}>
-                                            {submitStatus.type === 'loading' ? 'Memproses...' : 'Kirim Janji Temu'}
-                                        </button>
-                                        <button type="button" onClick={() => setShowForm(false)} style={{ padding: '10px 18px', backgroundColor: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                                            Batal
-                                        </button>
-                                        {submitStatus.msg && (
-                                            <span style={{ fontSize: 12, fontWeight: 600, color: submitStatus.type === 'success' ? '#059669' : submitStatus.type === 'error' ? '#dc2626' : '#0d9488', padding: '8px 12px', backgroundColor: submitStatus.type === 'success' ? '#f0fdf4' : submitStatus.type === 'error' ? '#fef2f2' : '#f0fdfa', borderRadius: 8 }}>
-                                                {submitStatus.msg}
-                                            </span>
-                                        )}
-                                    </div>
-                                </form>
+                                ))}
                             </div>
                         </motion.div>
-                    )}
-                </AnimatePresence>
 
-                {/* ── SEARCH ── */}
-                <div style={{ position: 'relative', marginBottom: 16 }}>
-                    <Search size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                    <input
-                        type="text" placeholder="Cari berdasarkan nama dokter..."
-                        value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                        style={{ width: '100%', padding: '12px 16px 12px 42px', fontSize: 13, fontWeight: 500, color: '#1e293b', backgroundColor: '#fff', border: '1.5px solid #e2e8f0', borderRadius: 12, outline: 'none', boxSizing: 'border-box', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
-                    />
-                </div>
-
-                {/* ── TABS ── */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}>
-                    {tabs.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setFilter(tab.id)}
-                            style={{
-                                padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 700,
-                                whiteSpace: 'nowrap', cursor: 'pointer', border: 'none', transition: 'all 0.15s',
-                                backgroundColor: filter === tab.id ? '#059669' : '#fff',
-                                color: filter === tab.id ? '#fff' : '#64748b',
-                                boxShadow: filter === tab.id ? '0 4px 12px rgba(5,150,105,0.25)' : '0 1px 3px rgba(0,0,0,0.06)',
-                            }}
+                        {/* Tips Card */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-100"
                         >
-                            {tab.label}
-                            <span style={{ marginLeft: 6, fontSize: 10, opacity: 0.75 }}>({tab.count})</span>
-                        </button>
-                    ))}
-                </div>
-
-                {/* ── LIST ── */}
-                {loading ? (
-                    <div style={{ textAlign: 'center', padding: '64px 0' }}>
-                        <div style={{ width: 36, height: 36, border: '3px solid #d1fae5', borderTopColor: '#059669', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
-                        <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>Memuat janji temu...</p>
-                        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                    </div>
-                ) : filtered.length === 0 ? (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                        style={{ textAlign: 'center', padding: '64px 24px', backgroundColor: '#fff', borderRadius: 16, border: '1.5px solid #e2e8f0' }}>
-                        <div style={{ width: 56, height: 56, borderRadius: 16, backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                            <Calendar size={24} color="#cbd5e1" />
-                        </div>
-                        <p style={{ fontSize: 15, fontWeight: 700, color: '#334155', margin: '0 0 6px' }}>Belum Ada Janji Temu</p>
-                        <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>Buat janji temu pertama Anda dengan dokter spesialis kami</p>
-                    </motion.div>
-                ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {filtered.map((apt, idx) => (
-                            <motion.div
-                                key={apt.id}
-                                initial={{ opacity: 0, y: 12 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: idx * 0.04 }}
-                                style={{
-                                    backgroundColor: '#fff', borderRadius: 14,
-                                    border: '1.5px solid #e2e8f0', padding: '16px 20px',
-                                    boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                                    transition: 'box-shadow 0.15s, border-color 0.15s',
-                                    cursor: 'pointer',
-                                }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'; (e.currentTarget as HTMLDivElement).style.borderColor = '#d1fae5'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'; (e.currentTarget as HTMLDivElement).style.borderColor = '#e2e8f0'; }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-                                        {/* Avatar */}
-                                        <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #059669, #0d9488)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                            <Stethoscope size={20} color="#fff" />
-                                        </div>
-                                        <div style={{ minWidth: 0 }}>
-                                            <p style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{apt.doctor_name}</p>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748b' }}>
-                                                    <Calendar size={11} color="#059669" />
-                                                    {formatDate(apt.appointment_date)}
-                                                </span>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748b' }}>
-                                                    <Clock size={11} color="#059669" />
-                                                    {formatTime(apt.appointment_date)} WIB
-                                                </span>
-                                            </div>
-                                            {apt.notes && (
-                                                <div style={{ marginTop: 8, padding: '6px 10px', backgroundColor: '#f0fdf4', borderRadius: 7, fontSize: 11, color: '#065f46', fontWeight: 500 }}>
-                                                    {apt.notes}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                                        <StatusBadge status={apt.status} />
-                                        <ChevronRight size={15} color="#cbd5e1" />
-                                    </div>
+                            <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                                    <Heart size={18} className="text-white" />
                                 </div>
-                            </motion.div>
-                        ))}
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="text-sm font-bold text-emerald-800">Tips Sebelum Kunjungan</h4>
+                                        <Sparkles size={12} className="text-emerald-500" />
+                                    </div>
+                                    <p className="text-xs text-emerald-700 leading-relaxed">
+                                        Datang 15 menit sebelum jadwal, bawa kartu identitas, dan jangan lupa makan sebelum perawatan (kecuali ada arahan khusus).
+                                    </p>
+                                </div>
+                            </div>
+                        </motion.div>
                     </div>
-                )}
+
+                    {/* ========== KOLOM KANAN ========== */}
+                    <div className="space-y-5">
+
+                        {/* Header & Stat Cards */}
+                        <div>
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="mb-4"
+                            >
+                                <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-1 h-6 bg-emerald-500 rounded-full" />
+                                    <h2 className="text-xl font-black text-slate-800">Daftar Janji Temu</h2>
+                                </div>
+                                <p className="text-sm text-slate-500 ml-3">Kelola semua jadwal kunjungan Anda</p>
+                            </motion.div>
+
+                            {/* Stat Cards */}
+                            <div className="grid grid-cols-4 gap-2 mb-5">
+                                {stats.map((s, i) => (
+                                    <motion.div
+                                        key={s.label}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.05 }}
+                                        className="bg-white rounded-xl p-3 text-center shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+                                    >
+                                        <p className="text-lg font-black text-slate-800">{s.value}</p>
+                                        <p className="text-[9px] font-medium text-slate-400">{s.label}</p>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Tombol Buat Janji Baru */}
+                        <motion.button
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setShowForm(!showForm)}
+                            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all"
+                        >
+                            <Plus size={16} />
+                            {showForm ? 'Tutup Formulir' : 'Buat Janji Baru'}
+                        </motion.button>
+
+                        {/* Formulir */}
+                        <AnimatePresence>
+                            {showForm && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="bg-white rounded-xl border border-emerald-100 p-5 shadow-lg">
+                                        <form onSubmit={handleSubmit} className="space-y-3">
+                                            <div className="relative">
+                                                <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nama Lengkap"
+                                                    required
+                                                    value={formData.patient_name}
+                                                    onChange={e => setFormData({ ...formData, patient_name: e.target.value })}
+                                                    className="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                                                />
+                                            </div>
+                                            <div className="relative">
+                                                <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nomor WhatsApp"
+                                                    required
+                                                    value={formData.patient_phone}
+                                                    onChange={e => setFormData({ ...formData, patient_phone: e.target.value })}
+                                                    className="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                                                />
+                                            </div>
+                                            <div className="relative">
+                                                <Stethoscope size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
+                                                <select
+                                                    required
+                                                    value={formData.doctor_name}
+                                                    onChange={e => setFormData({ ...formData, doctor_name: e.target.value })}
+                                                    className="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition appearance-none cursor-pointer"
+                                                >
+                                                    <option value="">-- Pilih Dokter --</option>
+                                                    {doctors.map((d: any) => (
+                                                        <option key={d.id} value={d.name}>{d.name} — {d.specialty}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="relative">
+                                                <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                <input
+                                                    type="datetime-local"
+                                                    required
+                                                    value={formData.appointment_date}
+                                                    onChange={e => setFormData({ ...formData, appointment_date: e.target.value })}
+                                                    className="w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                                                />
+                                            </div>
+                                            <button
+                                                type="submit"
+                                                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-2.5 rounded-lg font-semibold text-sm transition-all hover:shadow-md"
+                                            >
+                                                {submitStatus.type === 'loading' ? 'Memproses...' : 'Kirim Janji Temu'}
+                                            </button>
+                                            {submitStatus.msg && (
+                                                <p className={`text-center text-xs font-medium py-2 rounded-lg ${submitStatus.type === 'success' ? 'text-emerald-600 bg-emerald-50' :
+                                                        submitStatus.type === 'error' ? 'text-red-600 bg-red-50' : 'text-emerald-600 bg-emerald-50'
+                                                    }`}>
+                                                    {submitStatus.msg}
+                                                </p>
+                                            )}
+                                        </form>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Search & Tabs */}
+                        <div className="relative">
+                            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Cari berdasarkan nama dokter..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="w-full pl-11 pr-4 py-3 text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition shadow-sm"
+                            />
+                        </div>
+
+                        {/* Filter Tabs */}
+                        <div className="flex gap-2 overflow-x-auto pb-2">
+                            {tabs.map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setFilter(tab.id)}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${filter === tab.id
+                                            ? 'bg-emerald-600 text-white shadow-md'
+                                            : 'bg-white text-slate-500 border border-slate-200 hover:border-emerald-300'
+                                        }`}
+                                >
+                                    <tab.icon size={12} />
+                                    {tab.label}
+                                    <span className={`text-[10px] ${filter === tab.id ? 'text-emerald-200' : 'text-slate-400'}`}>({tab.count})</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Daftar Janji Temu */}
+                        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 custom-scroll">
+                            {loading ? (
+                                <div className="bg-white rounded-xl border border-slate-200 text-center py-12">
+                                    <div className="w-12 h-12 border-3 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto mb-3" />
+                                    <p className="text-sm text-slate-500">Memuat janji temu...</p>
+                                </div>
+                            ) : filtered.length === 0 ? (
+                                <div className="bg-white rounded-xl border border-slate-200 text-center py-12">
+                                    <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                                        <Calendar size={24} className="text-slate-400" />
+                                    </div>
+                                    <p className="font-semibold text-slate-600 mb-1">Belum Ada Janji Temu</p>
+                                    <p className="text-sm text-slate-400">Buat janji temu pertama Anda</p>
+                                </div>
+                            ) : (
+                                filtered.map((apt, idx) => (
+                                    <motion.div
+                                        key={apt.id}
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: idx * 0.03 }}
+                                        className="bg-white rounded-xl border border-slate-200 p-4 hover:border-emerald-200 hover:shadow-md transition-all duration-200"
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                                                <Stethoscope size={20} className="text-white" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-start justify-between gap-2 flex-wrap">
+                                                    <h3 className="font-bold text-slate-800 text-sm">{apt.doctor_name}</h3>
+                                                    <StatusBadge status={apt.status} />
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5">
+                                                    <span className="flex items-center gap-1 text-xs text-slate-500">
+                                                        <Calendar size={11} className="text-emerald-500" />
+                                                        {formatDate(apt.appointment_date)}
+                                                    </span>
+                                                    <span className="flex items-center gap-1 text-xs text-slate-500">
+                                                        <Clock size={11} className="text-emerald-500" />
+                                                        {formatTime(apt.appointment_date)} WIB
+                                                    </span>
+                                                </div>
+                                                {apt.notes && (
+                                                    <div className="mt-2 text-xs text-slate-500 bg-slate-50 p-2 rounded-lg">
+                                                        📝 {apt.notes}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <ChevronRight size={16} className="text-slate-300 flex-shrink-0" />
+                                        </div>
+                                    </motion.div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            <style jsx>{`
+                .custom-scroll::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-scroll::-webkit-scrollbar-track {
+                    background: #f1f5f9;
+                    border-radius: 10px;
+                }
+                .custom-scroll::-webkit-scrollbar-thumb {
+                    background: #cbd5e1;
+                    border-radius: 10px;
+                }
+                .custom-scroll::-webkit-scrollbar-thumb:hover {
+                    background: #94a3b8;
+                }
+            `}</style>
         </div>
     );
 }
@@ -341,8 +530,8 @@ function AppointmentsContent() {
 export default function AppointmentsPage() {
     return (
         <Suspense fallback={
-            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' }}>
-                <p style={{ fontSize: 13, color: '#94a3b8' }}>Memuat...</p>
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <div className="w-12 h-12 border-3 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
             </div>
         }>
             <AppointmentsContent />
