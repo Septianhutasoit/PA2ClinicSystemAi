@@ -22,6 +22,8 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     const [logoError, setLogoError] = useState(false);
     const [isQuickOpen, setIsQuickOpen] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const notifRef = useRef<HTMLDivElement>(null);
 
     // 1. PROTEKSI ROLE PASIEN
     useEffect(() => {
@@ -39,6 +41,37 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         const handleScroll = () => setIsScrolled(window.scrollY > 80);
         window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const checkLiveStatus = async () => {
+        try {
+            const res = await api.get('/clinic/appointments/me');
+            const myAppt = res.data[0]; // Ambil janji temu terbaru pasien
+
+            if (myAppt.status === 'scheduled') {
+                setNotifications([{
+                    id: myAppt.id,
+                    title: "GILIRAN ANDA! 🔔",
+                    desc: `Silakan masuk ke ruangan ${myAppt.doctor_name}.`,
+                    color: "bg-blue-500 animate-pulse" // Biru berkedip
+                }]);
+                setUnreadCount(1);
+            } else if (myAppt.status === 'completed') {
+                // Jika sudah selesai, beritahu rekam medis sudah ada
+                setNotifications([{
+                    id: myAppt.id,
+                    title: "Pemeriksaan Selesai ✅",
+                    desc: "Riwayat kesehatan Anda telah diperbarui.",
+                    color: "bg-emerald-500"
+                }]);
+            }
+        } catch (err) { /* silent */ }
+    };
+
+    // Cek setiap 10 detik agar terasa "Live"
+    useEffect(() => {
+        const timer = setInterval(checkLiveStatus, 10000);
+        return () => clearInterval(timer);
     }, []);
 
     const handleLogout = () => setShowLogoutModal(true);

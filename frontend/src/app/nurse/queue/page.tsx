@@ -50,14 +50,20 @@ export default function NurseQueuePage() {
         setToast(msg);
         setTimeout(() => setToast(null), 3000);
     };
-
     const handleStatusUpdate = async (id: number, newStatus: string) => {
         try {
-            await api.patch(`/clinic/appointments/${id}`, { status: newStatus });
-            showToast('Status pasien berhasil diperbarui');
-            fetchData();
-        } catch {
-            showToast('Gagal memperbarui status');
+            // PERBAIKAN: Gunakan endpoint /status agar masuk ke logika validasi backend
+            await api.patch(`/clinic/appointments/${id}/status`, {
+                status: newStatus
+            });
+
+            const msg = newStatus === 'scheduled' ? 'Pasien dipanggil!' : 'Pemeriksaan selesai!';
+            showToast(`✅ ${msg}`);
+
+            fetchData(); // Muat ulang data tabel agar status berubah di layar perawat
+        } catch (err) {
+            showToast('❌ Gagal memperbarui status. Cek koneksi server.');
+            console.error(err);
         }
     };
 

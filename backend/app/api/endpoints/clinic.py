@@ -61,12 +61,12 @@ def get_my_profile(db: Session = Depends(get_db), current_user: dict = Depends(g
 #   cancelled → dibatalkan
 # ─────────────────────────────────────────────────────────────────────────────
 
-VALID_STATUSES = {"pending", "confirmed", "completed", "cancelled"}
+VALID_STATUSES = {"pending", "confirmed", "scheduled", "completed", "cancelled"}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # HELPER: ambil User dari email token (DRY)
-# ══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════
 
 def _get_user_by_token(current_user: dict, db: Session) -> User:
     user = db.query(User).filter(User.email == current_user["email"]).first()
