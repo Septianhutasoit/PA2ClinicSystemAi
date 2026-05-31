@@ -9,7 +9,7 @@ import {
     Bell, ChevronDown, LogOut, Settings, User, Home,
     Menu, X, UserPlus, Building2, UsersRound,
     LayoutDashboard, CalendarCheck, FileText,
-    Stethoscope, Users, ClipboardList, Info, Target
+    Stethoscope, Users, ClipboardList, Sparkles, Target, HeartPulse
 } from 'lucide-react';
 import api from '@/services/api';
 
@@ -113,6 +113,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         { name: 'Nauli Dental', href: '/patient/about', icon: Building2 },
         { name: 'Tim Kami', href: '/patient/doctors', icon: UsersRound },
         { name: 'Visi & Misi', href: '/patient/visiMisi', icon: Target },
+        { name: 'NauliCo', href: '/patient/nauli-co', icon: Sparkles },
     ];
 
     if (!isAuthorized) return null;
@@ -120,7 +121,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     const isHeroPage = [
         '/patient/dashboard', '/patient/about', '/patient/appointments',
         '/patient/records', '/patient/services', '/patient/visiMisi',
-        '/patient/doctors',
+        '/patient/doctors', '/patient/nauli-co',
     ].some(p => pathname.startsWith(p));
 
     return (
