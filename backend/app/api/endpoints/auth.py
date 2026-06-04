@@ -79,34 +79,37 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
 # --- FITUR RESET PASSWORD (Harus Login) ---
 
-class ResetPasswordRequest(BaseModel):
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
     new_password: str
 
+# --- 2. Ganti Fungsi reset_password menjadi Publik ---
 @router.post("/reset-password")
 def reset_password(
-    data: ResetPasswordRequest, 
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(security.get_current_user)
+    data: ForgotPasswordRequest, # Menggunakan skema baru (email + password)
+    db: Session = Depends(get_db)
+    # HAPUS baris current_user: dict = Depends(...) agar bisa diakses tanpa login
 ):
-    # Ambil email dari token JWT (bukan dari input user)
-    user = db.query(User).filter(User.email == current_user["email"]).first()
+    # Cari user berdasarkan email yang diinput di form
+    email_clean = data.email.lower().strip()
+    user = db.query(User).filter(User.email == email_clean).first()
     
     if not user:
-        raise HTTPException(status_code=404, detail="User tidak ditemukan")
+        raise HTTPException(status_code=404, detail="Email tidak ditemukan di sistem")
 
-    # Validasi panjang password minimum
+    # Validasi panjang password
     if len(data.new_password) < 8:
         raise HTTPException(status_code=400, detail="Password minimal 8 karakter")
 
-    # 3. Hash password baru dan update ke kolom hashed_password
+    # Hash password baru
     user.hashed_password = security.get_password_hash(data.new_password)
     
     try:
         db.commit()
-        return {"message": "Password berhasil diperbarui!"}
+        return {"message": "Password berhasil diperbarui! Silakan kembali ke halaman login."}
     except Exception as e:
         db.rollback()
-        print(f"DEBUG ERROR: {str(e)}")
+        print(f"DEBUG ERROR RESET: {str(e)}")
         raise HTTPException(status_code=500, detail="Gagal menyimpan ke database.")
 
 @router.get("/me", response_model=UserResponse)
