@@ -51,7 +51,7 @@ export default function NauliCoLayout({ children }: { children: React.ReactNode 
                                 <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
                             </div>
                             <span className="text-[10px] font-black uppercase tracking-[0.18em] hidden sm:block">
-                                Portal
+                                Kembali
                             </span>
                         </Link>
 

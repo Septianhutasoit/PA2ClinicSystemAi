@@ -1,51 +1,37 @@
 'use client';
-import { motion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
+import { useRef } from 'react';
 import Link from 'next/link';
 import {
     ArrowRight, CheckCircle, Users, Star, Award,
     Heart, Sparkles, MapPin, Search, CalendarCheck,
-    Stethoscope, Smartphone, MousePointer2
+    Stethoscope, Smartphone, MousePointer2, Shield,
+    Clock, Phone, Mail, Quote, ThumbsUp, TrendingUp,
+    Smile, Activity
 } from 'lucide-react';
 
 const fadeUp = (delay = 0) => ({
-    initial: { opacity: 0, y: 24 },
+    initial: { opacity: 0, y: 30 },
     whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1], delay },
+    viewport: { once: true, margin: "-100px" },
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1], delay },
+});
+
+const slideInLeft = (delay = 0) => ({
+    initial: { opacity: 0, x: -60 },
+    whileInView: { opacity: 1, x: 0 },
+    viewport: { once: true, margin: "-100px" },
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1], delay },
+});
+
+const slideInRight = (delay = 0) => ({
+    initial: { opacity: 0, x: 60 },
+    whileInView: { opacity: 1, x: 0 },
+    viewport: { once: true, margin: "-100px" },
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1], delay },
 });
 
 export default function NauliCoAboutPage() {
-
-    const patientJourney = [
-        {
-            step: "01",
-            title: "Reservasi Online",
-            desc: "Daftar melalui portal atau WhatsApp kami untuk memilih jadwal dokter spesialis.",
-            icon: Smartphone,
-            color: "#10B981"
-        },
-        {
-            step: "02",
-            title: "Konfirmasi & Datang",
-            desc: "Tim kami akan mengirimkan pengingat. Harap datang 15 menit sebelum jadwal.",
-            icon: MapPin,
-            color: "#059669"
-        },
-        {
-            step: "03",
-            title: "Pemeriksaan AI",
-            desc: "Diagnosa akurat menggunakan teknologi pemindaian 3D dan bantuan kecerdasan buatan.",
-            icon: Search,
-            color: "#047857"
-        },
-        {
-            step: "04",
-            title: "Tindakan Medis",
-            desc: "Perawatan dilakukan oleh tim dokter ahli dengan standar sterilisasi internasional.",
-            icon: Stethoscope,
-            color: "#065F46"
-        }
-    ];
 
     return (
         <div className="min-h-screen" style={{ backgroundColor: '#ECFDF5' }}>
@@ -55,41 +41,55 @@ export default function NauliCoAboutPage() {
                 className="relative w-full min-h-screen flex items-start overflow-hidden -mt-24 pt-24"
                 style={{ backgroundColor: '#ECFDF5' }}
             >
-                {/* Orbs dekorasi */}
                 <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-200/40 rounded-full blur-[100px] pointer-events-none -translate-y-1/4 translate-x-1/4" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-200/30 rounded-full blur-[100px] pointer-events-none translate-y-1/3 -translate-x-1/3" />
 
                 <div className="max-w-7xl mx-auto px-6 sm:px-10 w-full pt-32 pb-20 relative z-10">
-                    <div className="grid md:grid-cols-2 gap-10 items-start">
+                    <div className="grid md:grid-cols-2 gap-10 items-center">
 
-                        {/* ── Kiri: Teks ── */}
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                             className="space-y-6"
                         >
-                            <h1 className="text-7xl sm:text-8xl lg:text-9xl font-black leading-[0.85] tracking-tighter" style={{ color: '#005A32' }}>
-                                Are You<br />Next?
+                            <div className="inline-flex items-center gap-2 bg-emerald-100 px-4 py-2 rounded-full">
+                                <Sparkles size={14} className="text-emerald-700" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Nauli Dental Care</span>
+                            </div>
+                            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black leading-[0.9] tracking-tighter" style={{ color: '#005A32' }}>
+                                Senyum Sehat<br />
+                                <span className="text-emerald-500">Masa Depan Cerah</span>
                             </h1>
                             <div className="space-y-4 max-w-md pt-2">
-                                <p className="text-emerald-900/75 text-lg font-bold leading-relaxed italic">
-                                    Jadilah bagian dari gerakan yang mengedukasi masyarakat tentang pentingnya perawatan gigi berkualitas!
+                                <p className="text-emerald-900/75 text-lg font-bold leading-relaxed">
+                                    Klinik gigi modern berbasis AI di Balige, Sumatera Utara.
                                 </p>
                                 <p className="text-slate-500 text-[15px] leading-relaxed">
-                                    Nauli Dental Care Balige berkomitmen memberikan layanan kesehatan gigi terbaik dengan dukungan teknologi AI modern untuk hasil yang lebih presisi.
+                                    Kami berkomitmen memberikan layanan kesehatan gigi terbaik dengan dukungan teknologi AI modern
+                                    untuk hasil yang lebih presisi dan pengalaman perawatan yang nyaman.
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-3 pt-4">
-                                <Link href="/patient/nauli-co/register-as-partner">
-                                    <button className="bg-[#006D44] text-white px-10 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-emerald-400/30">
-                                        Daftar Sekarang
+                                <Link href="/patient/appointments">
+                                    <button className="bg-[#006D44] text-white px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-emerald-400/30 flex items-center gap-2">
+                                        Buat Janji <ArrowRight size={14} />
+                                    </button>
+                                </Link>
+                                <Link href="/patient/contact">
+                                    <button className="bg-white text-[#006D44] px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-md border border-emerald-200">
+                                        Hubungi Kami
                                     </button>
                                 </Link>
                             </div>
                         </motion.div>
 
-                        {/* ── Kanan: Foto ── */}
-                        <motion.div {...fadeUp(0.2)} className="relative flex justify-center">
+                        <motion.div
+                            initial={{ opacity: 0, x: 30 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.7, delay: 0.2 }}
+                            className="relative flex justify-center"
+                        >
                             <div className="absolute inset-0 bg-emerald-300/20 rounded-full blur-[80px] pointer-events-none" />
                             <img src="/images/doctors.jpg" alt="Nauli Dental" className="w-full max-w-[460px] rounded-[2.5rem] shadow-2xl border-8 border-white/70" />
                         </motion.div>
@@ -97,83 +97,176 @@ export default function NauliCoAboutPage() {
                 </div>
             </section>
 
-            {/* ══ PANDUAN: ROUTE GRAFIK (Alur Pasien) ══ */}
-            <section className="px-6 sm:px-10 py-24 relative overflow-hidden">
+            {/* ══ TEKS AJAKAN DENGAN ANIMASI SCROLL KIRI-KANAN ══ */}
+            <section className="px-6 sm:px-10 py-20">
                 <div className="max-w-6xl mx-auto">
-                    <motion.div {...fadeUp()} className="text-center mb-20">
+
+                    {/* Header Section - Tengah */}
+                    <motion.div {...fadeUp()} className="text-center mb-16">
                         <div className="inline-flex items-center gap-2 bg-emerald-100 px-4 py-2 rounded-full mb-4">
-                            <CalendarCheck size={14} className="text-emerald-700" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Langkah Berobat</span>
+                            <Heart size={14} className="text-emerald-700" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Mengapa Memilih Nauli Dental</span>
                         </div>
                         <h2 className="text-4xl md:text-5xl font-black tracking-tight" style={{ color: '#005A32' }}>
-                            Alur Perjalanan <span className="text-emerald-500 font-medium">Pasien</span>
+                            Percayakan Kesehatan Gigi Anda<br />
+                            <span className="text-emerald-500">Kepada Ahlinya</span>
                         </h2>
                     </motion.div>
 
-                    <div className="relative">
-                        {/* Garis Tengah Grafik */}
-                        <div className="absolute left-[20px] md:left-1/2 top-0 bottom-0 w-1 bg-emerald-200/50 md:-translate-x-1/2 rounded-full" />
+                    <div className="space-y-16">
 
-                        <div className="space-y-12">
-                            {patientJourney.map((item, i) => {
-                                const Icon = item.icon;
-                                return (
-                                    <motion.div
-                                        key={i}
-                                        {...fadeUp(i * 0.1)}
-                                        className={`relative flex items-center justify-between md:justify-normal w-full group ${i % 2 !== 0 ? 'md:flex-row-reverse' : ''}`}
-                                    >
-                                        {/* Point di tengah garis */}
-                                        <div className="absolute left-[20px] md:left-1/2 w-4 h-4 bg-emerald-500 rounded-full border-4 border-[#ECFDF5] z-10 md:-translate-x-1/2 shadow-sm" />
-
-                                        {/* Konten Card */}
-                                        <div className="w-full md:w-[45%] ml-12 md:ml-0">
-                                            <div className="bg-white p-6 rounded-3xl shadow-xl shadow-emerald-900/5 border border-white group-hover:border-emerald-200 transition-all">
-                                                <div className="flex items-center gap-4 mb-3">
-                                                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white" style={{ backgroundColor: item.color }}>
-                                                        <Icon size={22} />
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Step {item.step}</span>
-                                                        <h4 className="text-lg font-black text-slate-800 leading-none">{item.title}</h4>
-                                                    </div>
-                                                </div>
-                                                <p className="text-sm text-slate-500 leading-relaxed font-medium">{item.desc}</p>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ══ STATS ══ */}
-            <section className="px-6 sm:px-10 pb-24">
-                <div className="max-w-5xl mx-auto">
-                    <div className="grid grid-cols-3 gap-4">
-                        {[
-                            { v: '1.500+', l: 'Pasien Terlayani', i: Users },
-                            { v: '5 Th', l: 'Pengalaman', i: Award },
-                            { v: '98%', l: 'Kepuasan', i: Star },
-                        ].map((s, i) => (
-                            <motion.div key={i} {...fadeUp(i * 0.05)} className="bg-white border border-emerald-100 rounded-2xl p-6 text-center shadow-sm">
-                                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-                                    <s.i size={18} />
+                        {/* Block 1: Quote - Kiri */}
+                        <motion.div {...slideInLeft()} className="grid md:grid-cols-2 gap-8 items-center">
+                            <div className="bg-white rounded-2xl p-8 shadow-lg border border-emerald-100">
+                                <Quote size={40} className="text-emerald-300 mb-4" />
+                                <p className="text-lg md:text-xl font-medium text-slate-700 leading-relaxed">
+                                    "Kesehatan gigi adalah cerminan dari kesehatan tubuh secara keseluruhan.
+                                    Di Nauli Dental Care, kami percaya bahwa setiap orang berhak mendapatkan senyum sehat
+                                    dan percaya diri tanpa harus khawatir dengan biaya atau rasa sakit."
+                                </p>
+                                <div className="mt-4 flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                                        <span className="text-emerald-600 font-black">N</span>
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-slate-800">Nauli Dental Care</p>
+                                        <p className="text-xs text-slate-400">Est. 2024 · Balige, Sumatera Utara</p>
+                                    </div>
                                 </div>
-                                <p className="text-2xl font-black text-emerald-700">{s.v}</p>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{s.l}</p>
-                            </motion.div>
-                        ))}
+                            </div>
+                            <div className="hidden md:block"></div>
+                        </motion.div>
+
+                        {/* Block 2: Teks Ajakan - Kanan */}
+                        <motion.div {...slideInRight()} className="grid md:grid-cols-2 gap-8 items-center">
+                            <div className="hidden md:block"></div>
+                            <div className="bg-white rounded-2xl p-8 shadow-lg border border-emerald-100">
+                                <div className="space-y-5">
+                                    <p className="text-slate-600 leading-relaxed">
+                                        Dengan memilih <span className="font-bold text-emerald-600">Nauli Dental Care</span>, Anda tidak hanya mendapatkan perawatan gigi berkualitas,
+                                        tetapi juga menjadi bagian dari gerakan masyarakat yang peduli terhadap pentingnya kesehatan gigi dan mulut.
+                                        Kami menghadirkan pengalaman perawatan yang nyaman, modern, dan terjangkau untuk seluruh lapisan masyarakat di Balige dan sekitarnya.
+                                    </p>
+                                    <p className="text-slate-600 leading-relaxed">
+                                        Bersama <span className="font-bold text-emerald-600">Nauli Dental Care</span>, Anda akan merasakan perbedaan nyata dalam setiap kunjungan.
+                                        Tim dokter spesialis kami tidak hanya ahli dalam bidangnya, tetapi juga memiliki kepedulian tinggi
+                                        terhadap kenyamanan dan kebutuhan setiap pasien.
+                                    </p>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        {/* Block 3: Manfaat - Kiri */}
+                        <motion.div {...slideInLeft()} className="grid md:grid-cols-2 gap-8 items-center">
+                            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl p-8 border border-emerald-100">
+                                <h3 className="text-xl font-black text-emerald-800 mb-5 flex items-center gap-2">
+                                    <TrendingUp size={22} className="text-emerald-600" />
+                                    Manfaat Memilih Nauli Dental Care:
+                                </h3>
+                                <div className="space-y-4">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center mt-0.5 shrink-0">
+                                            <span className="text-white text-[10px] font-black">1</span>
+                                        </div>
+                                        <p className="text-sm text-slate-700">
+                                            <span className="font-bold text-emerald-700">Konsultasi Pertama GRATIS</span> — Tanpa biaya, tanpa komitmen.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center mt-0.5 shrink-0">
+                                            <span className="text-white text-[10px] font-black">2</span>
+                                        </div>
+                                        <p className="text-sm text-slate-700">
+                                            <span className="font-bold text-emerald-700">Teknologi AI Modern</span> — Diagnosis lebih akurat dengan kecerdasan buatan.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center mt-0.5 shrink-0">
+                                            <span className="text-white text-[10px] font-black">3</span>
+                                        </div>
+                                        <p className="text-sm text-slate-700">
+                                            <span className="font-bold text-emerald-700">Booking Online 24/7</span> — Mudah, cepat, kapan saja.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center mt-0.5 shrink-0">
+                                            <span className="text-white text-[10px] font-black">4</span>
+                                        </div>
+                                        <p className="text-sm text-slate-700">
+                                            <span className="font-bold text-emerald-700">Tim Dokter Spesialis</span> — Berpengalaman di bidangnya.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center mt-0.5 shrink-0">
+                                            <span className="text-white text-[10px] font-black">5</span>
+                                        </div>
+                                        <p className="text-sm text-slate-700">
+                                            <span className="font-bold text-emerald-700">Harga Transparan & Terjangkau</span> — Tanpa biaya tersembunyi.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="hidden md:block"></div>
+                        </motion.div>
+
+                        {/* Block 4: Testimoni - Kanan */}
+                        <motion.div {...slideInRight()} className="grid md:grid-cols-2 gap-8 items-center">
+                            <div className="hidden md:block"></div>
+                            <div className="bg-white rounded-2xl p-8 shadow-lg border border-emerald-100 text-center">
+                                <div className="flex justify-center mb-4">
+                                    <div className="flex gap-0.5">
+                                        {[...Array(5)].map((_, i) => (
+                                            <Star key={i} size={18} className="fill-amber-400 text-amber-400" />
+                                        ))}
+                                    </div>
+                                </div>
+                                <p className="text-slate-600 italic leading-relaxed">
+                                    "Pelayanan sangat memuaskan, dokter ramah dan profesional.
+                                    Klinik bersih dan nyaman. Sangat rekomended untuk perawatan gigi di Balige!"
+                                </p>
+                                <p className="mt-3 font-bold text-slate-800">— Rina Simanjuntak, Pasien Nauli Dental</p>
+                                <p className="text-xs text-slate-400 mt-1">Rating Google Maps 4.9/5 · 500+ ulasan</p>
+                            </div>
+                        </motion.div>
+
+                        {/* Block 5: Ajakan Penutup - Kiri */}
+                        <motion.div {...slideInLeft()} className="grid md:grid-cols-2 gap-8 items-center">
+                            <div className="text-center md:text-left">
+                                <p className="text-slate-700 text-lg leading-relaxed">
+                                    Jangan tunda lagi! Kesehatan gigi yang baik adalah investasi untuk masa depan Anda.
+                                </p>
+                                <p className="text-emerald-600 font-bold text-xl mt-3">
+                                    Daftar sekarang dan rasakan pengalaman perawatan gigi modern!
+                                </p>
+                                <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-6">
+                                    <Link href="/patient/appointments">
+                                        <button className="bg-[#006D44] text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-emerald-700 transition shadow-md flex items-center gap-2">
+                                            Buat Janji Sekarang <ArrowRight size={14} />
+                                        </button>
+                                    </Link>
+                                    <a href="https://wa.me/628126530965" target="_blank">
+                                        <button className="bg-[#25D366] text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-[#20b558] transition shadow-md flex items-center gap-2">
+                                            Chat WhatsApp
+                                        </button>
+                                    </a>
+                                </div>
+                            </div>
+                            <div className="hidden md:block"></div>
+                        </motion.div>
                     </div>
                 </div>
             </section>
 
-            {/* ══ CTA SECTION ══ */}
+            {/* ══ CTA SECTION FINAL ══ */}
             <section className="px-6 sm:px-10 pb-32">
                 <div className="max-w-6xl mx-auto">
-                    <motion.div {...fadeUp()} className="bg-[#005A32] rounded-[3rem] p-10 md:p-16 text-white relative overflow-hidden text-center">
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.7 }}
+                        className="bg-[#005A32] rounded-[3rem] p-10 md:p-16 text-white relative overflow-hidden text-center"
+                    >
                         <Sparkles className="absolute top-10 right-10 text-emerald-400/20" size={80} />
                         <div className="relative z-10">
                             <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tight">Siap Mendapatkan<br />Senyum Impian Anda?</h2>
@@ -184,12 +277,16 @@ export default function NauliCoAboutPage() {
                                         Buat Janji Online <ArrowRight size={14} />
                                     </button>
                                 </Link>
+                                <Link href="/patient/contact">
+                                    <button className="bg-white/20 text-white px-10 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest border border-white/30 hover:bg-white/30 transition-all">
+                                        Hubungi Kami
+                                    </button>
+                                </Link>
                             </div>
                         </div>
                     </motion.div>
                 </div>
             </section>
-
         </div>
     );
 }
