@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
 import {
-    ArrowUp, X, User,
+    ArrowUp, X, User, CalendarDays,
     Maximize2, Minimize2, Trash2, ChevronRight,
     Plus, Search, Edit2,
     ThumbsUp, ThumbsDown, Copy, Check,
@@ -115,6 +115,8 @@ export default function Chatbot() {
     const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
     const [editTitleValue, setEditTitleValue] = useState('');
     const [isHovered, setIsHovered] = useState(false);
+    const [isBookingHovered, setIsBookingHovered] = useState(false); // State untuk tombol Booking
+const [isAiHovered, setIsAiHovered] = useState(false); // State pendukung tombol AI
 
     const feedbackInFlight = useRef<Set<string>>(new Set());
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -263,6 +265,39 @@ export default function Chatbot() {
     );
 
     if (!isOpen) return (
+    <>
+            {/* --- INI KODE TAMBAHAN UNTUK BOOKING (HANYA TAMBAH, TIDAK UBAH AI) --- */}
+            <motion.a
+                href="#booking"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                whileTap={{ scale: 0.95 }}
+                onMouseEnter={() => setIsBookingHovered(true)}
+                onMouseLeave={() => setIsBookingHovered(false)}
+                style={{
+                    position: 'fixed',
+                    bottom: 116, // Posisinya di atas tombol AI (24 + 80 + 12 gap)
+                    right: 24,
+                    zIndex: 9999,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    justifyContent: 'center', gap: 4,
+                    width: 80, height: 80,
+                    borderRadius: 12,
+                    backgroundColor: isBookingHovered ? '#10b981' : '#2e324d',
+                    border: isBookingHovered ? '1px solid #34d399' : '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: isBookingHovered ? '0 10px 25px rgba(16,185,129,0.3)' : '0 8px 24px rgba(0,0,0,0.2)',
+                    cursor: 'pointer', textDecoration: 'none',
+                    transition: 'all 0.3s ease',
+                }}
+            >
+                <div style={{ color: isBookingHovered ? '#ffffff' : '#10b981', transition: 'all 0.3s ease' }}>
+                    <CalendarDays size={32} />
+                </div>
+                <span style={{ fontSize: 10, fontWeight: 800, color: '#ffffff', textTransform: 'uppercase' }}>
+                    Booking
+                </span>
+            </motion.a>
+        
         <motion.button
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -335,6 +370,7 @@ export default function Chatbot() {
                 Ask AI
             </span>
         </motion.button>
+    </>
     );
 
     // ── CHATBOT WINDOW ──

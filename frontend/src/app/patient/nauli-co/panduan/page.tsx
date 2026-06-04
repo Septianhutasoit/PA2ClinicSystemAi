@@ -2,208 +2,143 @@
 import { motion } from 'framer-motion';
 import {
     ArrowRight, MapPin, Clock, Stethoscope,
-    Phone, Instagram, Facebook, CheckCircle2,
+    Instagram, Facebook, CheckCircle2,
     CalendarCheck, Smartphone, Sparkles, MessageCircle,
-    Users, Award, Star, Heart
+    Heart, BadgeCheck, Navigation, Info
 } from 'lucide-react';
 import Link from 'next/link';
 
-/* ── Animation Helper ── */
 const fadeUp = (delay = 0) => ({
     initial: { opacity: 0, y: 24 },
     whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
+    viewport: { once: true, margin: '-60px' },
     transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1], delay },
 });
 
+const SERVICES = [
+    "Pembersihan karang gigi (Scaling)",
+    "Penambalan gigi estetis (Sinar/Komposit)",
+    "Pemutihan gigi (Bleaching)",
+    "Perawatan gigi anak (Topical Fluoride)",
+    "Konsultasi Gigi Berlubang & Abses",
+    "Kerapian Gigi (Orthodontic Consultation)",
+];
+
+const JOURNEY = [
+    {
+        step: "01",
+        title: "Reservasi Online atau via WhatsApp",
+        icon: Smartphone,
+        color: "#10B981",
+        points: [
+            "Buka portal pasien Nauli Dental atau hubungi kami via WhatsApp.",
+            "Pilih cabang klinik, tanggal kunjungan, dan dokter spesialis yang tersedia.",
+            "Isi data diri dan keluhan singkat agar dokter dapat mempersiapkan pemeriksaan.",
+            "Reservasi selesai dalam kurang dari 2 menit — tanpa antri, tanpa kerumitan.",
+        ],
+    },
+    {
+        step: "02",
+        title: "Konfirmasi Jadwal & Persiapan Kunjungan",
+        icon: CalendarCheck,
+        color: "#059669",
+        points: [
+            "Tim kami akan mengirimkan konfirmasi jadwal melalui WhatsApp.",
+            "Pengingat otomatis dikirim sehari sebelum kunjungan agar Anda tidak lupa.",
+            "Hadir 15 menit lebih awal untuk proses registrasi dan pengisian rekam medis.",
+            "Pastikan membawa kartu identitas dan, jika ada, dokumen riwayat perawatan gigi sebelumnya.",
+        ],
+    },
+    {
+        step: "03",
+        title: "Pemeriksaan & Tindakan oleh Dokter Ahli",
+        icon: Stethoscope,
+        color: "#047857",
+        points: [
+            "Dokter spesialis melakukan pemeriksaan menyeluruh pada kondisi gigi dan mulut Anda.",
+            "Diagnosis disampaikan secara jelas beserta pilihan rencana perawatan yang tersedia.",
+            "Tindakan dilakukan dengan peralatan modern dan standar sterilisasi internasional.",
+            "Setelah selesai, dokter memberikan panduan perawatan lanjutan yang perlu diikuti di rumah.",
+        ],
+    },
+];
+
 export default function GuideAndHistoryPage() {
-
-    const services = [
-        "Pembersihan karang gigi (Scaling)",
-        "Penambalan gigi estetis (Sinar/Komposit)",
-        "Pemutihan gigi (Bleaching)",
-        "Perawatan gigi anak (Topical Fluoride)",
-        "Konsultasi Gigi Berlubang & Abses",
-        "Kerapian Gigi (Orthodontic Consultation)"
-    ];
-
-    const patientJourney = [
-        {
-            step: "01",
-            title: "Reservasi Online",
-            desc: "Daftar melalui portal atau WhatsApp kami untuk memilih jadwal dokter spesialis.",
-            icon: Smartphone,
-            color: "#10B981"
-        },
-        {
-            step: "02",
-            title: "Konfirmasi & Datang",
-            desc: "Tim kami akan mengirimkan pengingat. Harap datang 15 menit sebelum jadwal.",
-            icon: MapPin,
-            color: "#059669"
-        },
-        {
-            step: "03",
-            title: "Pemeriksaan & Tindakan",
-            desc: "Perawatan dilakukan oleh tim dokter ahli dengan standar sterilisasi internasional.",
-            icon: Stethoscope,
-            color: "#047857"
-        }
-    ];
-
     return (
-        <div className="min-h-screen" style={{ backgroundColor: '#ECFDF5' }}>
+        <div className="min-h-screen bg-[#ECFDF5]">
 
-            {/* ══ HERO SECTION ── Sejarah & Profil ══ */}
-            <section
-                className="relative w-full min-h-screen flex items-start overflow-hidden -mt-24 pt-24"
-                style={{ backgroundColor: '#ECFDF5' }}
-            >
-                {/* Orbs dekorasi */}
-                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-200/40 rounded-full blur-[100px] pointer-events-none -translate-y-1/4 translate-x-1/4" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-200/30 rounded-full blur-[100px] pointer-events-none translate-y-1/3 -translate-x-1/3" />
+            {/* ══════════════════════════
+                HERO
+            ══════════════════════════ */}
+            <section className="relative w-full min-h-screen flex items-start overflow-hidden -mt-24 pt-24 bg-[#ECFDF5]">
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-200/40 rounded-full blur-[120px] pointer-events-none -translate-y-1/4 translate-x-1/4" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-200/30 rounded-full blur-[120px] pointer-events-none translate-y-1/3 -translate-x-1/3" />
 
                 <div className="max-w-7xl mx-auto px-6 sm:px-10 w-full pt-32 pb-20 relative z-10">
-                    <div className="grid md:grid-cols-2 gap-10 items-center">
+                    <div className="grid md:grid-cols-2 gap-12 items-center">
 
-                        {/* ── Kiri: Teks ── */}
+                        {/* Left */}
                         <motion.div
-                            initial={{ opacity: 0, y: 30 }}
+                            initial={{ opacity: 0, y: 28 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                             className="space-y-6"
                         >
-                            <div className="inline-flex items-center gap-2 bg-emerald-100 px-4 py-2 rounded-full">
-                                <Sparkles size={14} className="text-emerald-700" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Profil & Panduan</span>
+                            <div className="inline-flex items-center gap-2 bg-emerald-100 border border-emerald-200 px-4 py-2 rounded-full">
+                                <Sparkles size={13} className="text-emerald-700" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Profil & Panduan Klinik</span>
                             </div>
-                            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black leading-[0.9] tracking-tighter" style={{ color: '#005A32' }}>
+
+                            <h1 className="text-6xl sm:text-7xl lg:text-[5.5rem] font-black leading-[0.9] tracking-tighter text-[#005A32]">
                                 Nauli<br />
                                 <span className="text-emerald-500">Dental Care</span>
                             </h1>
-                            <div className="space-y-4 max-w-md pt-2">
-                                <p className="text-emerald-900/75 text-lg font-bold leading-relaxed italic">
+
+                            <div className="space-y-3 max-w-md pt-1">
+                                <p className="text-emerald-900/75 text-lg font-bold leading-relaxed">
                                     Penyedia layanan kesehatan gigi dan mulut terpercaya di Sumatera Utara.
                                 </p>
                                 <p className="text-slate-500 text-[15px] leading-relaxed">
-                                    Mengedukasi masyarakat melalui perawatan estetika dan medis yang berkualitas,
-                                    dengan dukungan teknologi modern untuk hasil yang lebih presisi.
+                                    Kami hadir untuk membantu Anda mendapatkan senyum sehat dengan teknologi
+                                    modern, tim dokter berpengalaman, dan proses yang mudah dari awal hingga akhir.
                                 </p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-3 pt-2">
+                                <Link href="/patient/appointments">
+                                    <button className="group bg-[#006D44] text-white px-7 py-3.5 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-emerald-500/25 flex items-center gap-2 hover:bg-emerald-700 transition-all">
+                                        Buat Janji Sekarang
+                                        <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                                    </button>
+                                </Link>
+                                <a href="https://wa.me/628126530965" target="_blank" rel="noopener noreferrer">
+                                    <button className="bg-white text-[#006D44] px-7 py-3.5 rounded-2xl font-black text-[11px] uppercase tracking-widest border border-emerald-200 hover:border-emerald-400 transition-all shadow-sm">
+                                        Chat WhatsApp
+                                    </button>
+                                </a>
                             </div>
                         </motion.div>
 
-                        {/* ── Kanan: Foto ── */}
-                        <motion.div {...fadeUp(0.2)} className="relative flex justify-center">
+                        {/* Right */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 30 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.75, delay: 0.2 }}
+                            className="relative flex justify-center"
+                        >
                             <div className="absolute inset-0 bg-emerald-300/20 rounded-full blur-[80px] pointer-events-none" />
                             <img
                                 src="/images/doctors.jpg"
                                 alt="Nauli Dental"
-                                className="w-full max-w-[460px] rounded-[2.5rem] shadow-2xl border-8 border-white/70"
+                                className="w-full max-w-[460px] rounded-[2.5rem] shadow-2xl border-8 border-white/70 relative z-10"
                             />
-                        </motion.div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ══ STATS ══ */}
-            <section className="px-6 sm:px-10 pb-16">
-                <div className="max-w-5xl mx-auto">
-                    <div className="grid grid-cols-3 gap-4">
-                        {[
-                            { v: '1.500+', l: 'Pasien Terlayani', i: Users },
-                            { v: '5 Th', l: 'Pengalaman', i: Award },
-                            { v: '98%', l: 'Kepuasan', i: Star },
-                        ].map((s, i) => (
-                            <motion.div key={i} {...fadeUp(i * 0.05)} className="bg-white border border-emerald-100 rounded-2xl p-6 text-center shadow-sm">
-                                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-                                    <s.i size={18} />
+                            <div className="absolute bottom-6 left-4 z-20 bg-white rounded-2xl shadow-lg border border-emerald-100 px-4 py-3 flex items-center gap-3">
+                                <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center">
+                                    <BadgeCheck size={18} className="text-emerald-500" />
                                 </div>
-                                <p className="text-2xl font-black text-emerald-700">{s.v}</p>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{s.l}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ══ JARINGAN KLINIK (2 Kolom Bento Style) ══ */}
-            <section className="px-6 sm:px-10 pb-24">
-                <div className="max-w-6xl mx-auto">
-                    <motion.div {...fadeUp()} className="text-center mb-12">
-                        <div className="inline-flex items-center gap-2 bg-emerald-100 px-4 py-2 rounded-full mb-4">
-                            <MapPin size={14} className="text-emerald-700" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Jaringan Klinik</span>
-                        </div>
-                        <h2 className="text-3xl md:text-4xl font-black tracking-tight" style={{ color: '#005A32' }}>
-                            Lokasi <span className="text-emerald-500">Kami</span>
-                        </h2>
-                    </motion.div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* CABANG BALIGE */}
-                        <motion.div {...fadeUp(0.3)} className="bg-white rounded-[2.5rem] shadow-2xl shadow-emerald-900/10 border border-emerald-100 overflow-hidden group hover:shadow-xl transition-all">
-                            <div className="p-8 md:p-10">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
-                                        <MapPin size={28} />
-                                    </div>
-                                    <span className="bg-emerald-500 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase">Pusat - Toba</span>
-                                </div>
-                                <h3 className="text-2xl font-black text-slate-800 mb-3 uppercase tracking-tight">Cabang Balige</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed mb-6 font-medium">
-                                    Melayani pemeriksaan gigi umum hingga perawatan estetika wajah dan gigi di jantung Kabupaten Toba.
-                                </p>
-                                <div className="space-y-3 border-t border-slate-100 pt-5">
-                                    <div className="flex gap-3 text-xs">
-                                        <Clock size={16} className="text-emerald-500 shrink-0" />
-                                        <span className="text-slate-600 font-semibold">Senin – Jumat: 10.00 – 20.00 WIB | Sabtu: 10.00 – 18.00 WIB</span>
-                                    </div>
-                                    <div className="flex gap-3 text-xs">
-                                        <Stethoscope size={16} className="text-emerald-500 shrink-0" />
-                                        <span className="text-slate-600">drg. Yetti M, drg. Sere S, drg. Domdom P.</span>
-                                    </div>
-                                </div>
-                                <div className="mt-6 flex gap-3">
-                                    <a href="https://wa.me/628126530965" className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold text-[11px] uppercase tracking-wider text-center hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 flex items-center justify-center gap-2">
-                                        <MessageCircle size={14} /> WhatsApp
-                                    </a>
-                                    <a href="https://instagram.com/dentalcare.nauli" className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-pink-500 transition border border-slate-100">
-                                        <Instagram size={18} />
-                                    </a>
-                                </div>
-                            </div>
-                        </motion.div>
-
-                        {/* CABANG TANAH JAWA */}
-                        <motion.div {...fadeUp(0.4)} className="bg-white rounded-[2.5rem] shadow-2xl shadow-emerald-900/10 border border-emerald-100 overflow-hidden group hover:shadow-xl transition-all">
-                            <div className="p-8 md:p-10">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100">
-                                        <MapPin size={28} />
-                                    </div>
-                                    <span className="bg-slate-800 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase">Cabang - Simalungun</span>
-                                </div>
-                                <h3 className="text-2xl font-black text-slate-800 mb-3 uppercase tracking-tight">Tanah Jawa</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed mb-6 font-medium">
-                                    Klinik alternatif strategis yang berada di wilayah Simalungun, samping Kantor Pos Tanah Jawa.
-                                </p>
-                                <div className="space-y-3 border-t border-slate-100 pt-5">
-                                    <div className="flex gap-3 text-xs">
-                                        <Clock size={16} className="text-emerald-500 shrink-0" />
-                                        <span className="text-slate-600 font-semibold">Senin – Sabtu: 13.00 – 20.00 WIB (Reservasi)</span>
-                                    </div>
-                                    <div className="flex gap-3 text-xs">
-                                        <MapPin size={16} className="text-emerald-500 shrink-0" />
-                                        <span className="text-slate-600">Ruko Putih, Samping Kantor Pos Tanah Jawa, Pematang-Tanahdjawah.</span>
-                                    </div>
-                                </div>
-                                <div className="mt-6 flex gap-3">
-                                    <a href="https://wa.me/6282276075793" className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-bold text-[11px] uppercase tracking-wider text-center hover:bg-slate-900 transition shadow-lg shadow-slate-200 flex items-center justify-center gap-2">
-                                        <MessageCircle size={14} /> WhatsApp
-                                    </a>
-                                    <a href="#" className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-blue-600 transition border border-slate-100">
-                                        <Facebook size={18} />
-                                    </a>
+                                <div>
+                                    <p className="text-slate-800 font-black text-sm leading-none">Terdaftar & Tersertifikasi</p>
+                                    <p className="text-slate-400 text-[10px] mt-0.5">IDI · PDGI · Est. 2024</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -211,98 +146,152 @@ export default function GuideAndHistoryPage() {
                 </div>
             </section>
 
-            {/* ══ LAYANAN KOMPREHENSIF ══ */}
-            <section className="px-6 sm:px-10 py-16">
-                <div className="max-w-5xl mx-auto">
-                    <motion.div {...fadeUp()} className="text-center mb-12">
-                        <div className="inline-flex items-center gap-2 bg-emerald-100 px-4 py-2 rounded-full mb-4">
-                            <Heart size={14} className="text-emerald-700" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Layanan Kami</span>
-                        </div>
-                        <h2 className="text-3xl md:text-4xl font-black tracking-tight" style={{ color: '#005A32' }}>
-                            Layanan Medis <span className="text-emerald-500">Unggulan</span>
-                        </h2>
-                        <div className="h-1.5 w-12 bg-emerald-500 rounded-full mx-auto mt-4" />
-                    </motion.div>
+            {/* ══════════════════════════
+                PANDUAN KUNJUNGAN
+            ══════════════════════════ */}
+            <section id="panduan" className="px-6 sm:px-10 py-20">
+                <div className="max-w-4xl mx-auto">
 
-                    <div className="grid sm:grid-cols-2 gap-4">
-                        {services.map((service, i) => (
-                            <motion.div key={i} {...fadeUp(i * 0.05)} className="flex items-center gap-4 bg-white p-5 rounded-2xl border border-emerald-50 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all">
-                                <CheckCircle2 className="text-emerald-500 shrink-0" size={20} />
-                                <span className="text-sm font-bold text-slate-700">{service}</span>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ══ PANDUAN KUNJUNGAN (ALUR PASIEN) ══ */}
-            <section className="px-6 sm:px-10 py-20 relative overflow-hidden">
-                <div className="max-w-5xl mx-auto">
-                    <motion.div {...fadeUp()} className="text-center mb-16">
-                        <div className="inline-flex items-center gap-2 bg-emerald-100 px-4 py-2 rounded-full mb-4">
-                            <CalendarCheck size={14} className="text-emerald-700" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Langkah Berobat</span>
+                    <motion.div {...fadeUp()} className="text-center mb-14">
+                        <div className="inline-flex items-center gap-2 bg-emerald-100 border border-emerald-200 px-4 py-2 rounded-full mb-4">
+                            <CalendarCheck size={13} className="text-emerald-700" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Cara Berobat</span>
                         </div>
-                        <h2 className="text-3xl md:text-4xl font-black tracking-tight" style={{ color: '#005A32' }}>
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#005A32]">
                             Panduan <span className="text-emerald-500">Kunjungan</span>
                         </h2>
-                        <p className="text-slate-500 text-sm mt-3 max-w-md mx-auto">Ikuti langkah mudah berikut untuk mendapatkan perawatan terbaik</p>
+                        <p className="text-slate-500 text-sm mt-3 max-w-md mx-auto leading-relaxed">
+                            Ikuti langkah berikut untuk mendapatkan perawatan gigi terbaik.
+                            Prosesnya mudah, cepat, dan nyaman untuk Anda.
+                        </p>
                     </motion.div>
 
-                    <div className="relative">
-                        {/* Garis Tengah Grafik */}
-                        <div className="absolute left-[20px] md:left-1/2 top-0 bottom-0 w-1 bg-emerald-200/50 md:-translate-x-1/2 rounded-full" />
-
-                        <div className="space-y-12">
-                            {patientJourney.map((item, i) => {
-                                const Icon = item.icon;
-                                return (
-                                    <motion.div
-                                        key={i}
-                                        {...fadeUp(i * 0.1)}
-                                        className={`relative flex items-center justify-between md:justify-normal w-full group ${i % 2 !== 0 ? 'md:flex-row-reverse' : ''}`}
-                                    >
-                                        {/* Point di tengah garis */}
-                                        <div className="absolute left-[20px] md:left-1/2 w-4 h-4 bg-emerald-500 rounded-full border-4 border-[#ECFDF5] z-10 md:-translate-x-1/2 shadow-sm" />
-
-                                        {/* Konten Card */}
-                                        <div className="w-full md:w-[45%] ml-12 md:ml-0">
-                                            <div className="bg-white p-6 rounded-3xl shadow-xl shadow-emerald-900/5 border border-white group-hover:border-emerald-200 transition-all">
-                                                <div className="flex items-center gap-4 mb-3">
-                                                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white" style={{ backgroundColor: item.color }}>
-                                                        <Icon size={22} />
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Step {item.step}</span>
-                                                        <h4 className="text-lg font-black text-slate-800 leading-none">{item.title}</h4>
-                                                    </div>
-                                                </div>
-                                                <p className="text-sm text-slate-500 leading-relaxed font-medium">{item.desc}</p>
+                    <div className="space-y-5">
+                        {JOURNEY.map((item, i) => {
+                            const Icon = item.icon;
+                            return (
+                                <motion.div key={i} {...fadeUp(i * 0.08)}>
+                                    <div className="bg-white border border-emerald-100 rounded-3xl p-7 hover:border-emerald-300 hover:shadow-md transition-all">
+                                        {/* Header */}
+                                        <div className="flex items-center gap-4 mb-5">
+                                            <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-white flex-shrink-0"
+                                                style={{ backgroundColor: item.color }}>
+                                                <Icon size={20} />
+                                            </div>
+                                            <div>
+                                                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">
+                                                    Langkah {item.step}
+                                                </span>
+                                                <h4 className="text-base font-black text-slate-800 leading-snug">{item.title}</h4>
                                             </div>
                                         </div>
-                                    </motion.div>
-                                );
-                            })}
-                        </div>
+
+                                        {/* Bullet points as plain text */}
+                                        <div className="space-y-2.5 pl-1">
+                                            {item.points.map((pt, j) => (
+                                                <div key={j} className="flex items-start gap-3">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0 mt-2" />
+                                                    <p className="text-sm text-slate-600 leading-relaxed">{pt}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
                     </div>
+
+                    {/* Info note */}
+                    <motion.div {...fadeUp(0.3)} className="mt-6 flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+                        <Info size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-emerald-800 leading-relaxed">
+                            <span className="font-bold">Catatan:</span> Untuk kunjungan pertama, disarankan datang tanpa makan berat minimal 1 jam sebelumnya.
+                            Konsultasi pertama di Nauli Dental Care <span className="font-bold">GRATIS</span> tanpa biaya tambahan.
+                        </p>
+                    </motion.div>
                 </div>
             </section>
 
-            {/* ══ CTA SECTION ══ */}
-            <section className="px-6 sm:px-10 pb-32">
+
+
+            {/* ══════════════════════════
+                LAYANAN
+            ══════════════════════════ */}
+            <section id="layanan" className="px-6 sm:px-10 py-16">
+                <div className="max-w-5xl mx-auto">
+
+                    <motion.div {...fadeUp()} className="text-center mb-12">
+                        <div className="inline-flex items-center gap-2 bg-emerald-100 border border-emerald-200 px-4 py-2 rounded-full mb-4">
+                            <Heart size={13} className="text-emerald-700" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Layanan Kami</span>
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#005A32]">
+                            Layanan Medis <span className="text-emerald-500">Unggulan</span>
+                        </h2>
+                        <p className="text-slate-500 text-sm mt-3 max-w-md mx-auto">
+                            Dari perawatan rutin hingga estetika, semua tersedia dalam satu klinik modern.
+                        </p>
+                        <div className="h-1 w-10 bg-emerald-500 rounded-full mx-auto mt-4" />
+                    </motion.div>
+
+                    <div className="grid sm:grid-cols-2 gap-3">
+                        {SERVICES.map((service, i) => (
+                            <motion.div key={i} {...fadeUp(i * 0.04)}
+                                className="flex items-center gap-3.5 bg-white p-4 rounded-2xl border border-emerald-50 shadow-sm hover:border-emerald-300 hover:bg-emerald-50/30 transition-all group">
+                                <div className="w-7 h-7 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-500 group-hover:border-emerald-500 transition-all">
+                                    <CheckCircle2 className="text-emerald-500 group-hover:text-white transition-colors" size={15} />
+                                </div>
+                                <span className="text-sm font-semibold text-slate-700">{service}</span>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    <motion.div {...fadeUp(0.3)} className="mt-8 text-center">
+                        <Link href="/patient/services">
+                            <button className="inline-flex items-center gap-2 text-emerald-600 font-bold text-sm border border-emerald-200 bg-white hover:border-emerald-400 hover:bg-emerald-50 px-6 py-3 rounded-2xl transition-all">
+                                Lihat Semua Layanan
+                                <ArrowRight size={14} />
+                            </button>
+                        </Link>
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* ══════════════════════════
+                CTA FINAL
+            ══════════════════════════ */}
+            <section className="px-6 sm:px-10 pb-32 pt-8">
                 <div className="max-w-6xl mx-auto">
-                    <motion.div {...fadeUp()} className="bg-[#005A32] rounded-[3rem] p-10 md:p-16 text-white relative overflow-hidden text-center">
-                        <Sparkles className="absolute top-10 right-10 text-emerald-400/20" size={80} />
+                    <motion.div {...fadeUp()}
+                        className="bg-[#005A32] rounded-[2.5rem] p-10 md:p-16 text-white relative overflow-hidden text-center">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-teal-400/10 rounded-full blur-3xl pointer-events-none" />
+                        <Sparkles className="absolute top-8 right-8 text-emerald-400/15" size={72} />
+
                         <div className="relative z-10">
-                            <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tight">Siap Mendapatkan<br />Senyum Impian Anda?</h2>
-                            <p className="text-emerald-100/60 max-w-xl mx-auto mb-10 font-medium">Jangan tunda kesehatan gigi Anda. Konsultasikan dengan tim ahli kami secara gratis hari ini.</p>
+                            <div className="inline-flex items-center gap-2 bg-emerald-400/15 border border-emerald-400/25 px-4 py-1.5 rounded-full mb-6">
+                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Konsultasi Gratis Hari Ini</span>
+                            </div>
+                            <h2 className="text-3xl md:text-5xl font-black mb-5 tracking-tight leading-tight">
+                                Siap Mendapatkan<br />Senyum Impian Anda?
+                            </h2>
+                            <p className="text-emerald-100/60 max-w-lg mx-auto mb-10 text-[15px] leading-relaxed">
+                                Jangan tunda kesehatan gigi Anda. Konsultasikan dengan tim ahli kami
+                                secara gratis — tanpa antri, tanpa ribet.
+                            </p>
                             <div className="flex flex-wrap justify-center gap-4">
                                 <Link href="/patient/appointments">
-                                    <button className="bg-emerald-400 text-[#005A32] px-10 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-black/20 flex items-center gap-2">
-                                        Buat Janji Online <ArrowRight size={14} />
+                                    <button className="group bg-emerald-400 text-[#005A32] px-9 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-black/20 flex items-center gap-2 hover:bg-emerald-300 transition-all">
+                                        Buat Janji Online
+                                        <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
                                     </button>
                                 </Link>
+                                <a href="https://wa.me/628126530965" target="_blank" rel="noopener noreferrer">
+                                    <button className="bg-white/10 text-white px-9 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest border border-white/20 hover:bg-white/20 transition-all flex items-center gap-2">
+                                        <MessageCircle size={13} /> WhatsApp
+                                    </button>
+                                </a>
                             </div>
                         </div>
                     </motion.div>
