@@ -334,7 +334,7 @@ export default function ForgotPasswordPage() {
                                     </span>
                                 </div>
 
-                                <h2 className="text-2xl font-black italic uppercase tracking-tighter text-slate-900 mb-3">
+                                <h2 className="text-2xl font-black uppercase tracking-tighter text-slate-900 mb-3">
                                     Password Diperbarui!
                                 </h2>
                                 <p className="text-slate-400 text-sm font-medium">

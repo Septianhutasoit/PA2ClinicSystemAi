@@ -119,11 +119,15 @@ export default function LoginPage() {
 
                 {/* Logo */}
                 <div className="relative z-10 flex items-center gap-3">
-                    <div className="w-11 h-11 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/20 shadow-lg">
-                        <span className="text-white font-black italic text-xl">K</span>
+                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg p-1.5 transition-transform hover:scale-105">
+                        <img
+                            src="/images/Logo.png"
+                            alt="Nauli Dental Logo"
+                            className="w-full h-full object-contain"
+                        />
                     </div>
                     <div>
-                        <h1 className="text-white text-2xl font-black tracking-tighter italic leading-none">Klinik Nauli Dental </h1>
+                        <h1 className="text-white text-2xl font-black tracking-tighter leading-none">Klinik Nauli Dental </h1>
                         <p className="text-emerald-300 text-[9px] font-bold uppercase tracking-widest mt-0.5">Sistem Informasi Terintegrasi</p>
                     </div>
                 </div>
@@ -182,20 +186,24 @@ export default function LoginPage() {
                 <div className="w-full max-w-[420px]">
 
                     {/* Mobile logo (shown only on small screens) */}
-                    <div className="flex lg:hidden items-center gap-3 mb-10 justify-center">
-                        <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200 font-black italic">K</div>
-                        <div>
-                            <h1 className="text-2xl font-black text-slate-800 tracking-tighter italic leading-none">Klinik.AI</h1>
-                            <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mt-1">Sistem Informasi Terintegrasi</p>
+                    <div className="mb-10 text-center flex flex-col items-center">
+
+                        {/* Container Logo Bulat dengan Garis Hijau */}
+                        <div className="w-23 h-23 mb-6 p-4 bg-white rounded-[2rem] border-2 border-emerald-500 shadow-xl shadow-emerald-900/10 flex items-center justify-center transition-all duration-300 hover:scale-105 group">
+                            <img
+                                src="/images/Logo.png"
+                                alt="Nauli Dental Logo"
+                                className="w-full h-full object-contain transition-transform duration-300 group-hover:rotate-6"
+                            />
+                        </div>
+
+                        {/* Heading Texts */}
+                        <div className="space-y-1">
+                            <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">Selamat Datang</h2>
+                            <div className="h-1 w-12 bg-emerald-500 rounded-full my-3 mx-auto" />
+                            <p className="text-slate-400 text-sm font-medium">Masuk untuk mengakses dashboard Anda</p>
                         </div>
                     </div>
-
-                    {/* Heading */}
-                    <div className="mb-10">
-                        <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">Selamat Datang</h2>
-                        <p className="text-slate-400 text-sm font-medium mt-2">Masuk untuk mengakses dashboard Anda</p>
-                    </div>
-
                     {/* Form */}
                     <form onSubmit={handleLogin} className="space-y-5">
                         <div className="space-y-1.5 group">
@@ -256,7 +264,7 @@ export default function LoginPage() {
                         >
                             {isLoading
                                 ? <><Loader2 className="animate-spin" size={19} /> Sedang Masuk...</>
-                                : <>Mulai Sesi Kerja <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" /></>
+                                : <>Login <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" /></>
                             }
                         </button>
                     </form>
