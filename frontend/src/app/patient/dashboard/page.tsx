@@ -319,7 +319,6 @@ export default function WelcomePage() {
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                                         <User size={16} />
                                     </div>
-                                    <div id="booking" className="py-24 px-6 bg-white"></div>
                                     <select
                                         className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm font-medium appearance-none cursor-pointer focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"
                                         value={formData.patient_gender}

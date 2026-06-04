@@ -268,7 +268,7 @@ const [isAiHovered, setIsAiHovered] = useState(false); // State pendukung tombol
     <>
             {/* --- INI KODE TAMBAHAN UNTUK BOOKING (HANYA TAMBAH, TIDAK UBAH AI) --- */}
             <motion.a
-                href="#booking"
+                href="/patient/appointments"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 whileTap={{ scale: 0.95 }}
