@@ -231,117 +231,105 @@ export default function VisiMisiPage() {
                 </div>
             </div>
 
-            {/* ══ VISI & MISI ══════════════════════════════════════════════ */}
-            <div id="visi-misi" className="max-w-7xl mx-auto px-6 sm:px-10 pb-24">
-                <div className="grid md:grid-cols-2 gap-6">
-                    {/* VISI */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        className="bg-white border border-[#D4EDE5] rounded-2xl p-10 hover:shadow-lg transition-all"
-                    >
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center">
-                                <Eye size={18} className="text-emerald-600" />
-                            </div>
+            {/* ══ VISI & MISI — SPLIT LAYOUT (referensi Gambar 3&4) ═══════════ */}
+            <div id="visi-misi" className="max-w-7xl mx-auto px-6 sm:px-10 pb-24 space-y-20">
+
+                {/* ── VISI: foto kiri, teks kanan ── */}
+                <motion.div
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7 }}
+                    className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center"
+                >
+                    {/* Foto kiri */}
+                    <div className="relative rounded-3xl overflow-hidden shadow-xl aspect-[4/3]">
+                        <img
+                            src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=900"
+                            alt="Nauli Dental - Visi"
+                            className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-900/20 to-transparent" />
+                    </div>
+
+                    {/* Teks Visi kanan */}
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1 h-6 bg-emerald-500 rounded-full" />
                             <span className="text-emerald-600 font-black text-xs uppercase tracking-widest">Visi Utama</span>
                         </div>
 
-                        <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-tight mb-5">
-                            Menjadi Pioneer<br />
-                            <span className="text-emerald-600">Klinik Digital</span><br />
-                            Sumatera Utara
+                        <h2 className="text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                            Visi
                         </h2>
 
-                        <p className="text-slate-500 text-sm leading-relaxed mb-8">
-                            Menjadi pionir klinik gigi digital di Sumatera Utara yang mengedepankan
-                            akurasi diagnosa AI dan kenyamanan pasien kelas dunia pada tahun 2030.
+                        <blockquote className="text-xl md:text-2xl text-slate-700 font-medium leading-relaxed border-l-4 border-emerald-500 pl-5">
+                            "Menjadi pioneer klinik gigi digital di Sumatera Utara yang mengedepankan
+                            akurasi diagnosa AI dan kenyamanan pasien kelas dunia pada tahun 2030."
+                        </blockquote>
+
+                        <p className="text-slate-500 text-sm leading-relaxed">
+                            Nauli Dental Care berkomitmen menjadi pusat rujukan kesehatan gigi terdepan
+                            di wilayah Sumatera Utara, dengan mengintegrasikan teknologi kecerdasan buatan
+                            ke dalam setiap aspek pelayanan — dari diagnosis hingga perawatan pasca-tindakan.
                         </p>
 
-                        <div className="flex items-center gap-2 text-emerald-600 font-black text-xs uppercase tracking-widest border-t border-slate-100 pt-6">
+                        <div className="flex items-center gap-2 text-emerald-600 font-black text-xs uppercase tracking-widest pt-2">
                             Target 2030 <ArrowRight size={13} />
                         </div>
-                    </motion.div>
-
-                    {/* MISI */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        className="bg-[#0A1C14] rounded-2xl p-10 relative overflow-hidden"
-                    >
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="w-10 h-10 bg-emerald-500/20 border border-emerald-500/30 rounded-xl flex items-center justify-center">
-                                    <Target size={18} className="text-emerald-400" />
-                                </div>
-                                <span className="text-emerald-400 font-black text-xs uppercase tracking-widest">Misi Strategis</span>
-                            </div>
-
-                            <h2 className="text-3xl font-black text-white tracking-tight leading-tight mb-8">
-                                Langkah<br />
-                                <span className="text-emerald-400">Nyata</span> Kami
-                            </h2>
-
-                            <div className="space-y-5">
-                                {misiItems.map((item, i) => (
-                                    <div key={i} className="flex items-start gap-4">
-                                        <div className="w-5 h-5 rounded-full border border-emerald-500/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                        </div>
-                                        <p className="text-white/55 text-sm leading-relaxed">{item}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-            </div>
-
-            {/* ══ MILESTONE ════════════════════════════════════════════════ */}
-            <div className="bg-white border-y border-[#D4EDE5] py-24">
-                <div className="max-w-7xl mx-auto px-6 sm:px-10">
-                    <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="mb-16"
-                    >
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-1 h-6 bg-emerald-500 rounded-full" />
-                            <span className="text-emerald-600 font-black text-xs uppercase tracking-widest">Perjalanan Kami</span>
-                        </div>
-                        <h2 className="text-4xl font-black text-slate-900 tracking-tight">
-                            Tonggak <span className="text-emerald-600">Pencapaian</span>
-                        </h2>
-                    </motion.div>
-
-                    <div className="relative">
-                        <div className="hidden md:block absolute top-5 left-0 right-0 h-px bg-slate-100" />
-                        <div className="grid md:grid-cols-3 gap-12">
-                            {achievements.map((item, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, y: 16 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.1 }}
-                                >
-                                    <div className="hidden md:flex w-10 h-10 rounded-full bg-emerald-50 border border-emerald-200 items-center justify-center mb-8">
-                                        <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                                    </div>
-                                    <div className="text-5xl font-black text-emerald-100">{item.year}</div>
-                                    <h3 className="text-lg font-black text-slate-800 mt-3">{item.title}</h3>
-                                    <p className="text-sm text-slate-400 mt-2 leading-relaxed">{item.desc}</p>
-                                </motion.div>
-                            ))}
-                        </div>
                     </div>
-                </div>
+                </motion.div>
+
+                {/* ── MISI: teks kiri, foto kanan ── */}
+                <motion.div
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7 }}
+                    className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center"
+                >
+                    {/* Teks Misi kiri */}
+                    <div className="space-y-6 order-2 md:order-1">
+                        <div className="flex items-center gap-3">
+                            <div className="w-1 h-6 bg-emerald-500 rounded-full" />
+                            <span className="text-emerald-600 font-black text-xs uppercase tracking-widest">Misi Strategis</span>
+                        </div>
+
+                        <h2 className="text-4xl font-black text-slate-900 tracking-tight">
+                            Misi
+                        </h2>
+
+                        <p className="text-slate-500 text-sm leading-relaxed">
+                            Langkah-langkah nyata yang kami jalani setiap hari untuk mewujudkan visi
+                            menjadi klinik gigi digital terbaik di Sumatera Utara:
+                        </p>
+
+                        <ol className="space-y-4">
+                            {misiItems.map((item, i) => (
+                                <li key={i} className="flex items-start gap-4 group">
+                                    <span className="w-7 h-7 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center flex-shrink-0 text-emerald-600 font-black text-xs group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-500 transition-all">
+                                        {i + 1}
+                                    </span>
+                                    <p className="text-slate-600 text-sm leading-relaxed pt-1">{item}</p>
+                                </li>
+                            ))}
+                        </ol>
+                    </div>
+
+                    {/* Foto kanan */}
+                    <div className="relative rounded-3xl overflow-hidden shadow-xl aspect-[4/3] order-1 md:order-2">
+                        <img
+                            src="https://images.unsplash.com/photo-1606811841689-23dfddce3e95?q=80&w=900"
+                            alt="Nauli Dental - Misi"
+                            className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-tl from-emerald-900/20 to-transparent" />
+                    </div>
+                </motion.div>
+
             </div>
+
+
 
             {/* ══ BERITA ═══════════════════════════════════════════════════ */}
             <div id="berita" className="py-24">
