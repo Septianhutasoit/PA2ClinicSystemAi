@@ -13,6 +13,7 @@ import {
     ResponsiveContainer, PieChart, Pie, Cell, Legend,
     LineChart, Line
 } from 'recharts';
+import { img } from 'framer-motion/m';
 
 export default function AdminDashboard() {
     const [viewMode, setViewMode] = useState('Weekly');
@@ -138,12 +139,29 @@ export default function AdminDashboard() {
                         <input type="text" placeholder="Cari data pasien atau dokter..." className="pl-11 pr-6 py-2.5 bg-white border border-slate-100 rounded-xl text-xs w-72 focus:ring-4 focus:ring-emerald-50 transition-all font-bold outline-none" />
                     </div>
                     <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
-                        <div className="text-right hidden sm:block">
-                            <p className="text-[11px] font-black text-slate-900 uppercase leading-none">Administrator</p>
-                            <p className="text-[9px] text-emerald-600 font-bold tracking-widest uppercase italic">Terverifikasi</p>
-                        </div>
-                        <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black italic shadow-lg">K</div>
-                    </div>
+            <div className="text-right hidden sm:block">
+            <p className="text-[11px] font-black text-slate-900 uppercase leading-none">Administrator</p>
+             <p className="text-[9px] text-emerald-600 font-bold tracking-widest uppercase italic">Terverifikasi</p>
+            </div>
+
+            {/* MODIFIKASI: Mengganti 'K' dengan Logo Asli */}
+            <div className="w-10 h-10 rounded-xl bg-white border border-emerald-50 flex items-center justify-center shadow-lg p-1.5 shrink-0 transition-transform hover:scale-105">
+            <img 
+            src="/images/Logo.png" 
+            alt="Logo Nauli Dental" 
+            className="w-full h-full object-contain"
+            onError={(e) => {
+                // Fallback jika logo gagal load, kembali ke inisial K
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                if (target.parentElement) {
+                    target.parentElement.classList.add('bg-emerald-600');
+                    target.parentElement.innerHTML = '<span class="text-white font-black italic">K</span>';
+                        }
+                     }}
+                 />
+            </div>
+        </div>
                     <button
                         onClick={() => setViewMode(v => v === 'Weekly' ? 'Weekly' : 'Monthly')}
                         className="p-2 bg-slate-50 rounded-lg text-slate-400 hover:text-emerald-600
@@ -270,8 +288,8 @@ export default function AdminDashboard() {
                                 <Calendar size={18} className="text-emerald-600" />
                             </div>
                             <div>
-                                <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">Jadwal Dokter</h3>
-                                <p className="text-[9px] text-slate-400">Kalender praktik harian</p>
+                                <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">Kalender</h3>
+                                <p className="text-[9px] text-slate-400">Kalender harian</p>
                             </div>
                         </div>
                         <div className="flex gap-2">

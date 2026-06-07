@@ -405,11 +405,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {/* Search */}
-                        <div className="relative hidden md:block group mr-1">
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300 group-focus-within:text-emerald-500 transition-colors" />
-                            <input type="text" placeholder="Global search..." className="pl-9 pr-4 py-1.5 bg-emerald-50/50 border border-transparent rounded-full text-[11px] w-52 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-all" />
-                        </div>
 
                         {/* Sync AI */}
                         <button onClick={handleSyncAI} disabled={isSyncing} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black border transition-all ${isSyncing ? 'bg-slate-100 text-slate-400' : 'bg-white text-emerald-600 border-emerald-100 hover:bg-emerald-50'}`}>
