@@ -169,33 +169,6 @@ export default function NauliCoLayout({ children }: { children: React.ReactNode 
             </main>
 
             {/* ════════════════════════════════════════════════════
-                FLOATING BUTTONS KIRI BAWAH
-                (Promo! + Join Now! — sesuai referensi)
-            ════════════════════════════════════════════════════ */}
-            <div className="fixed bottom-8 left-8 z-[110] flex flex-col gap-2.5">
-                <motion.button
-                    whileHover={{ scale: 1.06, x: 2 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="bg-[#00ACC1] text-white px-6 py-2.5 rounded-xl
-                        font-black text-[10px] uppercase tracking-[0.2em]
-                        shadow-xl shadow-cyan-300/30 border border-white/20
-                        hover:bg-[#0097A7] transition-colors"
-                >
-                    Promo!
-                </motion.button>
-                <motion.button
-                    whileHover={{ scale: 1.06, x: 2 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="bg-slate-900 text-white px-6 py-2.5 rounded-xl
-                        font-black text-[10px] uppercase tracking-[0.2em]
-                        shadow-xl shadow-slate-900/30 border border-white/10
-                        hover:bg-slate-800 transition-colors"
-                >
-                    Join Now!
-                </motion.button>
-            </div>
-
-            {/* ════════════════════════════════════════════════════
                 FLOATING WHATSAPP KANAN BAWAH
                 (Need Help? Chat with us — sesuai referensi)
             ════════════════════════════════════════════════════ */}

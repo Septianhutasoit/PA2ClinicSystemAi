@@ -475,12 +475,19 @@ export default function WelcomePage() {
                                             <div className="relative">
                                                 <User size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
-                                                    type="text" placeholder="Nama Lengkap Pasien" required
+                                                    type="text"
+                                                    placeholder="Nama Lengkap Pasien"
+                                                    required
+                                                    maxLength={50}
                                                     value={formData.patient_name}
-                                                    onChange={e => setFormData({ ...formData, patient_name: e.target.value })}
+                                                    onChange={e => {
+                                                        // Hanya huruf, spasi, dan titik (untuk gelar seperti dr.)
+                                                        const val = e.target.value.replace(/[^a-zA-ZÀ-ÿ\s.]/g, '');
+                                                        setFormData({ ...formData, patient_name: val });
+                                                    }}
                                                     className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl
-                                                               text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
-                                                               focus:border-emerald-400 outline-none transition-all"
+                                                    text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
+                                                  focus:border-emerald-400 outline-none transition-all"
                                                 />
                                             </div>
                                         </div>
@@ -491,13 +498,32 @@ export default function WelcomePage() {
                                             <div className="relative">
                                                 <Phone size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
-                                                    type="text" placeholder="No. Hp / WhatsApp" required
+                                                    type="tel"
+                                                    placeholder="08xx-xxxx-xxxx"
+                                                    required
+                                                    maxLength={15}
                                                     value={formData.patient_phone}
-                                                    onChange={e => setFormData({ ...formData, patient_phone: e.target.value })}
+                                                    onChange={e => {
+                                                        const raw = e.target.value.replace(/[^\d+\-]/g, '');
+                                                        const digitsOnly = raw.replace(/\D/g, '');
+                                                        const maxDigits = digitsOnly.startsWith('62') ? 13 : 12;
+                                                        if (digitsOnly.length <= maxDigits) {
+                                                            setFormData({ ...formData, patient_phone: raw });
+                                                        }
+                                                    }}
                                                     className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl
-                                                               text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
-                                                               focus:border-emerald-400 outline-none transition-all"
+                                                     text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
+                                                    focus:border-emerald-400 outline-none transition-all"
                                                 />
+                                                {formData.patient_phone && (
+                                                    <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold
+                                                    ${formData.patient_phone.replace(/\D/g, '').length < 10
+                                                            ? 'text-red-400'
+                                                            : 'text-emerald-500'}`}>
+                                                        {formData.patient_phone.replace(/\D/g, '').length}/
+                                                        {formData.patient_phone.replace(/\D/g, '').startsWith('62') ? '13' : '12'}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -511,12 +537,21 @@ export default function WelcomePage() {
                                             <div className="relative">
                                                 <MapPin size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
-                                                    type="text" placeholder="Alamat Lengkap" required
+                                                    type="text"
+                                                    placeholder="Jl. Nama Jalan No. ..."
+                                                    required
+                                                    maxLength={100}
                                                     value={formData.patient_address}
-                                                    onChange={e => setFormData({ ...formData, patient_address: e.target.value })}
+                                                    onChange={e => {
+                                                        const val = e.target.value;
+                                                        // Karakter pertama harus huruf, setelahnya boleh angka
+                                                        if (val === '' || /^[a-zA-ZÀ-ÿ]/.test(val)) {
+                                                            setFormData({ ...formData, patient_address: val });
+                                                        }
+                                                    }}
                                                     className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl
-                                                               text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
-                                                               focus:border-emerald-400 outline-none transition-all"
+                                                 text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
+                                                 focus:border-emerald-400 outline-none transition-all"
                                                 />
                                             </div>
                                         </div>
