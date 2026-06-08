@@ -23,9 +23,8 @@ const STATS = [
 ];
 
 const FLOAT_BADGES = [
-  { icon: '❤️', title: 'Pasien Puas', sub: '2,400+ pasien', pos: 'top-4 -right-6' },
-  { icon: '🏅', title: 'Bersertifikat', sub: 'Standar ISO', pos: '-bottom-4 -left-6' },
-  { icon: '✦', title: 'AI Powered', sub: 'Diagnosis cepat', pos: 'top-1/2 -left-16 -translate-y-1/2' },
+  { icon: '❤️', title: 'Pasien Puas', sub: '2,400+ pasien', pos: 'top-5 -right-6' },
+  { icon: '✦', title: 'AI Chatbot & Automation', sub: 'Diagnosis cepat', pos: 'top-1/2 -left-16 -translate-y-1/2' },
 ];
 
 /* ── Foto klinik lokal — ganti dengan foto asli jika ada ─────────────────
@@ -414,7 +413,7 @@ export default function WelcomePage() {
               {[
                 { icon: ShieldCheck, label: 'Data Terenkripsi', color: 'text-emerald-400' },
                 { icon: Clock, label: '24/7 Support', color: 'text-emerald-300' },
-                { icon: Activity, label: 'Dokter Spesialis', color: 'text-teal-400' },
+                { icon: Activity, label: 'Dokter Gigi & Perawat', color: 'text-teal-400' },
               ].map(({ icon: Icon, label, color }, i) => (
                 <span key={i} className="flex items-center gap-[6px] text-[11px] font-semibold text-white/45">
                   {i > 0 && <span className="w-[3px] h-[3px] rounded-full bg-white/20 -ml-2 mr-1" />}
