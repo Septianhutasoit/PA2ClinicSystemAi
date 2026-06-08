@@ -36,7 +36,7 @@ export default function NurseLayout({ children }: { children: React.ReactNode })
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isAuthorized, setIsAuthorized] = useState(false);
-    const [nurseName, setNurseName] = useState('Perawat');
+    const [nurse, setNurse] = useState({ name: 'Perawat', email: '...' });
 
     // ── Profile dropdown
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -51,17 +51,39 @@ export default function NurseLayout({ children }: { children: React.ReactNode })
     // ── Dark mode
     const [isDarkMode, setIsDarkMode] = useState(false);
 
-    // 1. AUTH CHECK
+    // 1. AUTH & IDENTITY CHECK
     useEffect(() => {
-        const token = localStorage.getItem('token') || Cookies.get('token');
-        const role = localStorage.getItem('user_role') || Cookies.get('role');
-        const name = localStorage.getItem('user_name') || 'Perawat';
-        if (!token || role?.toLowerCase() !== 'nurse') {
-            router.push('/login');
-        } else {
-            setIsAuthorized(true);
-            setNurseName(name);
-        }
+        const verifyNurse = async () => {
+            const token = localStorage.getItem('token') || Cookies.get('token');
+
+            if (!token) {
+                handleLogout();
+                return;
+            }
+
+            try {
+                // Ambil data asli dari database
+                const res = await api.get('/auth/me');
+
+                // Validasi: Jika role bukan nurse, cegah akses
+                if (res.data.role.toLowerCase() !== 'nurse') {
+                    console.error("Akses ditolak: Anda bukan Perawat");
+                    handleLogout();
+                    return;
+                }
+
+                // Set data dinamis ke tampilan
+                setNurse({
+                    name: res.data.full_name,
+                    email: res.data.email
+                });
+                setIsAuthorized(true);
+            } catch (err) {
+                handleLogout();
+            }
+        };
+
+        verifyNurse();
     }, [router]);
 
     // 2. CLOSE DROPDOWNS ON OUTSIDE CLICK
@@ -196,7 +218,7 @@ export default function NurseLayout({ children }: { children: React.ReactNode })
                                 Nauli Dental Care
                             </p>
                             <p className="text-[9px] text-emerald-600 font-bold truncate mt-1 italic opacity-70">
-                                {nurseName}
+                                {nurse.name}
                             </p>
                         </motion.div>
                     )}
@@ -443,7 +465,7 @@ export default function NurseLayout({ children }: { children: React.ReactNode })
                                 <div className="text-left hidden sm:block leading-none">
                                     <p className={`text-[11px] font-black uppercase transition-colors truncate max-w-[90px]
                                         ${isProfileOpen ? 'text-white' : 'text-slate-800 group-hover:text-white'}`}>
-                                        {nurseName}
+                                        {nurse.name}
                                     </p>
                                     <p className={`text-[9px] font-bold tracking-widest mt-0.5 uppercase transition-colors
                                         ${isProfileOpen ? 'text-emerald-200' : 'text-emerald-600 group-hover:text-emerald-300'}`}>
@@ -479,7 +501,7 @@ export default function NurseLayout({ children }: { children: React.ReactNode })
                                                     <HeartPulse size={20} className="text-white" />
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="text-[13px] font-black uppercase">{nurseName}</p>
+                                                    <p className="text-[13px] font-black uppercase">{nurse.name}</p>
                                                     <p className="text-[10px] font-bold opacity-80 tracking-wide">
                                                         PERAWAT KLINIK
                                                     </p>
@@ -493,7 +515,7 @@ export default function NurseLayout({ children }: { children: React.ReactNode })
                                                 Signed in as
                                             </p>
                                             <p className="text-[12px] font-bold text-slate-700">
-                                                {localStorage.getItem('user_email') || 'perawat@klinik.ai'}
+                                                {nurse.email}
                                             </p>
                                         </div>
 

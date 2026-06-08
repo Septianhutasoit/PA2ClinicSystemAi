@@ -20,7 +20,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isAuthorized, setIsAuthorized] = useState(false);
-    const [doctorName, setDoctorName] = useState('Dokter');
+    const [doctor, setDoctor] = useState({ name: 'Dokter', email: '...' });
 
     // ── Profile dropdown
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -35,17 +35,45 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
     // ── Dark mode
     const [isDarkMode, setIsDarkMode] = useState(false);
 
-    // 1. AUTH CHECK
+    // 1. AUTH & DATA FETCHING (Versi Debug)
     useEffect(() => {
-        const token = localStorage.getItem('token') || Cookies.get('token');
-        const role = localStorage.getItem('user_role') || Cookies.get('role');
-        const name = localStorage.getItem('user_name') || 'Dokter';
-        if (!token || role?.toLowerCase() !== 'doctor') {
-            router.push('/login');
-        } else {
-            setIsAuthorized(true);
-            setDoctorName(name);
-        }
+        const verifyAndFetch = async () => {
+            // Ambil token dulu dari storage
+            const token = localStorage.getItem('token') || Cookies.get('token');
+
+            // Jika token tidak ada, langsung logout tanpa tanya server
+            if (!token) {
+                console.warn("Token tidak ditemukan");
+                handleLogout();
+                return;
+            }
+
+            try {
+                // Panggil API
+                const res = await api.get('/auth/me');
+
+                // Cek Role (Sangat Penting!)
+                if (res.data.role.toLowerCase() !== 'doctor') {
+                    console.error("Akses ditolak: Anda login sebagai", res.data.role);
+                    handleLogout();
+                    return;
+                }
+
+                // Jika berhasil
+                setDoctor({
+                    name: res.data.full_name,
+                    email: res.data.email
+                });
+                setIsAuthorized(true);
+
+            } catch (err: any) {
+                // Kita cetak error aslinya agar tahu salahnya dimana
+                console.error("Gagal Verifikasi:", err.response?.data || err.message);
+                handleLogout();
+            }
+        };
+
+        verifyAndFetch();
     }, [router]);
 
     // 2. CLOSE DROPDOWNS ON OUTSIDE CLICK
@@ -173,7 +201,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
                             className="mx-3 mt-4 mb-2 p-3 bg-emerald-50/40 rounded-xl border border-emerald-100/50 overflow-hidden"
                         >
                             <p className="text-[10px] font-black text-emerald-900 uppercase leading-none">Nauli Dental Care</p>
-                            <p className="text-[9px] text-emerald-600 font-bold truncate mt-1 italic opacity-70">{doctorName}</p>
+                            <p className="text-[9px] text-emerald-600 font-bold truncate mt-1 italic opacity-70">{doctor.name}</p>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -378,7 +406,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
                                 {/* Avatar ikon dokter */}
                                 <div className="relative shrink-0 transition-transform active:scale-90 group-hover:scale-105">
                                     <div className="w-8 h-8 rounded-lg bg-emerald-700 border-2 border-white/20 shadow-sm flex items-center justify-center text-white font-black text-sm">
-                                        {doctorName.charAt(0).toUpperCase()}
+                                        {doctor.name.charAt(0).toUpperCase()}
                                     </div>
                                     <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-400 border-2 border-white rounded-full animate-pulse" />
                                 </div>
@@ -386,7 +414,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
                                 {/* Teks */}
                                 <div className="text-left hidden sm:block leading-none">
                                     <p className={`text-[11px] font-black uppercase transition-colors truncate max-w-[90px] ${isProfileOpen ? 'text-white' : 'text-slate-800 group-hover:text-white'}`}>
-                                        {doctorName}
+                                        {doctor.name}
                                     </p>
                                     <p className={`text-[9px] font-bold tracking-widest mt-0.5 uppercase transition-colors ${isProfileOpen ? 'text-emerald-200' : 'text-emerald-600 group-hover:text-emerald-300'}`}>
                                         Dokter
@@ -411,19 +439,19 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
                                         <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 p-4 text-white">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center border-2 border-white/30 text-white font-black text-lg">
-                                                    {doctorName.charAt(0).toUpperCase()}
+                                                    {doctor.name.charAt(0).toUpperCase()}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="text-[13px] font-black uppercase">{doctorName}</p>
-                                                    <p className="text-[10px] font-bold opacity-80 tracking-wide">DOKTER SPESIALIS</p>
+                                                    <p className="text-[13px] font-black uppercase">{doctor.name}</p>
+                                                    <p className="text-[10px] font-bold opacity-80 tracking-wide">DOKTER</p>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Email/info */}
                                         <div className="px-4 py-3 border-b border-slate-100/50">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">Signed in as</p>
-                                            <p className="text-[12px] font-bold text-slate-700">dokter@klinik.ai</p>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">{doctor.name}</p>
+                                            <p className="text-[12px] font-bold text-slate-700">{doctor.email}</p>
                                         </div>
 
                                         {/* Menu items */}
