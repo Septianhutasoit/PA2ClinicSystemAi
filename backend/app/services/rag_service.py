@@ -1,19 +1,27 @@
 # backend/app/services/rag_service.py
 # ════════════════════════════════════════════════════════════════
-# FIX:
-#   1. k=3 (lebih sedikit chunk → respons lebih cepat)
-#   2. Prompt KETAT: AI hanya boleh jawab dari PDF/DB
-#   3. History mapping: handle 'bot' & 'assistant'
-#   4. Temperature 0.1 (lebih presisi, kurang hallucinate)
+# FIX KRITIS — 3 perubahan utama:
+#
+#   1. IMPORT BENAR:
+#      langchain_classic → TIDAK ADA (penyebab error & skor 44%)
+#      Ganti ke: from langchain.chains import ...
+#
+#   2. k=6, temperature=0.0 → lebih akurat, tidak mengarang
+#
+#   3. Prompt lebih detail → sebutkan semua dokter & harga
 # ════════════════════════════════════════════════════════════════
 
 import os
 from langchain_cohere import ChatCohere, CohereEmbeddings
 from langchain_pinecone import PineconeVectorStore
-from langchain_classic.chains import create_retrieval_chain
-from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+
+# ── FIX IMPORT (bukan langchain_classic) ─────────────────────────
+from langchain.chains import create_retrieval_chain
+from langchain.chains import create_history_aware_retriever
+from langchain.chains.combine_documents import create_stuff_documents_chain
+# ─────────────────────────────────────────────────────────────────
+
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_classic.chains import create_history_aware_retriever
 from langchain_core.messages import HumanMessage, AIMessage
 from app.core.config import settings
 
@@ -32,46 +40,51 @@ class ChatbotService:
                 index_name=settings.PINECONE_INDEX_NAME,
                 embedding=self.embeddings,
             )
-            # Temperature rendah → lebih presisi, tidak mengarang
+
+            # temperature=0.0 → deterministik, tidak mengarang sama sekali
             self.llm = ChatCohere(
                 model="command-r-plus-08-2024",
-                temperature=0.1,
-                max_tokens=512,   # batasi panjang jawaban → respons lebih cepat
+                temperature=0.0,
+                max_tokens=600,
             )
 
-            # ── 2. Prompt: sederhanakan pertanyaan berdasar history ─────────
+            # ── 2. Prompt kontekstualisasi riwayat ─────────────────────────
             contextualize_q_prompt = ChatPromptTemplate.from_messages([
                 (
                     "system",
-                    "Sederhanakan pertanyaan pengguna menjadi pertanyaan mandiri "
-                    "berdasarkan riwayat chat. JANGAN jawab—hanya reformulasikan "
-                    "jika perlu. Jika sudah jelas, kembalikan apa adanya.",
+                    "Ubah pertanyaan pengguna menjadi pertanyaan mandiri "
+                    "berdasarkan riwayat chat. JANGAN jawab. "
+                    "Jika sudah jelas, kembalikan apa adanya.",
                 ),
                 MessagesPlaceholder("chat_history"),
                 ("human", "{input}"),
             ])
 
-            # k=3 → ambil 3 chunk paling relevan (cukup akurat, lebih cepat dari k=5)
+            # k=6 → ambil 6 chunk agar info yang tersebar di PDF tetap terjangkau
             self.history_aware_retriever = create_history_aware_retriever(
-    self.llm,
-    self.vectorstore.as_retriever(
-    search_kwargs={"k": 8}   # hapus score_threshold sama sekali
-),
-    contextualize_q_prompt,
-)
+                self.llm,
+                self.vectorstore.as_retriever(search_kwargs={"k": 6}),
+                contextualize_q_prompt,
+            )
 
-            # ── 3. Prompt utama: WAJIB dari dokumen ───────────────────────
-            system_prompt = """Anda adalah "KlinikAI", asisten resmi Nauli Dental Care Balige.
+            # ── 3. Prompt utama: KETAT + instruksi DETAIL ──────────────────
+            system_prompt = """Anda adalah asisten medis resmi "KlinikAI" dari Nauli Dental Care Balige.
 
-SUMBER INFORMASI ANDA (Wajib dibaca teliti):
+TUGAS: Jawab pertanyaan pasien berdasarkan KONTEKS DOKUMEN di bawah ini secara mendetail dan akurat.
+
+KONTEKS DOKUMEN:
 {context}
 
-ATURAN JAWABAN:
-1. Jika ditanya soal DOKTER, sebutkan SEMUA nama dokter yang ada di konteks tanpa terkecuali.
-2. Jika ditanya soal HARGA, berikan detail harga sesuai yang tertulis.
-3. Jika jawaban ADA di konteks -> jawab ramah & jelas, awali "Horas!".
-4. Jika jawaban TIDAK ADA di konteks -> jawab: "Horas! Maaf, informasi tersebut belum tersedia di data kami. Silakan hubungi WA 0821-6352-6363."
-5. Jawab dalam Bahasa Indonesia yang profesional."""
+ATURAN WAJIB:
+1. Gunakan HANYA informasi dari KONTEKS DOKUMEN. Dilarang mengarang.
+2. Jika ditanya NAMA DOKTER → sebutkan SEMUA nama dokter dari konteks.
+3. Jika ditanya HARGA → sebutkan angka persis dari konteks.
+4. Jika ditanya GEJALA/PENANGANAN → jelaskan sesuai data, berikan detail.
+5. Jika informasi TIDAK ADA di konteks → balas:
+   "Horas! Maaf, informasi tersebut belum tersedia di data kami.
+   Hubungi WA 0821-6352-6363 atau kunjungi Jl. Balige No. 12, Toba."
+6. Gunakan sapaan "Horas!" hanya di awal jawaban positif.
+7. Jawab dalam Bahasa Indonesia yang ramah dan profesional."""
 
             qa_prompt = ChatPromptTemplate.from_messages([
                 ("system", system_prompt),
@@ -84,16 +97,15 @@ ATURAN JAWABAN:
             self.rag_chain = create_retrieval_chain(
                 self.history_aware_retriever, question_answer_chain
             )
-            print("[INFO] Chatbot Service siap!")
+            print("[INFO] ✅ Chatbot Service siap!")
 
         except Exception as e:
-            print(f"[ERROR] Gagal inisialisasi ChatbotService: {e}")
+            print(f"[ERROR] Gagal inisialisasi: {e}")
             raise
 
     def get_response(self, query: str, history: list = []) -> str:
         try:
-            # Konversi history → LangChain format
-            # Terima 'bot' maupun 'assistant' (fallback aman)
+            # ── Konversi history → LangChain format ──────────────────────
             chat_history = []
             for msg in history:
                 role    = msg.get("role", "")
@@ -104,13 +116,15 @@ ATURAN JAWABAN:
                     chat_history.append(HumanMessage(content=content))
                 elif role in ("assistant", "bot"):
                     chat_history.append(AIMessage(content=content))
-                # role tak dikenal → abaikan
 
-            # Batasi history ke 6 pesan terakhir agar tidak memperlambat
             chat_history = chat_history[-6:]
 
-            print(f"[CHAT] Pertanyaan : {query[:80]}{'...' if len(query)>80 else ''}")
-            print(f"[CHAT] History    : {len(chat_history)} pesan")
+            # ── Debug: tampilkan chunk yang diambil ───────────────────────
+            debug_docs = self.vectorstore.similarity_search(query, k=6)
+            print(f"\n[DEBUG] Query  : {query[:80]}")
+            print(f"[DEBUG] Chunks : {len(debug_docs)} ditemukan")
+            for i, d in enumerate(debug_docs):
+                print(f"        [{i+1}] {d.page_content[:100].strip()}")
 
             result = self.rag_chain.invoke({
                 "input":        query,
@@ -120,11 +134,11 @@ ATURAN JAWABAN:
             answer = (result.get("answer") or "").strip()
             if not answer:
                 return (
-                    "Horas! Maaf, saya tidak dapat menemukan jawaban yang tepat. "
-                    "Silakan hubungi WA 0821-6352-6363."
+                    "Horas! Maaf, saya tidak menemukan jawaban yang tepat. "
+                    "Hubungi WA 0821-6352-6363."
                 )
 
-            print(f"[CHAT] Jawaban    : {len(answer)} karakter")
+            print(f"[CHAT] Jawaban : {len(answer)} karakter")
             return answer
 
         except Exception as e:
