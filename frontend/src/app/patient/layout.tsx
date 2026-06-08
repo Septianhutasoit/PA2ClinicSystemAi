@@ -25,6 +25,7 @@ interface Notification {
 export default function PatientLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
+    const [user, setUser] = useState({ name: '', email: '' });
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -43,12 +44,39 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     useEffect(() => {
         const token = localStorage.getItem('token') || Cookies.get('token');
         const role = localStorage.getItem('user_role') || Cookies.get('role');
+
         if (!token || role?.toLowerCase() !== 'patient') {
             router.push('/login');
-        } else {
-            setIsAuthorized(true);
+            return;
         }
+
+        // AMBIL DATA DARI DATABASE (DINAMIS TOTAL)
+        const fetchUserData = async () => {
+            try {
+                const res = await api.get('/auth/me'); // Memanggil endpoint yang Anda tunjukkan di Python
+                setUser({
+                    name: res.data.full_name,
+                    email: res.data.email
+                });
+                setIsAuthorized(true);
+
+                // Update localStorage agar data terbaru tersimpan
+                localStorage.setItem('user_name', res.data.full_name);
+                localStorage.setItem('user_email', res.data.email);
+            } catch (err) {
+                console.error("Gagal mengambil data user:", err);
+                router.push('/login');
+            }
+        };
+
+        fetchUserData();
     }, [router, pathname]);
+
+    const getInitials = (name: string) => {
+        return name
+            ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+            : 'U';
+    };
 
     // 2. SCROLL EFFECT
     useEffect(() => {
@@ -374,20 +402,20 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                         setIsNotifOpen(false);
                                         setIsQuickOpen(false);
                                     }}
-                                    className="flex items-center gap-2 pl-2 pr-2 py-1 rounded-full transition-all duration-300
-                                        bg-white/10 border border-white/20 hover:bg-white/20"
+                                    className="flex items-center gap-2 pl-2 pr-2 py-1 rounded-full transition-all duration-300 bg-white/10 border border-white/20 hover:bg-white/20"
                                 >
                                     <div className="relative flex-shrink-0">
-                                        <div className="w-7 h-7 rounded-full ring-2 ring-emerald-400/50 flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-500">
-                                            <span className="text-white font-bold text-[10px]">SA</span>
+                                        <div className="w-7 h-7 rounded-full ring-2 ring-emerald-400/50 flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold text-[10px]">
+                                            {getInitials(user.name)}
                                         </div>
                                         <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-white" />
                                     </div>
                                     <div className="hidden sm:block text-left pr-1">
-                                        <p className="text-[11px] font-semibold leading-tight text-white">Septian Adi</p>
-                                        <p className="text-[9px] font-medium text-emerald-400">Member Gold</p>
+                                        <p className="text-[11px] font-semibold leading-tight text-white">{user.name}</p>
+                                        <p className="text-[9px] font-medium text-emerald-400">Patient Member</p>
                                     </div>
-                                    <ChevronDown size={12}
+                                    <ChevronDown
+                                        size={12}
                                         className={`text-white/60 transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''}`}
                                     />
                                 </motion.button>
@@ -399,34 +427,34 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                             exit={{ opacity: 0, y: 8, scale: 0.96 }}
                                             transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-                                            className="absolute right-0 mt-2 w-64 bg-[#1a1a1a]/95 backdrop-blur-md rounded-2xl
-                                                shadow-2xl shadow-black/50 border border-white/8 overflow-hidden z-[110]"
+                                            className="absolute right-0 mt-2 w-64 bg-[#1a1a1a]/95 backdrop-blur-md rounded-2xl shadow-2xl shadow-black/50 border border-white/8 overflow-hidden z-[110]"
                                         >
                                             <div className="bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-3 text-white">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">SA</div>
+                                                    <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
+                                                        {getInitials(user.name)}
+                                                    </div>
                                                     <div>
-                                                        <p className="font-semibold text-sm leading-tight">Septian Adi</p>
-                                                        <p className="text-[10px] text-emerald-100 mt-0.5">septian@email.com</p>
+                                                        <p className="font-semibold text-sm leading-tight">{user.name}</p>
+                                                        <p className="text-[10px] text-emerald-100 mt-0.5">{user.email}</p>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="px-3 py-3 space-y-1">
-                                                {[
-                                                    { href: '/patient/profile', icon: User, label: 'Profil Saya', style: 'text-slate-600 hover:bg-slate-50' },
-                                                    { href: '/patient/settings', icon: Settings, label: 'Pengaturan', style: 'text-slate-600 hover:bg-slate-50' },
-                                                    { href: '/register', icon: UserPlus, label: 'Daftar Akun Baru', style: 'text-emerald-600 hover:bg-emerald-50' },
-                                                ].map(item => (
-                                                    <Link key={item.href} href={item.href} onClick={() => setIsProfileOpen(false)}>
-                                                        <button className={`w-full px-3 py-2 text-left text-sm font-medium rounded-xl flex items-center gap-3 transition-all ${item.style}`}>
-                                                            <item.icon size={14} className="text-emerald-500" /> {item.label}
-                                                        </button>
-                                                    </Link>
-                                                ))}
-                                                <div className="h-px bg-slate-100 mx-2" />
+                                                <Link href="/patient/profile" onClick={() => setIsProfileOpen(false)}>
+                                                    <button className="w-full px-3 py-2 text-left text-sm font-medium text-slate-300 hover:bg-white/5 rounded-xl flex items-center gap-3 transition-all">
+                                                        <User size={14} className="text-emerald-500" /> Profil Saya
+                                                    </button>
+                                                </Link>
+                                                <Link href="/register" onClick={() => setIsProfileOpen(false)}>
+                                                    <button className="w-full px-3 py-2 text-left text-sm font-medium text-emerald-400 hover:bg-white/5 rounded-xl flex items-center gap-3 transition-all">
+                                                        <UserPlus size={14} /> Daftar Akun Baru
+                                                    </button>
+                                                </Link>
+                                                <div className="h-px bg-white/5 mx-2 my-1" />
                                                 <button
                                                     onClick={() => { setIsProfileOpen(false); handleLogout(); }}
-                                                    className="w-full px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-50 rounded-xl flex items-center gap-3 transition-all"
+                                                    className="w-full px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-500/10 rounded-xl flex items-center gap-3 transition-all"
                                                 >
                                                     <LogOut size={14} /> Keluar Portal
                                                 </button>
@@ -556,13 +584,17 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                     </div>
                                 </div>
                                 <div className="px-6 py-5 space-y-4">
+                                    {/* KOTAK USER DINAMIS */}
                                     <div className="flex items-center gap-3 bg-white/5 border border-white/8 rounded-xl p-4">
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-black text-base shrink-0">
-                                            SA
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-black text-base shrink-0 shadow-lg">
+                                            {/* INISIAL DINAMIS */}
+                                            {getInitials(user.name)}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-black text-white">Septian Adi</p>
-                                            <p className="text-[10px] text-white/40 mt-0.5">septian@email.com</p>
+                                            {/* NAMA DINAMIS */}
+                                            <p className="text-sm font-black text-white">{user.name}</p>
+                                            {/* EMAIL DINAMIS */}
+                                            <p className="text-[10px] text-white/40 mt-0.5">{user.email}</p>
                                         </div>
                                     </div>
                                     <p className="text-sm text-white/60 leading-relaxed">

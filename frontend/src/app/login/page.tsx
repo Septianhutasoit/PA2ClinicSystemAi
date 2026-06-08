@@ -58,17 +58,26 @@ export default function LoginPage() {
                 { timeout: 10000 }
             );
 
-            const { access_token, role } = res.data;
+            // Ambil semua data penting sekaligus dari res.data
+            const { access_token, role, full_name, } = res.data;
 
             const expires = 1 / 24;
             Cookies.set('token', access_token, { expires, sameSite: 'strict' });
             Cookies.set('role', role, { expires, sameSite: 'strict' });
             localStorage.setItem('token', access_token);
             localStorage.setItem('user_role', role);
+            localStorage.setItem('user_name', full_name || ''); 
 
             // Simpan nama user jika tersedia
-            if (res.data.full_name) {
-                localStorage.setItem('user_name', res.data.full_name);
+            if (full_name) {
+                localStorage.setItem('user_name', full_name);
+            } else {
+                // Fallback jika backend mengirim variabel berbeda (contoh: 'name')
+                localStorage.setItem('user_name', res.data.name || 'Dame');
+            }
+
+            if (email) {
+                localStorage.setItem('user_email', email);
             }
 
             redirectUser(role);
