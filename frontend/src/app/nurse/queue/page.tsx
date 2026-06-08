@@ -91,7 +91,7 @@ export default function NurseQueuePage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Antrian Hari Ini</h1>
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Antrian Pasien</h1>
                     <p className="text-sm text-slate-400 font-medium mt-1">{total} pasien terdaftar · {pending} menunggu</p>
                 </div>
                 <button onClick={() => fetchData(true)} disabled={isRefreshing}

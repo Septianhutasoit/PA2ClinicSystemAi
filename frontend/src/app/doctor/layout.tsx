@@ -429,12 +429,6 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
                                         {/* Menu items */}
                                         <div className="py-2 px-2">
                                             <button
-                                                onClick={() => { setIsProfileOpen(false); router.push('/doctor/profile'); }}
-                                                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[12px] font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-all"
-                                            >
-                                                <UserCircle size={16} className="text-emerald-600" /> View Profile
-                                            </button>
-                                            <button
                                                 onClick={handleLogout}
                                                 className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-[12px] font-bold text-red-600 hover:bg-red-50 transition-all"
                                             >

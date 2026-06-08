@@ -25,8 +25,42 @@ function AppointmentsContent() {
         api.get('/clinic/doctors').then(res => setDoctors(res.data)).catch(() => setDoctors([]));
     }, []);
 
+    const isTimeValid = (date: string, time: string) => {
+        if (!date || !time) return true;
+
+        const [hours, minutes] = time.split(':').map(Number);
+        const selectedMinutes = hours * 60 + minutes;
+
+        // Batasan Jam Praktek (09:00 - 21:00 dalam menit)
+        const minLimit = 9 * 60;  // 09:00
+        const maxLimit = 21 * 60; // 21:00
+
+        // 1. Cek rentang jam praktek
+        if (selectedMinutes < minLimit || selectedMinutes > maxLimit) {
+            setSubmitStatus({ type: 'error', msg: '❌ Jam praktek: 09:00 - 21:00' });
+            return false;
+        }
+
+        // 2. Cek jika tanggal yang dipilih adalah hari ini, jangan biarkan jam yang sudah lewat
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (date === todayStr) {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            if (selectedMinutes <= currentMinutes) {
+                setSubmitStatus({ type: 'error', msg: '❌ Waktu tersebut sudah terlewat untuk hari ini.' });
+                return false;
+            }
+        }
+
+        return true;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        // VALIDASI JAM SEBELUM SUBMIT
+        if (!isTimeValid(formData.visit_date, formData.visit_time)) {
+            return; // Hentikan proses jika waktu tidak valid
+        }
         setSubmitStatus({ type: 'loading', msg: 'Mengirim reservasi...' });
 
         const combinedNotes = `Riwayat: ${formData.medical_history || '-'} | Keperluan: ${formData.additional_notes || '-'}`;
@@ -211,8 +245,21 @@ function AppointmentsContent() {
                                 </div>
                                 <div>
                                     <label className={labelClass}>Pilih Waktu</label>
-                                    <input type="time" required className={inputClass}
-                                        value={formData.visit_time} onChange={e => setFormData({ ...formData, visit_time: e.target.value })} />
+                                    <input
+                                        type="time"
+                                        required
+                                        className={inputClass}
+                                        min="09:00"
+                                        max="21:00"
+                                        value={formData.visit_time}
+                                        onChange={e => {
+                                            const timeVal = e.target.value;
+                                            setFormData({ ...formData, visit_time: timeVal });
+                                            // Validasi langsung saat user mengubah jam
+                                            isTimeValid(formData.visit_date, timeVal);
+                                        }}
+                                    />
+                                    <p className="text-[9px] text-slate-400 mt-1 italic">* Range: 09:00 - 21:00</p>
                                 </div>
                             </div>
 

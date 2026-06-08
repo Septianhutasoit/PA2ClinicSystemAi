@@ -116,7 +116,7 @@ export default function NurseLayout({ children }: { children: React.ReactNode })
 
     const menuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', href: '/nurse' },
-        { icon: ClipboardList, label: 'Antrian Hari Ini', href: '/nurse/queue' },
+        { icon: ClipboardList, label: 'Antrian Pasien', href: '/nurse/queue' },
         { icon: Users2, label: 'Daftar Pasien', href: '/nurse/patients' },
         { icon: Stethoscope, label: 'Layanan Klinik', href: '/nurse/services' },
         { icon: Activity, label: 'Catatan Medis', href: '/nurse/records' },

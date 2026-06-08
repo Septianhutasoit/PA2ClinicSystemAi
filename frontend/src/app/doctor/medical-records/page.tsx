@@ -60,23 +60,6 @@ export default function AdminMedicalRecords() {
                             Sistem Informasi Rekam Medis — Nauli Dental Care
                         </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <button
-                            onClick={() => window.print()}
-                            className="flex items-center gap-1.5 px-4 py-2 bg-slate-50 border border-slate-200
-                                       text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200
-                                       text-xs font-semibold rounded-xl transition-all"
-                        >
-                            <Printer size={14} /> Cetak
-                        </button>
-                        <button
-                            className="flex items-center gap-1.5 px-4 py-2 bg-slate-50 border border-slate-200
-                                       text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200
-                                       text-xs font-semibold rounded-xl transition-all"
-                        >
-                            <Download size={14} /> Ekspor
-                        </button>
-                    </div>
                 </div>
             </div>
 
@@ -365,13 +348,6 @@ export default function AdminMedicalRecords() {
 
                                     {/* Footer modal */}
                                     <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between">
-                                        <button
-                                            onClick={() => window.print()}
-                                            className="flex items-center gap-2 text-[11px] font-bold text-emerald-600
-                                                       hover:text-emerald-800 transition-colors uppercase tracking-wide"
-                                        >
-                                            <Printer size={13} /> Cetak Dokumen
-                                        </button>
                                         <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
                                             <MapPin size={10} /> Terverifikasi Digital · Klinik Nauli
                                         </p>

@@ -63,6 +63,21 @@ export default function WelcomePage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        // --- LOGIKA VALIDASI JAM ---
+        if (formData.appointment_date) {
+            const selectedDate = new Date(formData.appointment_date);
+            const hours = selectedDate.getHours();
+
+            // Cek jika jam di bawah 10 atau jam 20:00 ke atas (Jam 8 malam lewat)
+            if (hours < 10 || hours >= 20) {
+                setStatus({
+                    type: 'error',
+                    msg: '❌ Mohon pilih jam kunjungan antara 10:00 s/d 20:00 WIB.'
+                });
+                return; // Berhenti di sini, jangan lanjut kirim API
+            }
+        }
+
         setStatus({ type: 'loading', msg: 'Memproses...' });
         try {
             await api.post('/clinic/appointments', formData);
@@ -605,14 +620,19 @@ export default function WelcomePage() {
                                             <div className="relative">
                                                 <Clock size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                                 <input
-                                                    type="datetime-local" required
+                                                    type="datetime-local"
+                                                    required
                                                     value={formData.appointment_date}
                                                     onChange={e => setFormData({ ...formData, appointment_date: e.target.value })}
                                                     className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl
-                                                               text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
-                                                               focus:border-emerald-400 outline-none transition-all"
+                       text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
+                       focus:border-emerald-400 outline-none transition-all"
                                                 />
                                             </div>
+                                            {/* Tambahkan teks informasi jam di bawah ini */}
+                                            <p className="text-[9px] text-slate-400 italic ml-1">
+                                                * Jam operasional: 10.00 – 20.00 WIB
+                                            </p>
                                         </div>
                                     </div>
 
