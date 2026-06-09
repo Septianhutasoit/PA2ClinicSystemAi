@@ -158,7 +158,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     ].some(p => pathname.startsWith(p));
 
     return (
-        <div className="min-h-screen font-sans overflow-x-clip bg-[#0a0a0a]">
+        <div className="min-h-screen font-sans overflow-x-clip bg-slate-50">
 
             {/* ══════════════════════════════════════════════════════════════
                 NAVBAR

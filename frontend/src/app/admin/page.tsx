@@ -66,13 +66,6 @@ export default function AdminDashboard() {
 
     // Data kalender statis
     const weekDays = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-    const events = [
-        { date: 5, title: 'Scaling Gigi', time: '09:00', patient: 'Budi', type: 'dental' },
-        { date: 12, title: 'Cabut Gigi', time: '10:30', patient: 'Siti', type: 'surgery' },
-        { date: 15, title: 'Konsultasi', time: '14:00', patient: 'Andi', type: 'consult' },
-        { date: 20, title: 'Behel Gigi', time: '11:00', patient: 'Rina', type: 'ortho' },
-        { date: 25, title: 'Scaling', time: '08:30', patient: 'Doni', type: 'dental' },
-    ];
 
     const getDaysInMonth = (date: Date) => {
         const year = date.getFullYear();
@@ -102,9 +95,6 @@ export default function AdminDashboard() {
         setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
     };
 
-    const getEventForDate = (date: number) => {
-        return events.find(e => e.date === date);
-    };
 
     // ✅ GANTI JADI — tampilkan label hari + jumlah
     const CustomTooltip = ({ active, payload, label }: any) => {
@@ -307,7 +297,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="grid grid-cols-7 gap-1">
                         {days.map((day, idx) => {
-                            const event = day ? getEventForDate(day) : null;
+                            const event = null; // getEventForDate(day);
                             const isToday = day === new Date().getDate() &&
                                 currentMonth.getMonth() === new Date().getMonth() &&
                                 currentMonth.getFullYear() === new Date().getFullYear();
@@ -319,11 +309,6 @@ export default function AdminDashboard() {
                                         </div>
                                     ) : (
                                         <div className="h-6" />
-                                    )}
-                                    {event && (
-                                        <div className="mt-1 p-1 rounded-md border-l-2 bg-emerald-50 text-emerald-700 border-emerald-200 text-[7px] font-bold truncate">
-                                            {event.title}
-                                        </div>
                                     )}
                                 </div>
                             );
