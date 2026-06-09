@@ -39,6 +39,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const notifRef = useRef<HTMLDivElement>(null);
+    const seenNotifIds = useRef<Set<string>>(new Set());
 
     // 1. PROTEKSI ROLE PASIEN
     useEffect(() => {
@@ -89,32 +90,71 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     const checkLiveStatus = async () => {
         try {
             const res = await api.get('/clinic/appointments/me');
-            const myAppt = res.data[0];
-            if (!myAppt) return;
+            const appointments: any[] = res.data;
+            if (!appointments?.length) return;
 
-            if (myAppt.status === 'scheduled') {
-                setNotifications([{
-                    id: myAppt.id,
-                    title: 'GILIRAN ANDA! 🔔',
-                    desc: `Silakan masuk ke ruangan ${myAppt.doctor_name}.`,
-                    color: 'bg-blue-500 animate-pulse',
-                    time: 'Baru saja',
-                }]);
-                setUnreadCount(1);
-            } else if (myAppt.status === 'completed') {
-                setNotifications([{
-                    id: myAppt.id,
-                    title: 'Pemeriksaan Selesai ✅',
-                    desc: 'Riwayat kesehatan Anda telah diperbarui.',
-                    color: 'bg-emerald-500',
-                    time: 'Baru saja',
-                }]);
+            const newNotifs: Notification[] = [];
+
+            appointments.forEach((appt: any) => {
+                // Buat key unik per appointment + status
+                // Sehingga notif hanya muncul SEKALI per perubahan status
+                const key = `${appt.id}-${appt.status}`;
+                if (seenNotifIds.current.has(key)) return;
+
+                // Konfigurasi notif berdasarkan status
+                const config: Record<string, { title: string; desc: string; color: string }> = {
+                    confirmed: {
+                        title: '✅ Reservasi Dikonfirmasi',
+                        desc: `Janji dengan ${appt.doctor_name} telah dikonfirmasi.`,
+                        color: 'bg-emerald-500',
+                    },
+                    scheduled: {
+                        title: '🔔 GILIRAN ANDA!',
+                        desc: `Silakan masuk ke ruangan ${appt.doctor_name} sekarang.`,
+                        color: 'bg-blue-500 animate-pulse',
+                    },
+                    completed: {
+                        title: '🩺 Pemeriksaan Selesai',
+                        desc: `Rekam medis dari ${appt.doctor_name} telah tersedia.`,
+                        color: 'bg-teal-500',
+                    },
+                    cancelled: {
+                        title: '❌ Reservasi Dibatalkan',
+                        desc: `Janji dengan ${appt.doctor_name} telah dibatalkan.`,
+                        color: 'bg-red-500',
+                    },
+                };
+
+                const cfg = config[appt.status];
+                if (!cfg) return; // pending tidak perlu notif
+
+                newNotifs.push({
+                    id: appt.id,
+                    title: cfg.title,
+                    desc: cfg.desc,
+                    color: cfg.color,
+                    time: new Date(appt.appointment_date).toLocaleDateString('id-ID', {
+                        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                    }),
+                });
+            });
+
+            if (newNotifs.length > 0) {
+                // Gabungkan dengan notif lama, batas 10 item
+                setNotifications(prev => [...newNotifs, ...prev].slice(0, 10));
+                setUnreadCount(prev => prev + newNotifs.length);
+
+                // Tandai sebagai sudah diproses
+                newNotifs.forEach(n => {
+                    seenNotifIds.current.add(`${n.id}-${appointments.find(a => a.id === n.id)?.status}`);
+                });
             }
+
         } catch { /* silent */ }
     };
 
     useEffect(() => {
-        checkLiveStatus();
+        checkLiveStatus(); // Langsung cek saat mount
         const timer = setInterval(checkLiveStatus, 10000);
         return () => clearInterval(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -381,6 +421,8 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                                     onClick={() => {
                                                         setNotifications([]);
                                                         setUnreadCount(0);
+                                                        // Reset tracking sehingga notif bisa muncul lagi jika status berubah
+                                                        seenNotifIds.current.clear();
                                                     }}
                                                     className="w-full text-[10px] font-bold text-white/30 hover:text-white/60 transition-colors py-1"
                                                 >

@@ -431,16 +431,16 @@ def get_doctor_today(
     today_end   = datetime.combine(date.today(), datetime.max.time())
 
     return (
-        db.query(Appointment)
-        .filter(
-            Appointment.doctor_name == user.full_name,
-            Appointment.appointment_date >= today_start,
-            Appointment.appointment_date <= today_end,
-            Appointment.status == "confirmed",
-        )
-        .order_by(Appointment.appointment_date.asc())
-        .all()
+    db.query(Appointment)
+    .filter(
+        func.lower(func.trim(Appointment.doctor_name)) == user.full_name.strip().lower(),
+        Appointment.appointment_date >= today_start,
+        Appointment.appointment_date <= today_end,
+        Appointment.status.in_(["confirmed", "scheduled"]),   # ← keduanya
     )
+    .order_by(Appointment.appointment_date.asc())
+    .all()
+)
 
 
 @router.get("/appointments/my-schedule")
@@ -470,7 +470,9 @@ def get_doctor_stats(
     my_name = user.full_name.strip().lower() 
     
     # Base query: Pasien yang memanggil nama dokter ini
-    base = db.query(Appointment).filter(func.lower(Appointment.doctor_name) == my_name)
+    base = db.query(Appointment).filter(
+    func.lower(func.trim(Appointment.doctor_name)) == my_name
+)
 
     return {
         "doctor_name": user.full_name,
@@ -592,6 +594,59 @@ def update_appointment_status(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
+    role = current_user.get("role")
+    new_status = body.status.lower()
+
+    if role not in {"doctor", "nurse", "admin"}:
+        raise HTTPException(status_code=403, detail="Akses ditolak.")
+
+    if new_status not in VALID_STATUSES:
+        raise HTTPException(status_code=400, detail=f"Status tidak valid.")
+
+    appo = db.query(Appointment).filter(Appointment.id == appointment_id).first()
+    if not appo:
+        raise HTTPException(status_code=404, detail="Appointment tidak ditemukan")
+
+    # ── PERAWAT: pending → confirmed ──────────────────────────────────────
+    if role == "nurse":
+        if appo.status == "pending" and new_status == "confirmed":
+            appo.status = "confirmed"
+        else:
+            raise HTTPException(
+                status_code=403,
+                detail="Perawat hanya bisa konfirmasi reservasi yang masih pending."
+            )
+
+    # ── DOKTER: confirmed → scheduled → completed ─────────────────────────
+    elif role == "doctor":
+        user = _get_user_by_token(current_user, db)
+        if appo.doctor_name != user.full_name:
+            raise HTTPException(status_code=403, detail="Bukan pasien Anda.")
+
+        if appo.status == "confirmed" and new_status == "scheduled":
+            appo.status = "scheduled"
+        elif appo.status == "scheduled" and new_status == "completed":
+            appo.status = "completed"
+        else:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Alur tidak valid: {appo.status} → {new_status}"
+            )
+
+    # ── ADMIN: bebas mengubah status apapun ───────────────────────────────
+    elif role == "admin":
+        if body.notes:
+            appo.notes = body.notes
+        appo.status = new_status
+
+    try:
+        db.commit()
+        db.refresh(appo)
+        return {"message": f"Status {appo.patient_name}: {appo.status}"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
     """
     Update status appointment.
 
