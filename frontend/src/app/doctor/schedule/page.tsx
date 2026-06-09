@@ -114,7 +114,7 @@ export default function DoctorSchedulePage() {
             {/* ── 3. DAFTAR ANTREAN ─────────────────────────────────────── */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden text-slate-800">
                 <div className="px-7 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <h3 className="text-base font-bold flex items-center gap-2 italic uppercase tracking-tighter"><Activity size={18} className="text-emerald-500" /> Antrean Pasien Hari Ini</h3>
+                    <h3 className="text-base font-bold flex items-center gap-2 italic uppercase tracking-tighter"><Activity size={18} className="text-emerald-500" /> Antrean Pasien</h3>
                     <span className="text-[10px] font-black bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1 rounded-full uppercase italic">Live Queue</span>
                 </div>
 

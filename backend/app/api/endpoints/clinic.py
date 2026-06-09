@@ -421,26 +421,23 @@ def get_doctor_today(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_doctor_or_admin),
 ):
-    """
-    Dokter melihat antrian HARI INI yang ditujukan kepadanya.
-    Filter ketat: nama dokter + rentang waktu hari ini + status confirmed.
-    """
     user = _get_user_by_token(current_user, db)
+    my_name = user.full_name.strip().lower()
 
-    today_start = datetime.combine(date.today(), datetime.min.time())
-    today_end   = datetime.combine(date.today(), datetime.max.time())
+    # ── Gunakan WIB untuk tanggal hari ini ──────────────────────────────────
+    WIB = pytz.timezone("Asia/Jakarta")
+    today_wib = datetime.now(WIB).date()
 
     return (
-    db.query(Appointment)
-    .filter(
-        func.lower(func.trim(Appointment.doctor_name)) == user.full_name.strip().lower(),
-        Appointment.appointment_date >= today_start,
-        Appointment.appointment_date <= today_end,
-        Appointment.status.in_(["confirmed", "scheduled"]),   # ← keduanya
+        db.query(Appointment)
+        .filter(
+            func.lower(func.trim(Appointment.doctor_name)) == my_name,
+            func.date(Appointment.appointment_date) == today_wib,
+            Appointment.status.in_(["confirmed", "scheduled"]),
+        )
+        .order_by(Appointment.appointment_date.asc())
+        .all()
     )
-    .order_by(Appointment.appointment_date.asc())
-    .all()
-)
 
 
 @router.get("/appointments/my-schedule")
@@ -463,31 +460,34 @@ def get_doctor_stats(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_doctor_or_admin)
 ):
-    # Ambil data dokter yang sedang login
     user = _get_user_by_token(current_user, db)
-    today = date.today()
 
-    my_name = user.full_name.strip().lower() 
-    
-    # Base query: Pasien yang memanggil nama dokter ini
+    # ── Nama + timezone konsisten ────────────────────────────────────────────
+    my_name = user.full_name.strip().lower()
+    WIB     = pytz.timezone("Asia/Jakarta")
+    today   = datetime.now(WIB).date()
+
+    # ── Base query: semua appointment dokter ini ─────────────────────────────
     base = db.query(Appointment).filter(
-    func.lower(func.trim(Appointment.doctor_name)) == my_name
-)
+        func.lower(func.trim(Appointment.doctor_name)) == my_name
+    )
+
+    # ── Base query khusus hari ini ───────────────────────────────────────────
+    base_today = base.filter(func.date(Appointment.appointment_date) == today)
 
     return {
-        "doctor_name": user.full_name,
+        "doctor_name":        user.full_name,
         "total_all_patients": base.count(),
-        "today_patients": base.filter(func.date(Appointment.appointment_date) == today).count(),
-        # FIX: Gunakan status huruf kecil 'confirmed'
-        "waiting_patients": base.filter(
-            func.date(Appointment.appointment_date) == today, 
-            Appointment.status == "confirmed" 
-        ).count(),
-        # FIX: Gunakan status huruf kecil 'completed'
-        "completed_today": base.filter(
-            func.date(Appointment.appointment_date) == today, 
-            Appointment.status == "completed"
-        ).count(),
+        "today_patients":     base_today.count(),
+        "waiting_patients":   base_today.filter(
+                                  Appointment.status == "confirmed"
+                              ).count(),
+        "scheduled_patients": base_today.filter(
+                                  Appointment.status == "scheduled"
+                              ).count(),
+        "completed_today":    base_today.filter(
+                                  Appointment.status == "completed"
+                              ).count(),
     }
 
 
@@ -500,13 +500,31 @@ def get_all_appointments(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    """
-    Semua appointment — hanya nurse/admin/doctor yang boleh.
-    Pasien langsung ditolak agar tidak bisa intip data orang lain.
-    """
     if current_user["role"] == "patient":
-        raise HTTPException(status_code=403, detail="Pasien tidak diizinkan melihat semua antrian")
-    return db.query(Appointment).order_by(Appointment.appointment_date.desc()).all()
+        raise HTTPException(status_code=403)
+
+    # Kita ambil data Appointment dan kita gabungkan (Join) dengan MedicalRecord
+    results = db.query(Appointment).order_by(Appointment.id.desc()).all()
+    
+    output = []
+    for app in results:
+        # Cari apakah sudah ada rekam medis untuk janji temu ini
+        record = db.query(MedicalRecord).filter(MedicalRecord.appointment_id == app.id).first()
+        
+        output.append({
+            "id": app.id,
+            "patient_name": app.patient_name,
+            "doctor_name": app.doctor_name,
+            "appointment_date": app.appointment_date,
+            "status": app.status,
+            "patient_phone": app.patient_phone,
+            "notes": app.notes, # Catatan pendaftaran
+            # TAMBAHKAN DUA FIELD INI (HASIL DOKTER)
+            "doctor_diagnosis": record.diagnosis if record else None,
+            "treatment": record.treatment if record else None
+        })
+        
+    return output
 
 
 @router.get("/appointments/queue")

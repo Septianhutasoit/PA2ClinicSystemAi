@@ -76,35 +76,51 @@ export default function NurseRecordsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
-                            {filtered.map((r, idx) => (
-                                <motion.tr key={r.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }} className="hover:bg-slate-50/50">
-                                    <td className="px-6 py-4 text-xs font-bold text-slate-400">{idx + 1}</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-100 to-pink-100 flex items-center justify-center font-black text-rose-700 text-sm">
-                                                {r.patient_name.charAt(0)}
-                                            </div>
-                                            <p className="text-sm font-black text-slate-800">{r.patient_name}</p>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <p className="text-xs text-slate-600 font-bold flex items-center gap-1.5">
-                                            <Stethoscope size={11} className="text-rose-400" /> {r.doctor_name || '-'}
-                                        </p>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <p className="text-xs text-slate-500 font-bold flex items-center gap-1.5">
-                                            <Calendar size={11} />
-                                            {new Date(r.appointment_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                        </p>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <p className="text-xs text-slate-500 font-medium max-w-[200px] truncate">
-                                            {r.notes || <span className="italic text-slate-300">Tidak ada catatan</span>}
-                                        </p>
-                                    </td>
-                                </motion.tr>
-                            ))}
+                                    {filtered.map((r: any, idx: number) => (
+                                        <motion.tr key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4 text-xs font-bold text-slate-400">#{r.id}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center font-black text-emerald-700 uppercase">
+                                                        {r.patient_name.charAt(0)}
+                                                    </div>
+                                                    <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{r.patient_name}</p>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <p className="text-xs font-bold text-slate-600 flex items-center gap-1">
+                                                    <Stethoscope size={12} className="text-emerald-500" /> {r.doctor_name || '-'}
+                                                </p>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="bg-slate-100 px-3 py-1 rounded-lg w-fit">
+                                                    <p className="text-[10px] font-black text-slate-500 uppercase">
+                                                        {new Date(r.appointment_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    </p>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 min-w-[300px]">
+                                                {r.doctor_diagnosis ? (
+                                                    <div className="bg-white border border-emerald-100 p-3 rounded-2xl shadow-sm space-y-2 relative overflow-hidden">
+                                                        <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[8px] px-2 py-0.5 rounded-bl-lg font-black uppercase">Selesai</div>
+                                                        <div>
+                                                            <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest block">Diagnosa Dokter:</span>
+                                                            <p className="text-xs font-bold text-slate-700 italic">"{r.doctor_diagnosis}"</p>
+                                                        </div>
+                                                        <div className="pt-2 border-t border-slate-50">
+                                                            <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest block">Tindakan Medis:</span>
+                                                            <p className="text-[11px] font-medium text-slate-500">{r.treatment}</p>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="p-3 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">Catatan Pendaftaran:</span>
+                                                        <p className="text-xs text-slate-400 italic">{r.notes || "Tidak ada catatan khusus"}</p>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </motion.tr>
+                                    ))}
                         </tbody>
                     </table>
                 </div>

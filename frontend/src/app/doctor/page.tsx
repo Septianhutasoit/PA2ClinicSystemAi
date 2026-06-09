@@ -76,6 +76,7 @@ export default function DoctorDashboard() {
     // ── Derived stats ──────────────────────────────────────────────────────
     const total = appointments.length;
     const waiting = stats?.waiting_patients ?? 0;
+    const scheduled = stats?.scheduled_patients ?? 0;
     const todayPat = stats?.today_patients ?? 0;
     const completed = stats?.completed_today ?? 0;
     const totalAll = stats?.total_all_patients ?? 0;
@@ -95,7 +96,14 @@ export default function DoctorDashboard() {
 
     const statCards = [
         { label: 'Total Pasien', value: isLoading ? '—' : totalAll, icon: Users, iconBg: 'bg-emerald-600', iconColor: 'text-white', dark: true, desc: 'Semua pasien terdaftar' },
-        { label: 'Menunggu', value: isLoading ? '—' : waiting, icon: TimerReset, iconBg: 'bg-amber-50', iconColor: 'text-amber-600', dark: false, desc: 'Antrian hari ini' },
+        {
+            label: 'Menunggu',
+            value: isLoading ? '—' : (waiting + scheduled),   // ← confirmed + scheduled
+            icon: TimerReset,
+            iconBg: 'bg-amber-50', iconColor: 'text-amber-600',
+            dark: false,
+            desc: 'Antrian hari ini',
+        },
         { label: 'Hari Ini', value: isLoading ? '—' : todayPat, icon: Activity, iconBg: 'bg-teal-50', iconColor: 'text-teal-600', dark: false, desc: 'Total jadwal hari ini' },
         { label: 'Selesai', value: isLoading ? '—' : completed, icon: CheckCircle2, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', dark: false, desc: 'Tindakan selesai' },
     ];
@@ -385,102 +393,6 @@ export default function DoctorDashboard() {
                     </div>
                 </div>
             </div>
-
-            {/* ══ TIMELINE JADWAL HARI INI ══════════════════════════════════ */}
-            <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6"
-            >
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center">
-                            <Calendar size={16} className="text-emerald-600" />
-                        </div>
-                        <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">
-                            Jadwal Pemeriksaan Hari Ini
-                        </h3>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-100
-                                     px-3 py-1.5 rounded-xl">
-                        {appointments.length} Janji Temu
-                    </span>
-                </div>
-
-                {isLoading ? (
-                    <div className="flex justify-center py-10">
-                        <Loader2 className="animate-spin text-emerald-400" size={24} />
-                    </div>
-                ) : appointments.length === 0 ? (
-                    <div className="py-10 text-center">
-                        <Calendar size={28} className="mx-auto text-slate-200 mb-2" />
-                        <p className="text-xs font-bold text-slate-400">Tidak ada jadwal hari ini</p>
-                    </div>
-                ) : (
-                    <div className="relative">
-                        {/* Garis timeline */}
-                        <div className="absolute left-[18px] top-2 bottom-2 w-0.5 bg-emerald-100 rounded-full" />
-
-                        <div className="space-y-3 pl-11">
-                            {appointments.slice(0, 5).map((app: any, idx: number) => {
-                                const st = STATUS_MAP[app.status?.toLowerCase()] ?? STATUS_MAP.pending;
-                                return (
-                                    <motion.div
-                                        key={app.id}
-                                        initial={{ opacity: 0, x: 16 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: 0.35 + idx * 0.07 }}
-                                        className="relative flex items-center gap-3"
-                                    >
-                                        {/* Dot timeline */}
-                                        <div className={`absolute -left-11 w-3.5 h-3.5 rounded-full border-2 border-white
-                                                         shadow-sm ${st.dot}`} />
-
-                                        <div className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border
-                                                         hover:shadow-sm transition-all ${st.bg}`}>
-                                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center
-                                                            font-black text-sm shadow-sm shrink-0">
-                                                <span className={st.color}>
-                                                    {app.patient_name?.charAt(0)?.toUpperCase() ?? '?'}
-                                                </span>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className={`text-xs font-bold truncate ${st.color}`}>
-                                                    {app.patient_name}
-                                                </p>
-                                                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                                                    {new Date(app.appointment_date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
-                                                    {app.doctor_name ? ` · ${app.doctor_name}` : ''}
-                                                </p>
-                                            </div>
-                                            <span className={`text-[9px] font-black uppercase tracking-widest
-                                                             shrink-0 ${st.color}`}>
-                                                {st.label}
-                                            </span>
-                                        </div>
-                                    </motion.div>
-                                );
-                            })}
-
-                            {appointments.length > 5 && (
-                                <div className="relative flex items-center gap-3">
-                                    <div className="absolute -left-11 w-3.5 h-3.5 rounded-full border-2 border-slate-200 bg-slate-100" />
-                                    <Link href="/doctor/queue"
-                                        className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl
-                                                   border border-dashed border-slate-200 text-slate-400
-                                                   hover:border-emerald-300 hover:text-emerald-600 transition-all group">
-                                        <span className="text-[11px] font-black uppercase tracking-widest">
-                                            +{appointments.length - 5} Pasien Lainnya
-                                        </span>
-                                        <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
-                                    </Link>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </motion.div>
         </div>
     );
 }

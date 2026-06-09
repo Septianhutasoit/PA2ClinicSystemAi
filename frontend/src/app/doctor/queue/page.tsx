@@ -33,6 +33,7 @@ export default function DoctorQueuePage() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
 
+    // refresh data function
     const fetchData = async (refresh = false) => {
         if (refresh) setIsRefreshing(true);
         try {
@@ -88,7 +89,7 @@ export default function DoctorQueuePage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-slate-900 tracking-tight">Antrian Pasien</h1>
-                    <p className="text-sm text-slate-400 font-medium mt-1">{pending} menunggu · {completed} selesai hari ini</p>
+                    <p className="text-sm text-slate-400 font-medium mt-1">{pending} menunggu · {completed} selesai </p>
                 </div>
                 <button
                     onClick={() => fetchData(true)} disabled={isRefreshing}

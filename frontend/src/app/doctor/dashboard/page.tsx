@@ -30,10 +30,18 @@ export default function DoctorDashboard() {
     const [todayPatients, setTodayPatients] = useState<any[]>([]);
     const [doctorName,    setDoctorName]    = useState<string>('');
     const [doctorRole,    setDoctorRole]    = useState<string>('doctor');
-    const [stats,         setStats]         = useState({
-        todayCount:        0,
-        completedCount:    0,
-        totalAllPatients:  0,
+    const [stats, setStats] = useState<any>({
+        todayCount: 0,
+        completedCount: 0,
+        totalAllPatients: 0,
+        summary: {
+            today_total: 0,
+            completed: 0,
+            waiting: 0,
+            in_room: 0,
+            total_all_patients: 0
+        },
+        weekly_report: []
     });
     const [isLoading,  setIsLoading]  = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
@@ -46,11 +54,7 @@ export default function DoctorDashboard() {
                 api.get('/clinic/appointments/doctor-stats'),
                 api.get('/clinic/appointments/my-today'),
             ]);
-            setStats({
-                todayCount:       resStats.data.waiting_patients   ?? 0,
-                completedCount:   resStats.data.completed_today    ?? 0,
-                totalAllPatients: resStats.data.total_all_patients ?? 0,
-            });
+            setStats(resStats.data); // Ambil seluruh response (termasuk summary & weekly_report)
             setTodayPatients(resToday.data ?? []);
         } catch {
             console.error('refreshData gagal');
@@ -188,16 +192,18 @@ export default function DoctorDashboard() {
                     <div className="relative z-10 mt-5">
                         <p className="text-[11px] font-black text-slate-700 capitalize">{tanggal}</p>
                         <div className="mt-3 pt-3 border-t border-emerald-50 grid grid-cols-2 gap-2">
-                            <div className="bg-emerald-50 rounded-xl p-3 text-center">
-                                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-wider">Antre</p>
-                                <p className="text-2xl font-black text-emerald-800 mt-0.5 tabular-nums">
-                                    {isLoading ? '—' : stats.todayCount}
+                            <div className="bg-amber-50 rounded-xl p-3 text-center">
+                                <p className="text-[9px] font-black text-amber-600 uppercase tracking-wider">Antre</p>
+                                <p className="text-2xl font-black text-amber-800 mt-0.5 tabular-nums">
+                                    {/* Mengambil data 'waiting_patients' dari backend stats */}
+                                    {isLoading ? '—' : (stats?.waiting_patients || 0)}
                                 </p>
                             </div>
-                            <div className="bg-slate-50 rounded-xl p-3 text-center">
-                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Selesai</p>
-                                <p className="text-2xl font-black text-slate-800 mt-0.5 tabular-nums">
-                                    {isLoading ? '—' : stats.completedCount}
+                            <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                                <p className="text-[9px] font-black text-emerald-600 uppercase tracking-wider">Selesai</p>
+                                <p className="text-2xl font-black text-emerald-800 mt-0.5 tabular-nums">
+                                    {/* INI YANG ANDA TANYAKAN: Mengambil data yang sudah selesai hari ini */}
+                                    {isLoading ? '—' : (stats?.completed_today || 0)}
                                 </p>
                             </div>
                         </div>
