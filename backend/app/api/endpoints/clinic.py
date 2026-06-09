@@ -424,15 +424,21 @@ def get_doctor_today(
     user = _get_user_by_token(current_user, db)
     my_name = user.full_name.strip().lower()
 
-    # ── Gunakan WIB untuk tanggal hari ini ──────────────────────────────────
-    WIB = pytz.timezone("Asia/Jakarta")
+    # ── Range WIB → konversi ke UTC (sama dengan analytics) ─────────────────
+    WIB       = pytz.timezone("Asia/Jakarta")
     today_wib = datetime.now(WIB).date()
+
+    start_utc = WIB.localize(datetime.combine(today_wib, datetime.min.time())) \
+                   .astimezone(pytz.utc).replace(tzinfo=None)
+    end_utc   = WIB.localize(datetime.combine(today_wib, datetime.max.time())) \
+                   .astimezone(pytz.utc).replace(tzinfo=None)
 
     return (
         db.query(Appointment)
         .filter(
             func.lower(func.trim(Appointment.doctor_name)) == my_name,
-            func.date(Appointment.appointment_date) == today_wib,
+            Appointment.appointment_date >= start_utc,
+            Appointment.appointment_date <= end_utc,
             Appointment.status.in_(["confirmed", "scheduled"]),
         )
         .order_by(Appointment.appointment_date.asc())
@@ -460,34 +466,34 @@ def get_doctor_stats(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_doctor_or_admin)
 ):
-    user = _get_user_by_token(current_user, db)
-
-    # ── Nama + timezone konsisten ────────────────────────────────────────────
+    user    = _get_user_by_token(current_user, db)
     my_name = user.full_name.strip().lower()
-    WIB     = pytz.timezone("Asia/Jakarta")
-    today   = datetime.now(WIB).date()
 
-    # ── Base query: semua appointment dokter ini ─────────────────────────────
+    # ── UTC range ────────────────────────────────────────────────────────────
+    WIB       = pytz.timezone("Asia/Jakarta")
+    today_wib = datetime.now(WIB).date()
+
+    start_utc = WIB.localize(datetime.combine(today_wib, datetime.min.time())) \
+                   .astimezone(pytz.utc).replace(tzinfo=None)
+    end_utc   = WIB.localize(datetime.combine(today_wib, datetime.max.time())) \
+                   .astimezone(pytz.utc).replace(tzinfo=None)
+
+    # ── Base queries ─────────────────────────────────────────────────────────
     base = db.query(Appointment).filter(
         func.lower(func.trim(Appointment.doctor_name)) == my_name
     )
-
-    # ── Base query khusus hari ini ───────────────────────────────────────────
-    base_today = base.filter(func.date(Appointment.appointment_date) == today)
+    base_today = base.filter(
+        Appointment.appointment_date >= start_utc,
+        Appointment.appointment_date <= end_utc,
+    )
 
     return {
         "doctor_name":        user.full_name,
         "total_all_patients": base.count(),
         "today_patients":     base_today.count(),
-        "waiting_patients":   base_today.filter(
-                                  Appointment.status == "confirmed"
-                              ).count(),
-        "scheduled_patients": base_today.filter(
-                                  Appointment.status == "scheduled"
-                              ).count(),
-        "completed_today":    base_today.filter(
-                                  Appointment.status == "completed"
-                              ).count(),
+        "waiting_patients":   base_today.filter(Appointment.status == "confirmed").count(),
+        "scheduled_patients": base_today.filter(Appointment.status == "scheduled").count(),
+        "completed_today":    base_today.filter(Appointment.status == "completed").count(),
     }
 
 
@@ -614,53 +620,56 @@ def update_appointment_status(
 ):
     role = current_user.get("role")
     new_status = body.status.lower()
-
-    if role not in {"doctor", "nurse", "admin"}:
-        raise HTTPException(status_code=403, detail="Akses ditolak.")
-
-    if new_status not in VALID_STATUSES:
-        raise HTTPException(status_code=400, detail=f"Status tidak valid.")
+    user = _get_user_by_token(current_user, db)
 
     appo = db.query(Appointment).filter(Appointment.id == appointment_id).first()
     if not appo:
         raise HTTPException(status_code=404, detail="Appointment tidak ditemukan")
 
-    # ── PERAWAT: pending → confirmed ──────────────────────────────────────
-    if role == "nurse":
-        if appo.status == "pending" and new_status == "confirmed":
-            appo.status = "confirmed"
-        else:
-            raise HTTPException(
-                status_code=403,
-                detail="Perawat hanya bisa konfirmasi reservasi yang masih pending."
-            )
+    # LOGGING UNTUK DEBUG (Lihat di terminal uvicorn)
+    print(f"DEBUG: User {user.full_name} ({role}) mencoba ubah ID {appointment_id}")
+    print(f"DEBUG: Alur {appo.status} -> {new_status}")
 
-    # ── DOKTER: confirmed → scheduled → completed ─────────────────────────
+    # ── 1. LOGIKA ADMIN (Bebas) ──────────────────────────────────
+    if role == "admin":
+        appo.status = new_status
+        if body.notes: appo.notes = body.notes
+
+    # ── 2. LOGIKA PERAWAT (Nurse) ────────────────────────────────
+    elif role == "nurse":
+        # Perawat boleh konfirmasi (pending -> confirmed) 
+        # ATAU panggil (confirmed -> scheduled)
+        # ATAU panggil langsung (pending -> scheduled) -> Kita buat fleksibel
+        if appo.status in ["pending", "confirmed"] and new_status in ["confirmed", "scheduled"]:
+            appo.status = new_status
+        else:
+            print(f"REJECTED: Perawat dilarang ubah {appo.status} ke {new_status}")
+            raise HTTPException(status_code=403, detail=f"Perawat dilarang ubah {appo.status} ke {new_status}")
+
+    # ── 3. LOGIKA DOKTER ──────────────────────────────────────────
     elif role == "doctor":
-        user = _get_user_by_token(current_user, db)
-        if appo.doctor_name != user.full_name:
-            raise HTTPException(status_code=403, detail="Bukan pasien Anda.")
+        # Normalisasi nama untuk pengecekan kepemilikan
+        db_doc_name = appo.doctor_name.replace(".", "").strip().lower()
+        my_name = user.full_name.replace(".", "").strip().lower()
+
+        if db_doc_name != my_name:
+            print(f"REJECTED: Pasien ini milik {appo.doctor_name}, bukan {user.full_name}")
+            raise HTTPException(status_code=403, detail="Anda bukan dokter pasien ini.")
 
         if appo.status == "confirmed" and new_status == "scheduled":
             appo.status = "scheduled"
         elif appo.status == "scheduled" and new_status == "completed":
             appo.status = "completed"
         else:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Alur tidak valid: {appo.status} → {new_status}"
-            )
+            raise HTTPException(status_code=403, detail="Alur status dokter tidak valid.")
 
-    # ── ADMIN: bebas mengubah status apapun ───────────────────────────────
-    elif role == "admin":
-        if body.notes:
-            appo.notes = body.notes
-        appo.status = new_status
+    else:
+        raise HTTPException(status_code=403, detail="Role tidak dikenal.")
 
     try:
         db.commit()
         db.refresh(appo)
-        return {"message": f"Status {appo.patient_name}: {appo.status}"}
+        return {"message": "Berhasil diperbarui", "status": appo.status}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
