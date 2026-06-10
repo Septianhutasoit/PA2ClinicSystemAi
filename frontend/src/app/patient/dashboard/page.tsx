@@ -36,9 +36,14 @@ export default function WelcomePage() {
     const router = useRouter();
     const [currentSlide, setCurrentSlide] = useState(0);
     const [doctors, setDoctors] = useState([]);
+    const [loggedInName, setLoggedInName] = useState('');
     const [formData, setFormData] = useState({
-        patient_name: '', patient_phone: '', doctor_name: '',
-        appointment_date: '', patient_address: '', patient_gender: ''
+        patient_phone: '',
+        doctor_name: '',
+        appointment_date: '',
+        patient_address: '',
+        patient_gender: '',
+        notes: '' // <--- TAMBAHKAN INI
     });
     const [status, setStatus] = useState({ type: '', msg: '' });
     const heroRef = useRef<HTMLDivElement>(null);
@@ -55,6 +60,17 @@ export default function WelcomePage() {
     useEffect(() => {
         const t = setInterval(() => setCurrentSlide(p => (p + 1) % bgImages.length), 5000);
         return () => clearInterval(t);
+    }, []);
+    
+    useEffect(() => {
+        // Ambil data profil saya
+        api.get('/auth/me')
+            .then(res => {
+                setLoggedInName(res.data.full_name);
+            })
+            .catch(() => {
+                setLoggedInName(localStorage.getItem('user_name') || 'Pasien');
+            });
     }, []);
 
     useEffect(() => {
@@ -82,7 +98,7 @@ export default function WelcomePage() {
         try {
             await api.post('/clinic/appointments', formData);
             setStatus({ type: 'success', msg: '✅ Berhasil! Jadwal tercatat. Mengalihkan...' });
-            setFormData({ patient_name: '', patient_phone: '', doctor_name: '', appointment_date: '', patient_address: '', patient_gender: '' });
+            setFormData({patient_phone: '', doctor_name: '', appointment_date: '',patient_address: '', patient_gender: '', notes: '' });
             setTimeout(() => { setStatus({ type: '', msg: '' }); router.push('/patient/appointments'); }, 1500);
         } catch {
             setStatus({ type: 'error', msg: '❌ Gagal mendaftar. Pastikan data sudah benar.' });
@@ -482,30 +498,21 @@ export default function WelcomePage() {
 
                                 <form onSubmit={handleSubmit} className="p-8 space-y-4">
                                     {/* Nama + Telepon */}
-                                    <div className="grid sm:grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                                                Nama <span className="text-red-500">*</span>
-                                            </label>
-                                            <div className="relative">
-                                                <User size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Nama Lengkap Pasien"
-                                                    required
-                                                    maxLength={50}
-                                                    value={formData.patient_name}
-                                                    onChange={e => {
-                                                        // Hanya huruf, spasi, dan titik (untuk gelar seperti dr.)
-                                                        const val = e.target.value.replace(/[^a-zA-ZÀ-ÿ\s.]/g, '');
-                                                        setFormData({ ...formData, patient_name: val });
-                                                    }}
-                                                    className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl
-                                                    text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
-                                                  focus:border-emerald-400 outline-none transition-all"
-                                                />
-                                            </div>
+                                    {/* Banner Identitas Otomatis (Menggantikan Input Nama) */}
+                                    <div className="sm:col-span-2 flex items-center gap-4 bg-emerald-50 border border-emerald-100 p-4 rounded-2xl mb-2">
+                                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0 border border-emerald-100">
+                                            <BadgeCheck size={24} className="text-emerald-600" />
                                         </div>
+                                        <div className="flex-1">
+                                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1.5">Pendaftar Terverifikasi</p>
+                                            <h4 className="text-base font-bold text-slate-800 uppercase italic">
+                                                {loggedInName || 'Memuat data akun...'}
+                                            </h4>
+                                        </div>
+                                        <div className="hidden sm:block px-3 py-1 bg-emerald-600 text-white text-[9px] font-black uppercase rounded-lg tracking-tighter">
+                                            Sesuai Akun
+                                        </div>
+                                    </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
                                                 Telepon <span className="text-red-500">*</span>
@@ -637,14 +644,33 @@ export default function WelcomePage() {
                                     </div>
 
                                     {/* Submit */}
-                                    <motion.button
-                                        type="submit"
-                                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl
-                                                   font-black text-sm uppercase tracking-widest shadow-lg
-                                                   shadow-emerald-200 transition-all mt-2"
-                                    >
-                                        {status.type === 'loading' ? 'Memproses...' : 'Submit Reservasi'}
+                            <motion.button
+                                type="submit"
+                                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                                disabled={status.type === 'loading'}
+                                className="w-full bg-emerald-600 hover:bg-slate-900 text-white py-4 rounded-2xl
+               font-black text-sm uppercase tracking-widest shadow-xl
+               shadow-emerald-200 transition-all mt-4 flex items-center justify-center gap-3"
+                            >
+                                {status.type === 'loading' ? (
+                                {/* Input Keluhan / Catatan untuk Perawat */}
+                                <div className="space-y-1.5 sm:col-span-2 mt-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                                        Keluhan / Catatan Medis <span className="text-slate-300 text-[8px] font-normal italic">(Akan dibaca oleh perawat)</span>
+                                    </label>
+                                    <div className="relative">
+                                        <MessageSquare size={14} className="absolute left-3.5 top-4 text-slate-400" />
+                                        <textarea
+                                            placeholder="Tuliskan keluhan yang Anda rasakan atau alasan ingin konsultasi..."
+                                            rows={3}
+                                            value={formData.notes}
+                                            onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                            className="w-full pl-10 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl
+                       text-sm font-medium focus:ring-4 focus:ring-emerald-400/10
+                       focus:border-emerald-500 outline-none transition-all resize-none italic"
+                                        />
+                                    </div>
+                                </div>
                                     </motion.button>
 
                                     {status.msg && (

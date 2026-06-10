@@ -344,37 +344,34 @@ def create_appointment(
     current_user: dict = Depends(get_current_user),
 ):
     try:
+        # ── Ambil user dari token ────────────────────────────────────────────
         user = _get_user_by_token(current_user, db)
-        
-        # 1. Simpan Janji Temu (Appointment)
-        # Kita gunakan data.model_dump() untuk mengambil semua input dari frontend
+
+        # ── patient_name SELALU dari akun login, bukan dari input form ───────
         new_appo = Appointment(
-            **data.model_dump(),
-            status="pending",
-            user_id=user.id,
+            patient_name    = user.full_name,        # ← otomatis dari akun
+            patient_phone   = data.patient_phone,
+            doctor_name     = data.doctor_name,
+            appointment_date= data.appointment_date,
+            patient_address = data.patient_address or '-',
+            patient_gender  = data.patient_gender  or '-',
+            notes           = data.notes,
+            status          = "pending",
+            user_id         = user.id,
         )
         db.add(new_appo)
 
-        # 2. Tambah ke daftar pasien jika belum ada
-        existing_patient = db.query(Patient).filter(Patient.email == user.email).first()
-
-        if not existing_patient:
-            # Pecah nama (Septian Hts -> Septian & Hts)
-            name_parts = user.full_name.split(" ", 1)
-            f_name = name_parts[0]
-            l_name = name_parts[1] if len(name_parts) > 1 else ""
-
-            # Gunakan getattr untuk menghindari error jika field tidak ada di form
-            new_p = Patient(
-                full_name=user.full_name,
-                email=user.email,
-                phone_number=data.patient_phone,
-                # Gunakan .get() atau getattr agar jika kosong tidak crash
-                address=getattr(data, 'address', '-'),
-                gender=getattr(data, 'gender', '-'),
-                created_at=datetime.utcnow()
-            )
-            db.add(new_p)
+        # ── Tambah ke tabel patients jika belum ada ──────────────────────────
+        existing = db.query(Patient).filter(Patient.email == user.email).first()
+        if not existing:
+            db.add(Patient(
+                full_name    = user.full_name,
+                email        = user.email,
+                phone_number = data.patient_phone,
+                address      = data.patient_address or '-',
+                gender       = data.patient_gender  or '-',
+                created_at   = datetime.utcnow(),
+            ))
 
         db.commit()
         db.refresh(new_appo)
@@ -382,9 +379,8 @@ def create_appointment(
 
     except Exception as e:
         db.rollback()
-        # CETAK ERROR KE TERMINAL AGAR KAMU TAHU MASALAHNYA
-        print(f"CRASH SAAT DAFTAR: {str(e)}") 
-        raise HTTPException(status_code=500, detail=f"Gagal mendaftar: {str(e)}")
+        print(f"BOOKING ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Gagal menyimpan reservasi: {str(e)}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

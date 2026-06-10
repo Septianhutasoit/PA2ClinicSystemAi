@@ -39,7 +39,7 @@ class ServiceResponse(ServiceBase):
 
 # INDUK: Harus dibuat paling atas agar bisa dipanggil anak-anaknya
 class AppointmentBase(BaseModel):
-    patient_name: str
+    patient_name: Optional[str] = None
     patient_phone: str
     doctor_name: str
     appointment_date: datetime
