@@ -5,7 +5,7 @@ import {
     Clock, Star, Heart, Activity, Phone, User,
     Stethoscope, CheckCircle, MapPin, Mail, Play,
     Award, Users, Zap, Shield, ChevronRight,
-    Quote, BadgeCheck, Microscope, Smile, HeartPulse
+    Quote, BadgeCheck, Microscope, Smile, HeartPulse, MessageSquare
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
@@ -497,63 +497,74 @@ export default function WelcomePage() {
                                 </div>
 
                                 <form onSubmit={handleSubmit} className="p-8 space-y-4">
-                                    {/* Nama + Telepon */}
-                                    {/* Banner Identitas Otomatis (Menggantikan Input Nama) */}
-                                    <div className="sm:col-span-2 flex items-center gap-4 bg-emerald-50 border border-emerald-100 p-4 rounded-2xl mb-2">
-                                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0 border border-emerald-100">
+
+                                    {/* ── Banner nama akun otomatis ── */}
+                                    <div className="flex items-center gap-4 bg-emerald-50 border border-emerald-100
+                    p-4 rounded-2xl">
+                                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center
+                        shadow-sm shrink-0 border border-emerald-100">
                                             <BadgeCheck size={24} className="text-emerald-600" />
                                         </div>
-                                        <div className="flex-1">
-                                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1.5">Pendaftar Terverifikasi</p>
-                                            <h4 className="text-base font-bold text-slate-800 uppercase italic">
-                                                {loggedInName || 'Memuat data akun...'}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[10px] font-black text-emerald-600 uppercase
+                          tracking-widest leading-none mb-1.5">
+                                                Pendaftar Terverifikasi
+                                            </p>
+                                            <h4 className="text-sm font-bold text-slate-800 truncate">
+                                                {loggedInName || (
+                                                    <span className="inline-block w-28 h-4 bg-emerald-100 rounded animate-pulse" />
+                                                )}
                                             </h4>
                                         </div>
-                                        <div className="hidden sm:block px-3 py-1 bg-emerald-600 text-white text-[9px] font-black uppercase rounded-lg tracking-tighter">
+                                        <span className="hidden sm:block px-3 py-1 bg-emerald-600 text-white
+                         text-[9px] font-black uppercase rounded-lg tracking-tighter shrink-0">
                                             Sesuai Akun
-                                        </div>
+                                        </span>
                                     </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                                                Telepon <span className="text-red-500">*</span>
-                                            </label>
-                                            <div className="relative">
-                                                <Phone size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                <input
-                                                    type="tel"
-                                                    placeholder="08xx-xxxx-xxxx"
-                                                    required
-                                                    maxLength={15}
-                                                    value={formData.patient_phone}
-                                                    onChange={e => {
-                                                        const raw = e.target.value.replace(/[^\d+\-]/g, '');
-                                                        const digitsOnly = raw.replace(/\D/g, '');
-                                                        const maxDigits = digitsOnly.startsWith('62') ? 13 : 12;
-                                                        if (digitsOnly.length <= maxDigits) {
-                                                            setFormData({ ...formData, patient_phone: raw });
-                                                        }
-                                                    }}
-                                                    className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl
-                                                     text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
-                                                    focus:border-emerald-400 outline-none transition-all"
-                                                />
-                                                {formData.patient_phone && (
-                                                    <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold
-                                                    ${formData.patient_phone.replace(/\D/g, '').length < 10
-                                                            ? 'text-red-400'
-                                                            : 'text-emerald-500'}`}>
-                                                        {formData.patient_phone.replace(/\D/g, '').length}/
-                                                        {formData.patient_phone.replace(/\D/g, '').startsWith('62') ? '13' : '12'}
-                                                    </span>
-                                                )}
-                                            </div>
+
+                                    {/* ── Telepon ── */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase
+                          tracking-widest flex items-center gap-1">
+                                            Telepon <span className="text-red-500">*</span>
+                                        </label>
+                                        <div className="relative">
+                                            <Phone size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="tel"
+                                                placeholder="08xx / +62xx / 62xx"
+                                                required
+                                                maxLength={15}
+                                                value={formData.patient_phone}
+                                                onChange={e => {
+                                                    const raw = e.target.value.replace(/[^\d+\-]/g, '');
+                                                    const digitsOnly = raw.replace(/\D/g, '');
+                                                    const maxDigits = digitsOnly.startsWith('62') ? 13 : 12;
+                                                    if (digitsOnly.length <= maxDigits) {
+                                                        setFormData({ ...formData, patient_phone: raw });
+                                                    }
+                                                }}
+                                                className="w-full pl-9 pr-12 py-3 bg-slate-50 border border-slate-200
+                           rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
+                           focus:border-emerald-400 outline-none transition-all"
+                                            />
+                                            {formData.patient_phone && (
+                                                <span className={`absolute right-3 top-1/2 -translate-y-1/2
+                                  text-[10px] font-bold pointer-events-none
+                                  ${formData.patient_phone.replace(/\D/g, '').length < 10
+                                                        ? 'text-red-400' : 'text-emerald-500'}`}>
+                                                    {formData.patient_phone.replace(/\D/g, '').length}/
+                                                    {formData.patient_phone.replace(/\D/g, '').startsWith('62') ? '13' : '12'}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 
-                                    {/* Alamat + Jenis Kelamin */}
+                                    {/* ── Alamat + Jenis Kelamin ── */}
                                     <div className="grid sm:grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase
+                              tracking-widest flex items-center gap-1">
                                                 Alamat <span className="text-red-500">*</span>
                                             </label>
                                             <div className="relative">
@@ -566,29 +577,32 @@ export default function WelcomePage() {
                                                     value={formData.patient_address}
                                                     onChange={e => {
                                                         const val = e.target.value;
-                                                        // Karakter pertama harus huruf, setelahnya boleh angka
                                                         if (val === '' || /^[a-zA-ZÀ-ÿ]/.test(val)) {
                                                             setFormData({ ...formData, patient_address: val });
                                                         }
                                                     }}
-                                                    className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl
-                                                 text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
-                                                 focus:border-emerald-400 outline-none transition-all"
+                                                    className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200
+                               rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
+                               focus:border-emerald-400 outline-none transition-all"
                                                 />
                                             </div>
                                         </div>
+
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase
+                              tracking-widest flex items-center gap-1">
                                                 Jenis Kelamin <span className="text-red-500">*</span>
                                             </label>
                                             <div className="relative">
                                                 <User size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                                <select required
+                                                <select
+                                                    required
                                                     value={formData.patient_gender}
                                                     onChange={e => setFormData({ ...formData, patient_gender: e.target.value })}
-                                                    className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl
-                                                               text-sm font-medium appearance-none focus:ring-2 focus:ring-emerald-400/30
-                                                               focus:border-emerald-400 outline-none transition-all cursor-pointer"
+                                                    className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200
+                               rounded-xl text-sm font-medium appearance-none
+                               focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400
+                               outline-none transition-all cursor-pointer"
                                                 >
                                                     <option value="">-- Pilih --</option>
                                                     <option value="Laki-laki">Laki-laki</option>
@@ -598,30 +612,38 @@ export default function WelcomePage() {
                                         </div>
                                     </div>
 
-                                    {/* Dokter + Tanggal */}
+                                    {/* ── Dokter + Tanggal ── */}
                                     <div className="grid sm:grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase
+                              tracking-widest flex items-center gap-1">
                                                 Dokter <span className="text-red-500">*</span>
                                             </label>
                                             <div className="relative">
-                                                <Stethoscope size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
-                                                <select required
+                                                <Stethoscope size={13} className="absolute left-3.5 top-1/2
+                                                  -translate-y-1/2 text-slate-400 z-10" />
+                                                <select
+                                                    required
                                                     value={formData.doctor_name}
                                                     onChange={e => setFormData({ ...formData, doctor_name: e.target.value })}
-                                                    className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl
-                                                               text-sm font-medium appearance-none focus:ring-2 focus:ring-emerald-400/30
-                                                               focus:border-emerald-400 outline-none transition-all cursor-pointer"
+                                                    className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200
+                               rounded-xl text-sm font-medium appearance-none
+                               focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400
+                               outline-none transition-all cursor-pointer"
                                                 >
                                                     <option value="">-- Pilih Dokter --</option>
                                                     {doctors.map((d: any) => (
-                                                        <option key={d.id} value={d.name}>{d.name} — {d.specialty}</option>
+                                                        <option key={d.id} value={d.name}>
+                                                            {d.name} — {d.specialty}
+                                                        </option>
                                                     ))}
                                                 </select>
                                             </div>
                                         </div>
+
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase
+                              tracking-widest flex items-center gap-1">
                                                 Tanggal Kunjungan <span className="text-red-500">*</span>
                                             </label>
                                             <div className="relative">
@@ -631,68 +653,93 @@ export default function WelcomePage() {
                                                     required
                                                     value={formData.appointment_date}
                                                     onChange={e => setFormData({ ...formData, appointment_date: e.target.value })}
-                                                    className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl
-                       text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
-                       focus:border-emerald-400 outline-none transition-all"
+                                                    className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200
+                               rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
+                               focus:border-emerald-400 outline-none transition-all"
                                                 />
                                             </div>
-                                            {/* Tambahkan teks informasi jam di bawah ini */}
                                             <p className="text-[9px] text-slate-400 italic ml-1">
                                                 * Jam operasional: 10.00 – 20.00 WIB
                                             </p>
                                         </div>
                                     </div>
 
-                                    {/* Submit */}
-                            <motion.button
-                                type="submit"
-                                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
-                                disabled={status.type === 'loading'}
-                                className="w-full bg-emerald-600 hover:bg-slate-900 text-white py-4 rounded-2xl
-               font-black text-sm uppercase tracking-widest shadow-xl
-               shadow-emerald-200 transition-all mt-4 flex items-center justify-center gap-3"
-                            >
-                                {status.type === 'loading' ? (
-                                {/* Input Keluhan / Catatan untuk Perawat */}
-                                <div className="space-y-1.5 sm:col-span-2 mt-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                                        Keluhan / Catatan Medis <span className="text-slate-300 text-[8px] font-normal italic">(Akan dibaca oleh perawat)</span>
-                                    </label>
-                                    <div className="relative">
-                                        <MessageSquare size={14} className="absolute left-3.5 top-4 text-slate-400" />
-                                        <textarea
-                                            placeholder="Tuliskan keluhan yang Anda rasakan atau alasan ingin konsultasi..."
-                                            rows={3}
-                                            value={formData.notes}
-                                            onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                                            className="w-full pl-10 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl
-                       text-sm font-medium focus:ring-4 focus:ring-emerald-400/10
-                       focus:border-emerald-500 outline-none transition-all resize-none italic"
-                                        />
+                                    {/* ── Keluhan / Catatan ── */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase
+                          tracking-widest flex items-center gap-1.5">
+                                            Keluhan / Catatan Medis
+                                            <span className="text-slate-300 text-[9px] font-normal italic normal-case tracking-normal">
+                                                (Akan dibaca perawat)
+                                            </span>
+                                        </label>
+                                        <div className="relative">
+                                            <MessageSquare size={14} className="absolute left-3.5 top-3.5 text-slate-400" />
+                                            <textarea
+                                                placeholder="Tuliskan keluhan atau alasan ingin konsultasi..."
+                                                rows={3}
+                                                value={formData.notes}
+                                                onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200
+                           rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
+                           focus:border-emerald-400 outline-none transition-all resize-none"
+                                            />
+                                        </div>
                                     </div>
-                                </div>
+
+                                    {/* ── Submit ── */}
+                                    <motion.button
+                                        type="submit"
+                                        whileHover={{ scale: 1.01 }}
+                                        whileTap={{ scale: 0.99 }}
+                                        disabled={status.type === 'loading'}
+                                        className="w-full bg-emerald-600 hover:bg-slate-900 text-white py-4 rounded-2xl
+                   font-black text-sm uppercase tracking-widest shadow-xl shadow-emerald-200
+                   transition-all mt-2 flex items-center justify-center gap-3
+                   disabled:opacity-60 disabled:cursor-not-allowed"
+                                    >
+                                        {status.type === 'loading' ? (
+                                            <>
+                                                <span className="w-4 h-4 border-2 border-white/40 border-t-white
+                                 rounded-full animate-spin" />
+                                                Memproses...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Calendar size={15} /> Submit Reservasi
+                                            </>
+                                        )}
                                     </motion.button>
 
+                                    {/* ── Status message ── */}
                                     {status.msg && (
                                         <motion.p
                                             initial={{ opacity: 0, y: -8 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             className={`text-center text-sm font-medium py-3 rounded-xl
-                                                ${status.type === 'success' ? 'text-emerald-600 bg-emerald-50 border border-emerald-200'
+                ${status.type === 'success'
+                                                    ? 'text-emerald-600 bg-emerald-50 border border-emerald-200'
                                                     : 'text-red-600 bg-red-50 border border-red-200'}`}
                                         >
                                             {status.msg}
                                         </motion.p>
                                     )}
 
-                                    {/* Trust badges */}
+                                    {/* ── Trust badges ── */}
                                     <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-xs text-slate-400">
-                                        <span className="flex items-center gap-1"><ShieldCheck size={12} className="text-emerald-500" /> Data Aman</span>
+                                        <span className="flex items-center gap-1">
+                                            <ShieldCheck size={12} className="text-emerald-500" /> Data Aman
+                                        </span>
                                         <span className="w-px h-3 bg-slate-200" />
-                                        <span className="flex items-center gap-1"><BadgeCheck size={12} className="text-emerald-500" /> Dokter Terverifikasi</span>
+                                        <span className="flex items-center gap-1">
+                                            <BadgeCheck size={12} className="text-emerald-500" /> Dokter Terverifikasi
+                                        </span>
                                         <span className="w-px h-3 bg-slate-200" />
-                                        <span className="flex items-center gap-1"><CheckCircle size={12} className="text-emerald-500" /> Konfirmasi Cepat</span>
+                                        <span className="flex items-center gap-1">
+                                            <CheckCircle size={12} className="text-emerald-500" /> Konfirmasi Cepat
+                                        </span>
                                     </div>
+
                                 </form>
                             </div>
                         </motion.div>
