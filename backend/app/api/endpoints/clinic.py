@@ -583,6 +583,99 @@ async def log_feedback(payload: dict, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "ok"}
 
+# CHAT HISTORY — Per User (Persisten)
+
+@router.get("/chat-history")
+def get_chat_history(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Ambil semua riwayat chat milik user yang login."""
+    from app.models.clinic import ChatLog
+    user = _get_user_by_token(current_user, db)
+
+    logs = (
+        db.query(ChatLog)
+        .filter(ChatLog.session_id == f"user_{user.id}")
+        .order_by(ChatLog.created_at.asc())
+        .all()
+    )
+    return [
+        {
+            "id":           log.id,
+            "user_message": log.user_message,
+            "bot_response": log.bot_response,
+            "feedback":     log.feedback,
+            "created_at":   log.created_at.isoformat() if log.created_at else None,
+        }
+        for log in logs
+    ]
+
+
+@router.post("/chat-history")
+def save_chat_message(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Simpan satu pasang pesan user + balasan bot ke database."""
+    from app.models.clinic import ChatLog
+    user = _get_user_by_token(current_user, db)
+
+    log = ChatLog(
+        user_message = payload.get("user_message", ""),
+        bot_response = payload.get("bot_response", ""),
+        session_id   = f"user_{user.id}",   # ← kunci per-akun
+    )
+    db.add(log)
+    db.commit()
+    db.refresh(log)
+    return {
+        "id":           log.id,
+        "user_message": log.user_message,
+        "bot_response": log.bot_response,
+        "created_at":   log.created_at.isoformat() if log.created_at else None,
+    }
+
+
+@router.delete("/chat-history/{log_id}")
+def delete_one_chat(
+    log_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Hapus satu entri chat milik user yang login."""
+    from app.models.clinic import ChatLog
+    user = _get_user_by_token(current_user, db)
+
+    log = db.query(ChatLog).filter(
+        ChatLog.id         == log_id,
+        ChatLog.session_id == f"user_{user.id}",   # pastikan milik user ini
+    ).first()
+
+    if not log:
+        raise HTTPException(status_code=404, detail="Riwayat tidak ditemukan")
+
+    db.delete(log)
+    db.commit()
+    return {"message": "Riwayat dihapus"}
+
+
+@router.delete("/chat-history")
+def clear_all_chat(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Hapus SEMUA riwayat chat milik user yang login."""
+    from app.models.clinic import ChatLog
+    user = _get_user_by_token(current_user, db)
+
+    deleted = db.query(ChatLog).filter(
+        ChatLog.session_id == f"user_{user.id}"
+    ).delete()
+    db.commit()
+    return {"message": f"{deleted} riwayat berhasil dihapus"}
+
 @router.get("/admin/stats")
 async def get_ai_stats(db: Session = Depends(get_db)):
     from app.models.clinic import ChatLog
