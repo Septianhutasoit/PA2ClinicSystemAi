@@ -122,6 +122,68 @@ const [isAiHovered, setIsAiHovered] = useState(false); // State pendukung tombol
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
+    // cek user apakah sedang login
+    const getToken = () => 
+        typeof window !== 'undefined'
+        ? localStorage.getItem('token') || null
+        : null;
+
+    // load history server dari server
+    const loadServerHistory = async () => {
+        const token = getToken();
+        if (!token) return; // tamu → pakai localStorage saja
+
+        try {
+            const res = await api.get('/clinic/chat-history');
+            const logs: { id: number; user_message: string; bot_response: string; created_at: string }[] = res.data;
+
+            if (!logs || logs.length === 0) return;
+
+            //Bangun 1 conversation dari semua log
+            const msgs: Message[] = [INITIAL_MSG()];
+            logs.forEach(log => {
+                msgs.push({ id: `user-${log.id}`, role: 'user', content: log.user_message, liked: null });
+                msgs.push({ id: `bot-${log.id}`, role: 'bot', content: log.bot_response, liked: null });
+            });
+
+            const serverConv: Conversation = {
+                id: 'server',
+                title: 'Riwayat Saya',
+                messages: msgs,
+                createdAt: Date.now(),
+            };
+
+            // Gabungkan: server conversation selalu di posisi pertama
+            setConversations(prev => {
+                const localOnly = prev.filter(c => c.id !== 'server');
+                return [serverConv, ...localOnly];
+            });
+            setCurrentConvId('server');
+        } catch (err) {
+            console.warn('[History] Gagal load dari server:', err);
+        }
+    };
+
+    // ── Simpan 1 pasang pesan ke server ──────────────────────────────
+    const saveToServer = async (userMsg: string, botMsg: string) => {
+        const token = getToken();
+        if (!token) return; // tamu → tidak disimpan ke server
+        try {
+            await api.post('/clinic/chat-history', {
+                user_message: userMsg,
+                bot_response: botMsg,
+            });
+        } catch (err) {
+            console.warn('[History] Gagal simpan ke server:', err);
+        }
+    };
+
+    useEffect(() => {
+        if (isOpen) {
+            loadServerHistory();
+        }
+    }, [isOpen]);
+
     useEffect(() => {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
@@ -199,14 +261,20 @@ const [isAiHovered, setIsAiHovered] = useState(false); // State pendukung tombol
         setTimeout(() => updateCurrentConversation(conv => ({ ...conv, messages: conv.messages.map(m => m.id === msgId ? { ...m, copied: false } : m) })), 2000);
     };
 
+    // GANTI — kembalikan ke versi asli, TANPA parameter userQuestion
     const simulateStreaming = (fullText: string) => {
         const newMsgId = 'bot-' + Date.now();
         let index = 0, current = '';
         const interval = setInterval(() => {
-            if (index < fullText.length) { current += fullText[index++]; setStreamingText(current); }
-            else {
+            if (index < fullText.length) {
+                current += fullText[index++];
+                setStreamingText(current);
+            } else {
                 clearInterval(interval);
-                updateCurrentConversation(conv => ({ ...conv, messages: [...conv.messages, { id: newMsgId, role: 'bot', content: fullText, liked: null }] }));
+                updateCurrentConversation(conv => ({
+                    ...conv,
+                    messages: [...conv.messages, { id: newMsgId, role: 'bot', content: fullText, liked: null }],
+                }));
                 setStreamingText('');
             }
         }, 15);
@@ -240,35 +308,38 @@ const [isAiHovered, setIsAiHovered] = useState(false); // State pendukung tombol
         setIsLoading(true);
 
         try {
-            // 2. BERSIHKAN HISTORY — hanya kirim role & content (cegah error 422)
-            //    Konversi 'bot' → 'assistant' agar backend tidak bingung
+            // 2. Bersihkan history — konversi 'bot' → 'assistant'
             const cleanHistory = messages.slice(-5).map(m => ({
                 role: m.role === 'bot' ? 'assistant' : 'user',
                 content: m.content,
             }));
 
-            // 3. TIMEOUT 30 DETIK — AI + Pinecone butuh waktu berpikir
-            const res = await api.post(
-                '/chatbot/chat',
-                { message: msg, history: cleanHistory }
-            );
+            // 3. Kirim ke AI backend
+            const res = await api.post('/chatbot/chat', { message: msg, history: cleanHistory });
+
+            // ✅ FIX 1: pakai res.data.reply — bukan getFallbackResponse
+            const botReply: string = res.data?.reply || getFallbackResponse(msg);
 
             setIsLoading(false);
-            simulateStreaming(res.data.reply);
+
+            // Simpan ke server (silent)
+            saveToServer(msg, botReply);
+
+            // ✅ FIX 2: 1 parameter saja
+            simulateStreaming(botReply);
 
         } catch (err: any) {
             console.error('[Chat Error]', err);
             setIsLoading(false);
 
-            // Bedakan timeout vs error lain
-            if (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')) {
-                simulateStreaming(
-                    'Horas! Maaf, saya butuh waktu lebih lama untuk mencari informasinya. ' +
-                    'Bisa ulangi pertanyaannya? Atau hubungi langsung WA 0821-6352-6363. 🙏'
-                );
-            } else {
-                simulateStreaming(getFallbackResponse(msg));
-            }
+            const fallback = (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout'))
+                ? 'Horas! Maaf, butuh waktu lebih lama. Bisa ulangi? Atau hubungi WA 0821-6352-6363. 🙏'
+                : getFallbackResponse(msg);
+
+            saveToServer(msg, fallback);
+
+            // ✅ FIX 3: tidak ada parameter kedua (msg dihapus)
+            simulateStreaming(fallback);
         }
     };
 
