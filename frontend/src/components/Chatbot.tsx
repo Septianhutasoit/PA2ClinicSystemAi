@@ -123,103 +123,21 @@ const [isAiHovered, setIsAiHovered] = useState(false); // State pendukung tombol
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        const loadHistory = async () => {
-            // Tetap load localStorage dulu sebagai fallback offline
-            const stored = localStorage.getItem(STORAGE_KEY);
-            let localConvs: Conversation[] = [];
-            if (stored) {
-                try { localConvs = JSON.parse(stored); } catch { /* corrupt */ }
-            }
-
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
             try {
-                // ── Ambil dari database (persisten per akun) ──────────────────
-                const res = await api.get('/clinic/chat-history');
-                const logs: any[] = res.data;
-
-                if (logs.length === 0) {
-                    // Belum ada riwayat — buat percakapan kosong baru
-                    const def: Conversation = {
-                        id: 'db-default',
-                        title: 'Percakapan Baru',
-                        messages: [INITIAL_MSG()],
-                        createdAt: Date.now(),
-                    };
-                    setConversations([def]);
-                    setCurrentConvId(def.id);
-                    return;
-                }
-
-                // ── Kelompokkan log berdasarkan tanggal (satu hari = satu konversasi) ──
-                const groups: Record<string, { logs: any[]; date: number }> = {};
-                logs.forEach(log => {
-                    const d = new Date(log.created_at);
-                    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-                    if (!groups[key]) groups[key] = { logs: [], date: d.getTime() };
-                    groups[key].logs.push(log);
-                });
-
-                const convs: Conversation[] = Object.entries(groups)
-                    .sort((a, b) => b[1].date - a[1].date)  // terbaru di atas
-                    .map(([key, group]) => {
-                        const msgs: Message[] = [INITIAL_MSG('-' + key)];
-                        group.logs.forEach(log => {
-                            if (log.user_message) msgs.push({
-                                id: 'db-user-' + log.id,
-                                role: 'user',
-                                content: log.user_message,
-                                dbId: log.id,
-                                createdAt: log.created_at,
-                            } as any);
-                            if (log.bot_response) msgs.push({
-                                id: 'db-bot-' + log.id,
-                                role: 'bot',
-                                content: log.bot_response,
-                                liked: log.feedback,
-                                dbId: log.id,
-                                createdAt: log.created_at,
-                            } as any);
-                        });
-
-                        // Judul = pesan user pertama di grup tsb
-                        const firstUser = group.logs[0]?.user_message ?? 'Percakapan';
-                        return {
-                            id: 'db-' + key,
-                            title: firstUser.slice(0, 32) + (firstUser.length > 32 ? '…' : ''),
-                            messages: msgs,
-                            createdAt: group.date,
-                        };
-                    });
-
-                setConversations(convs);
-                setCurrentConvId(convs[0].id);
-
-            } catch {
-                // ── Fallback: pakai localStorage jika API gagal (offline / belum login) ──
-                if (localConvs.length > 0) {
-                    setConversations(localConvs);
-                    setCurrentConvId(localConvs[0].id);
-                } else {
-                    const def: Conversation = {
-                        id: Date.now().toString(),
-                        title: 'Percakapan Baru',
-                        messages: [INITIAL_MSG()],
-                        createdAt: Date.now(),
-                    };
-                    setConversations([def]);
-                    setCurrentConvId(def.id);
-                }
-            }
-        };
-
-        loadHistory();
+                const parsed = JSON.parse(stored) as Conversation[];
+                if (parsed.length > 0) { setConversations(parsed); setCurrentConvId(parsed[0].id); return; }
+            } catch { /* corrupt */ }
+        }
+        const def: Conversation = { id: Date.now().toString(), title: 'Percakapan Baru', messages: [INITIAL_MSG()], createdAt: Date.now() };
+        setConversations([def]);
+        setCurrentConvId(def.id);
     }, []);
 
-   useEffect(() => {
-    if (conversations.length > 0) {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations)); }
-        catch { /* storage penuh */ }
-    }
-}, [conversations]);
+    useEffect(() => {
+        if (conversations.length > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+    }, [conversations]);
 
     useEffect(() => {
         scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -308,6 +226,7 @@ const [isAiHovered, setIsAiHovered] = useState(false); // State pendukung tombol
         const msg = text.trim();
         if (!msg || isLoading || streamingText) return;
 
+        // 1. Tampilkan pesan user ke UI
         const userMsgId = 'user-' + Date.now();
         updateCurrentConversation(conv => ({
             ...conv,
@@ -316,47 +235,40 @@ const [isAiHovered, setIsAiHovered] = useState(false); // State pendukung tombol
                 ? msg.slice(0, 32) + (msg.length > 32 ? '…' : '')
                 : conv.title,
         }));
+
         setInput('');
         setIsLoading(true);
 
         try {
+            // 2. BERSIHKAN HISTORY — hanya kirim role & content (cegah error 422)
+            //    Konversi 'bot' → 'assistant' agar backend tidak bingung
             const cleanHistory = messages.slice(-5).map(m => ({
                 role: m.role === 'bot' ? 'assistant' : 'user',
                 content: m.content,
             }));
 
-            const res = await api.post('/chatbot/chat', { message: msg, history: cleanHistory });
-            const botReply: string = res.data.reply;
+            // 3. TIMEOUT 30 DETIK — AI + Pinecone butuh waktu berpikir
+            const res = await api.post(
+                '/chatbot/chat',
+                { message: msg, history: cleanHistory }
+            );
 
             setIsLoading(false);
-
-            // ── Simpan ke database setelah dapat jawaban ──────────────────────
-            try {
-                await api.post('/clinic/chat-history', {
-                    user_message: msg,
-                    bot_response: botReply,
-                });
-            } catch { /* simpan gagal, UI tetap jalan */ }
-
-            simulateStreaming(botReply);
+            simulateStreaming(res.data.reply);
 
         } catch (err: any) {
             console.error('[Chat Error]', err);
             setIsLoading(false);
 
-            const fallback = err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')
-                ? 'Horas! Maaf, butuh waktu lebih lama. Ulangi pertanyaan atau hubungi WA 0821-6352-6363. 🙏'
-                : getFallbackResponse(msg);
-
-            // ── Tetap simpan fallback ke DB ───────────────────────────────────
-            try {
-                await api.post('/clinic/chat-history', {
-                    user_message: msg,
-                    bot_response: fallback,
-                });
-            } catch { /* silent */ }
-
-            simulateStreaming(fallback);
+            // Bedakan timeout vs error lain
+            if (err?.code === 'ECONNABORTED' || err?.message?.includes('timeout')) {
+                simulateStreaming(
+                    'Horas! Maaf, saya butuh waktu lebih lama untuk mencari informasinya. ' +
+                    'Bisa ulangi pertanyaannya? Atau hubungi langsung WA 0821-6352-6363. 🙏'
+                );
+            } else {
+                simulateStreaming(getFallbackResponse(msg));
+            }
         }
     };
 
