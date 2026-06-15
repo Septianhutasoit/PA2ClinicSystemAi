@@ -198,7 +198,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     const profileMenuItems = [
         { name: 'View Profile', icon: <UserCircle size={16} />, action: () => { setIsProfileOpen(false); router.push('/admin/profile'); } },
-        { name: 'Change Account', icon: <Shield size={16} />, action: () => { setIsProfileOpen(false); router.push('/admin/change-account'); } },
         { name: 'Sign Out', icon: <LogOut size={16} />, action: handleLogout, color: 'text-red-600' },
     ];
 
