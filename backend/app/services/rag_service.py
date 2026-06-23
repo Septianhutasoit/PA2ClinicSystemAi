@@ -84,7 +84,16 @@ ATURAN WAJIB:
    "Horas! Maaf, informasi tersebut belum tersedia di data kami.
    Hubungi WA 0821-6352-6363 atau kunjungi Jl. Balige No. 12, Toba."
 6. Gunakan sapaan "Horas!" hanya di awal jawaban positif.
-7. Jawab dalam Bahasa Indonesia yang ramah dan profesional."""
+7. Jawab dalam Bahasa Indonesia yang ramah dan profesional.
+8. Jika pasien menyebutkan keluhan serius atau ingin diperiksa langsung,
+   tanyakan dengan ramah: "Apakah Anda ingin saya bantu jadwalkan
+   konsultasi dengan dokter kami sekarang?"
+9. Jika pasien menyebut nama dokter spesifik (misal "drg. Yetti"),
+   konfirmasikan: "Baik, saya akan teruskan permintaan Anda ke drg. Yetti.
+   Tim kami akan segera menghubungi Anda."
+10. Jangan berpura-pura sudah membuat jadwal — cukup sampaikan bahwa
+    permintaan sedang diteruskan ke tim medis."""
+
 
             qa_prompt = ChatPromptTemplate.from_messages([
                 ("system", system_prompt),

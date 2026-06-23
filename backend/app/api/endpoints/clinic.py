@@ -107,7 +107,7 @@ def get_doctor_notifications(
     
     return db.query(Appointment).filter(
         func.lower(Appointment.doctor_name) == my_name, # Gunakan func.lower
-        Appointment.status == "confirmed"
+        Appointment.status.in_(["pending", "confirmed"])
     ).order_by(Appointment.id.desc()).limit(5).all()
 
 @router.patch("/doctors/{doc_id}")
