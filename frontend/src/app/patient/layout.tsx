@@ -176,7 +176,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                 .replace(/^ +/, '')
                 .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
         });
-        router.push('/login');
+        router.push('/');
     };
 
     const navItems = [

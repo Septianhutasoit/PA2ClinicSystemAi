@@ -521,6 +521,7 @@ def get_all_appointments(
             "status": app.status,
             "patient_phone": app.patient_phone,
             "notes": app.notes, # Catatan pendaftaran
+            "created_at": app.created_at,
             # TAMBAHKAN DUA FIELD INI (HASIL DOKTER)
             "doctor_diagnosis": record.diagnosis if record else None,
             "treatment": record.treatment if record else None
@@ -763,7 +764,7 @@ def update_appointment_status(
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-    """
+    """"created_at": app.created_at
     Update status appointment.
 
     Aturan akses (RBAC):
@@ -1052,7 +1053,7 @@ def get_recent_reservations(
             "consultation_date": app.appointment_date.strftime("%d %B %Y"), # Tanggal: 16 Mei 2026
             "title": title,
             "status": app.status,
-            "created_at": app.appointment_date # Digunakan untuk pengurutan
+            "created_at": app.created_at # Ini yang benar
         })
         
     return notif_list

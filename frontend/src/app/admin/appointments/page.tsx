@@ -17,6 +17,7 @@ export default function AdminAppointments() {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingApp, setEditingApp] = useState<any>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [filterStatus, setFilterStatus] = useState('all');
 
     useEffect(() => { fetchAppointments(); }, []);
 
@@ -49,10 +50,33 @@ export default function AdminAppointments() {
         }
     };
 
-    const filteredData = appointments.filter((app: any) =>
-        app.patient_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredData = appointments
+        .filter((app: any) => {
+            // 1. Filter Pencarian Nama
+            const matchesName = app.patient_name?.toLowerCase().includes(searchTerm.toLowerCase());
+            // 2. Filter Pilihan Status
+            const matchesStatus = filterStatus === 'all' ? true : app.status === filterStatus;
 
+            return matchesName && matchesStatus;
+        })
+        .sort((a: any, b: any) => {
+            const dateA = new Date(a.appointment_date).getTime();
+            const dateB = new Date(b.appointment_date).getTime();
+
+            // JIKA TANGGAL/JAM KONSULTASI BERBEDA:
+            // Urutkan dari yang paling dekat dengan waktu sekarang (Ascending)
+            if (dateA !== dateB) {
+                return dateA - dateB;
+            }
+
+            // JIKA TANGGAL/JAM KONSULTASI SAMA (TIE-BREAKER):
+            // Bandingkan waktu Request (siapa yang klik daftar duluan dia di atas)
+            const reqA = new Date(a.created_at || a.createdAt).getTime();
+            const reqB = new Date(b.created_at || b.createdAt).getTime();
+            return reqA - reqB;
+        });
+
+    
     // Hitung stats
     const totalConfirmed = appointments.filter((a: any) => a.status === 'confirmed').length;
     const totalPending = appointments.filter((a: any) => a.status === 'pending').length;
@@ -79,18 +103,35 @@ export default function AdminAppointments() {
                         </p>
                     </div>
 
-                    {/* Search */}
-                    <div className="relative shrink-0">
-                        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            placeholder="Cari nama pasien..."
-                            className="pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl
-                                       text-xs w-64 font-medium text-slate-700 placeholder-slate-400
-                                       focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300
-                                       transition-all"
-                            onChange={e => setSearchTerm(e.target.value)}
-                        />
+                    {/* Filter & Search */}
+                    <div className="flex items-center gap-3 shrink-0">
+                        {/* Dropdown Filter Status */}
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-black 
+                   text-emerald-700 uppercase tracking-tight outline-none focus:ring-2 
+                   focus:ring-emerald-400/30 transition-all cursor-pointer shadow-sm"
+                        >
+                            <option value="all">Semua Status</option>
+                            <option value="pending">⏳ Menunggu</option>
+                            <option value="confirmed">✅ Dikonfirmasi</option>
+                            <option value="completed">✔️ Selesai</option>
+                        </select>
+
+                        {/* Input Pencarian */}
+                        <div className="relative">
+                            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Cari nama pasien..."
+                                className="pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl
+                       text-xs w-48 font-medium text-slate-700 placeholder-slate-400
+                       focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-300
+                       transition-all shadow-sm"
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -144,7 +185,7 @@ export default function AdminAppointments() {
                     <table className="w-full text-left min-w-[860px]">
                         <thead>
                             <tr className="bg-slate-50/60 border-b border-slate-100">
-                                {['Pasien', 'Kontak', 'Alamat', 'Jadwal', 'Dokter', 'Status', 'Aksi'].map((h, i) => (
+                                {['Pasien', 'Kontak', 'Alamat', 'Jadwal Konsultasi', 'Dokter', 'Status', 'Aksi'].map((h, i) => (
                                     <th key={h} className={`px-5 py-3.5 text-[10px] font-black text-slate-400 uppercase tracking-widest
                                                             ${i === 5 ? 'text-center' : i === 6 ? 'text-right' : ''}`}>
                                         {h}
@@ -218,15 +259,37 @@ export default function AdminAppointments() {
                                             </div>
                                         </td>
 
-                                        {/* Jadwal */}
+                                        {/* Kolom Jadwal Konsultasi & Waktu Request */}
                                         <td className="px-5 py-4">
-                                            <div className="flex items-center gap-1.5">
-                                                <Calendar size={11} className="text-emerald-500 shrink-0" />
-                                                <span className="text-xs font-semibold text-slate-600">
-                                                    {new Date(app.appointment_date).toLocaleString('id-ID', {
-                                                        dateStyle: 'short', timeStyle: 'short'
-                                                    })}
-                                                </span>
+                                            <div className="flex flex-col gap-1.5">
+
+                                                {/* 1. Baris Atas: Jadwal yang dipilih pasien */}
+                                                <div className="flex items-center gap-1.5">
+                                                    <Calendar size={11} className="text-emerald-500 shrink-0" />
+                                                    <span className="text-xs font-bold text-slate-700">
+                                                        {app.appointment_date ? new Date(app.appointment_date).toLocaleString('id-ID', {
+                                                            dateStyle: 'short',
+                                                            timeStyle: 'short'
+                                                        }) : '—'}
+                                                    </span>
+                                                </div>
+
+                                                {/* 2. Baris Bawah: Info kapan dia klik daftar (Antrean Sistem) */}
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md w-fit">
+                                                    <Clock size={9} className="text-slate-400" />
+                                                    <span className="text-[9px] font-medium text-slate-400">
+                                                        Req: {(app.created_at || app.createdAt) ?
+                                                            new Date(app.created_at || app.createdAt).toLocaleString('id-ID', {
+                                                                day: '2-digit',
+                                                                month: '2-digit',
+                                                                year: '2-digit',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            }) : 'Tanggal tidak tersedia'
+                                                        }
+                                                    </span>
+                                                </div>
+
                                             </div>
                                         </td>
 

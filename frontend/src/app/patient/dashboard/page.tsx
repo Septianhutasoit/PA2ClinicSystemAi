@@ -146,21 +146,7 @@ export default function WelcomePage() {
             setStatus({ type: 'error', msg: '❌ Gagal mendaftar. Pastikan data sudah benar.' });
             setTimeout(() => setStatus({ type: '', msg: '' }), 3000);
         }
-    };
     
-        // --- LOGIKA VALIDASI JAM ---
-        if (formData.appointment_date) {
-            const selectedDate = new Date(formData.appointment_date);
-            const hours = selectedDate.getHours();
-
-            if (hours < 10 || hours >= 20) {
-                setStatus({
-                    type: 'error',
-                    msg: '❌ Mohon pilih jam kunjungan antara 10:00 s/d 20:00 WIB.'
-                });
-                return;
-            }
-        }
 
         setStatus({ type: 'loading', msg: 'Memproses...' });
         try {
