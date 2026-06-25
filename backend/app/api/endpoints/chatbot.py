@@ -8,8 +8,9 @@ from datetime import datetime
 
 from app.services.rag_service import ChatbotService
 from app.database.session import get_db
-from app.models.clinic import Doctor, Service, ChatLog
+from app.models.clinic import Doctor, Service, ChatLog, MedicalRecord
 from app.models.appointment import Appointment
+from app.models.user import User
 from app.core.security import get_current_user
 from app.core.config import settings
 
@@ -48,23 +49,19 @@ class FeedbackRequest(BaseModel):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# HELPER — Cocokkan nama dokter yang disebut user
+# HELPER 1 — Cocokkan nama dokter yang disebut user
 # ══════════════════════════════════════════════════════════════════════════════
 
 def find_doctor_by_name(message: str, db: Session) -> Optional[Doctor]:
     """
     Cek apakah nama dokter disebut di dalam pesan.
     Pencocokan fleksibel — abaikan 'drg.', 'seg.', titik, dan huruf kapital.
-
-    Contoh cocok:
-      "ingin bertemu drg. Yetti"   → Doctor(name="drg. Yetti Manalu")
-      "tanya serelady"             → Doctor(name="drg. Serelady Sitorus")
+    Contoh: "ingin bertemu drg. Yetti" → Doctor(name="drg. Yetti Manalu")
     """
     doctors   = db.query(Doctor).all()
     msg_lower = message.lower()
 
     for doc in doctors:
-        # Bersihkan gelar & titik dari nama dokter
         clean_name = (
             doc.name.lower()
             .replace("drg.", "")
@@ -72,20 +69,109 @@ def find_doctor_by_name(message: str, db: Session) -> Optional[Doctor]:
             .replace(".", "")
             .strip()
         )
-        # Cek setiap kata (minimal 3 huruf) apakah ada di pesan
         for part in clean_name.split():
             if len(part) >= 3 and part in msg_lower:
                 print(f"[DOCTOR MATCH] '{part}' cocok dengan '{doc.name}'")
                 return doc
-
     return None
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 1. CHAT — Dengan deteksi niat booking
+# HELPER 2 — Bangun konteks personal pasien dari PostgreSQL (real-time)
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Kata kunci yang menandakan pasien ingin bertemu / booking dokter
+def build_personal_context(db: Session, current_user: dict) -> str:
+    """
+    Ambil riwayat pasien dari Neon PostgreSQL secara real-time:
+      - pasien baru atau lama
+      - jumlah kunjungan
+      - diagnosa & perawatan terakhir (jika ada medical_record)
+
+    Return: string yang dikirim ke AI sebagai konteks personal.
+    """
+    try:
+        user = db.query(User).filter(User.email == current_user["email"]).first()
+        if not user:
+            return "Pasien belum teridentifikasi di sistem. Layani sebagai pengunjung umum."
+
+        full_name = user.full_name
+
+        # Hitung total kunjungan (exclude chatbot lead)
+        total_visits = db.query(Appointment).filter(
+            Appointment.patient_name == full_name,
+            Appointment.patient_phone != "Chatbot Lead",  # exclude auto-lead
+        ).count()
+
+        if total_visits == 0:
+            ctx = (
+                f"Nama pasien: {full_name}. "
+                f"Ini adalah PASIEN BARU yang belum pernah melakukan janji temu "
+                f"atau konsultasi sebelumnya di klinik ini. "
+                f"Sambut dengan hangat dan tawarkan pendaftaran konsultasi pertama."
+            )
+            print(f"[CHAT] Personal context → PASIEN BARU: {full_name}")
+            return ctx
+
+        # Ambil kunjungan terakhir
+        last_appo = (
+            db.query(Appointment)
+            .filter(
+                Appointment.patient_name == full_name,
+                Appointment.patient_phone != "Chatbot Lead",
+            )
+            .order_by(Appointment.appointment_date.desc())
+            .first()
+        )
+
+        # Ambil rekam medis terakhir
+        last_record = (
+            db.query(MedicalRecord)
+            .join(Appointment, MedicalRecord.appointment_id == Appointment.id)
+            .filter(Appointment.patient_name == full_name)
+            .order_by(MedicalRecord.created_at.desc())
+            .first()
+        )
+
+        parts = [
+            f"Nama pasien: {full_name}.",
+            f"Ini adalah PASIEN LAMA dengan total {total_visits} kali kunjungan/janji temu.",
+        ]
+
+        if last_appo:
+            tgl = (
+                last_appo.appointment_date.strftime("%d %B %Y")
+                if last_appo.appointment_date else "-"
+            )
+            parts.append(
+                f"Kunjungan terakhir: {tgl} dengan dokter {last_appo.doctor_name}, "
+                f"status: {last_appo.status}."
+            )
+
+        if last_record:
+            parts.append(
+                f"Diagnosa terakhir: {last_record.diagnosis or '-'}. "
+                f"Perawatan yang diberikan: {last_record.treatment or '-'}. "
+                f"Catatan dokter: {last_record.notes or '-'}."
+            )
+        else:
+            parts.append(
+                "Belum ada rekam medis tercatat. "
+                "Tanyakan jika pasien ingin mendapatkan pemeriksaan."
+            )
+
+        ctx = " ".join(parts)
+        print(f"[CHAT] Personal context → PASIEN LAMA: {full_name} ({total_visits} kunjungan)")
+        return ctx
+
+    except Exception as e:
+        print(f"[WARN] build_personal_context gagal: {e}")
+        return "Tidak dapat mengambil data pasien. Layani sebagai pengunjung umum."
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 1. CHAT — Dengan konteks personal + deteksi niat booking
+# ══════════════════════════════════════════════════════════════════════════════
+
 BOOKING_KEYWORDS = [
     "ingin bertemu", "mau booking", "mau daftar", "janji temu",
     "konsultasi langsung", "mau periksa", "ingin periksa", "mau ketemu",
@@ -98,23 +184,33 @@ BOOKING_KEYWORDS = [
 async def chat_with_bot(
     request: ChatRequest,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
     try:
-        # 1. Dapatkan jawaban dari AI
-        answer = chatbot_service.get_response(request.message, request.history)
+        # 1. Bangun konteks personal pasien dari PostgreSQL (real-time)
+        personal_context = build_personal_context(db, current_user)
 
-        # 2. Deteksi niat booking dari pesan user
-        user_msg_lower = request.message.lower()
+        # 2. Kirim ke AI bersama konteks personal
+        answer = chatbot_service.get_response(
+            request.message,
+            request.history,
+            personal_context,
+        )
+
+        # 3. Deteksi niat booking
+        user_msg_lower     = request.message.lower()
         has_booking_intent = any(kw in user_msg_lower for kw in BOOKING_KEYWORDS)
 
         if has_booking_intent:
-            # 3. Cari nama dokter yang disebut (jika ada)
             matched_doctor = find_doctor_by_name(request.message, db)
             doctor_name    = matched_doctor.name if matched_doctor else "Belum Ditentukan"
 
-            # 4. Buat appointment lead dengan status pending
+            # Nama asli pasien dari DB (bukan hardcode "User Chatbot")
+            user_db      = db.query(User).filter(User.email == current_user["email"]).first()
+            patient_name = user_db.full_name if user_db else "User Chatbot"
+
             new_lead = Appointment(
-                patient_name     = "User Chatbot",
+                patient_name     = patient_name,
                 patient_phone    = "Chatbot Lead",
                 doctor_name      = doctor_name,
                 appointment_date = datetime.now(),
@@ -123,7 +219,7 @@ async def chat_with_bot(
             )
             db.add(new_lead)
             db.commit()
-            print(f"[SYSTEM] Lead baru dibuat → dokter: {doctor_name}")
+            print(f"[SYSTEM] Lead baru → pasien: {patient_name}, dokter: {doctor_name}")
 
         return {"reply": answer}
 
@@ -141,7 +237,7 @@ async def chat_with_bot(
 
 @router.get("/chat/history")
 async def get_chat_history_placeholder():
-    """Placeholder agar tidak 404 — history per-user ada di /clinic/chat-history."""
+    """Placeholder — history per-user ada di /clinic/chat-history."""
     return []
 
 
@@ -187,11 +283,6 @@ def get_ai_history(db: Session = Depends(get_db)):
 
 @router.post("/ingest")
 async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
-    """
-    Gabungkan 2 sumber data ke Pinecone:
-      A. Teks dari Database (dokter, layanan, info klinik)
-      B. PDF dari folder /docs/** (rekursif)
-    """
     try:
         os.environ["COHERE_API_KEY"]   = settings.COHERE_API_KEY
         os.environ["PINECONE_API_KEY"] = settings.PINECONE_API_KEY
@@ -206,7 +297,6 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
 
         all_docs: list[Document] = []
 
-        # ── A. Data dari Database ────────────────────────────────────────────
         db_texts = [
             "Klinik Nauli Dental Care berlokasi di Jl. Raja Paindoan No.20A, "
             "Lumban Dolok Haume Bange, Kec. Balige, Toba, Sumatera Utara 22314.",
@@ -220,7 +310,6 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
             "Sabtu pukul 10.00–18.00 WIB.",
         ]
 
-        # Data dokter dari DB
         doctors = db.query(Doctor).all()
         for d in doctors:
             jadwal = "Senin–Jumat 10:00–20:00, Sabtu 10:00–18:00"
@@ -235,11 +324,9 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
             db_texts.append(
                 f"Dokter {d.name} adalah spesialis {d.specialty}. "
                 f"Jadwal praktik: {jadwal}. "
-                f"Pengalaman: {d.experience or '-'} tahun. "
-                f"Email: {d.email or '-'}."
+                f"Pengalaman: {d.experience or '-'} tahun."
             )
 
-        # Data layanan dari DB
         services = db.query(Service).all()
         for s in services:
             raw_price = str(s.price).replace(".", "").replace(",", "")
@@ -247,10 +334,8 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
                 price_display = f"{int(raw_price):,}".replace(",", ".")
             except Exception:
                 price_display = str(s.price)
-
             db_texts.append(
-                f"Layanan: {s.name}. "
-                f"Biaya estimasi: Rp {price_display}. "
+                f"Layanan: {s.name}. Biaya estimasi: Rp {price_display}. "
                 f"Deskripsi: {s.description or '-'}. "
                 f"Detail prosedur: {s.detail_info or '-'}."
             )
@@ -262,15 +347,12 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
         all_docs.extend(splitter.split_documents(db_documents))
         print(f"[INGEST] DB → {len(all_docs)} chunk")
 
-        # ── B. PDF dari folder /docs ─────────────────────────────────────────
         pdf_count = 0
         if PATH_MATERI.exists():
             try:
-                loader  = DirectoryLoader(
-                    str(PATH_MATERI),
-                    glob       = "**/*.pdf",
-                    loader_cls = PyPDFLoader,
-                    show_progress = True,
+                loader   = DirectoryLoader(
+                    str(PATH_MATERI), glob="**/*.pdf",
+                    loader_cls=PyPDFLoader, show_progress=True,
                 )
                 pdf_raw  = loader.load()
                 pdf_docs = splitter.split_documents(pdf_raw)
@@ -283,17 +365,13 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
             print(f"[WARN] Folder docs tidak ada: {PATH_MATERI}")
 
         if not all_docs:
-            raise HTTPException(
-                status_code = 400,
-                detail      = "Tidak ada data untuk di-ingest.",
-            )
+            raise HTTPException(status_code=400, detail="Tidak ada data untuk di-ingest.")
 
-        # ── C. Upload ke Pinecone ────────────────────────────────────────────
         print(f"[INGEST] Total upload: {len(all_docs)} chunk ke Pinecone...")
         PineconeVectorStore.from_documents(
-            documents      = all_docs,
-            embedding      = embeddings,
-            index_name     = settings.PINECONE_INDEX_NAME,
+            documents        = all_docs,
+            embedding        = embeddings,
+            index_name       = settings.PINECONE_INDEX_NAME,
             pinecone_api_key = settings.PINECONE_API_KEY,
         )
 
@@ -301,8 +379,7 @@ async def sync_chatbot_knowledge(db: Session = Depends(get_db)):
             "message": (
                 f"✅ Sinkronisasi selesai! AI telah mempelajari "
                 f"{len(doctors)} dokter, {len(services)} layanan, "
-                f"dan {pdf_count} halaman PDF "
-                f"({len(all_docs)} chunk total)."
+                f"dan {pdf_count} halaman PDF ({len(all_docs)} chunk total)."
             ),
             "total_chunks": len(all_docs),
             "pdf_pages":    pdf_count,

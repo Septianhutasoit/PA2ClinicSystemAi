@@ -70,13 +70,16 @@ class ChatbotService:
             # ── 3. Prompt utama: KETAT + instruksi DETAIL ──────────────────
             system_prompt = """Anda adalah asisten medis resmi "KlinikAI" dari Nauli Dental Care Balige.
 
+INFORMASI PASIEN YANG SEDANG BERTANYA (dari Database, real-time):
+{personal_context}
+
 TUGAS: Jawab pertanyaan pasien berdasarkan KONTEKS DOKUMEN di bawah ini secara mendetail dan akurat.
 
 KONTEKS DOKUMEN:
 {context}
 
 ATURAN WAJIB:
-1. Gunakan HANYA informasi dari KONTEKS DOKUMEN. Dilarang mengarang.
+1. Gunakan HANYA informasi dari KONTEKS DOKUMEN dan INFORMASI PASIEN. Dilarang mengarang.
 2. Jika ditanya NAMA DOKTER → sebutkan SEMUA nama dokter dari konteks.
 3. Jika ditanya HARGA → sebutkan angka persis dari konteks.
 4. Jika ditanya GEJALA/PENANGANAN → jelaskan sesuai data, berikan detail.
@@ -92,7 +95,11 @@ ATURAN WAJIB:
    konfirmasikan: "Baik, saya akan teruskan permintaan Anda ke drg. Yetti.
    Tim kami akan segera menghubungi Anda."
 10. Jangan berpura-pura sudah membuat jadwal — cukup sampaikan bahwa
-    permintaan sedang diteruskan ke tim medis."""
+    permintaan sedang diteruskan ke tim medis.
+11. Jika INFORMASI PASIEN menunjukkan PASIEN LAMA, sapa dengan hangat dan
+    sebutkan riwayat singkatnya bila relevan dengan pertanyaan.
+12. Jika INFORMASI PASIEN menunjukkan PASIEN BARU, sambut ramah dan
+    tawarkan pendaftaran/konsultasi pertama."""
 
 
             qa_prompt = ChatPromptTemplate.from_messages([
@@ -112,7 +119,7 @@ ATURAN WAJIB:
             print(f"[ERROR] Gagal inisialisasi: {e}")
             raise
 
-    def get_response(self, query: str, history: list = []) -> str:
+    def get_response(self, query: str, history: list = [], personal_context: str = "") -> str:
         try:
             # ── Konversi history → LangChain format ──────────────────────
             chat_history = []
@@ -138,6 +145,7 @@ ATURAN WAJIB:
             result = self.rag_chain.invoke({
                 "input":        query,
                 "chat_history": chat_history,
+                "personal_context": personal_context,
             })
 
             answer = (result.get("answer") or "").strip()
