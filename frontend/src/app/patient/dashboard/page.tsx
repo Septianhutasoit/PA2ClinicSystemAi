@@ -4,12 +4,13 @@ import {
     ShieldCheck, Sparkles, ArrowRight, Calendar,
     Clock, Star, Heart, Activity, Phone, User,
     Stethoscope, CheckCircle, MapPin, Mail, Play,
-    Award, Users, Zap, Shield, ChevronRight,
+    Award, Users, Zap, Shield, ChevronRight, 
     Quote, BadgeCheck, Microscope, Smile, HeartPulse, MessageSquare
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
 import Link from 'next/link';
+import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 
 // ── Fade-up helper ────────────────────────────────────────────────────────
@@ -34,18 +35,24 @@ const fadeRight = (delay = 0) => ({
 
 export default function WelcomePage() {
     const router = useRouter();
+
+    // ════════════════════════════════════════════════════════
+    // SEMUA STATE — wajib di dalam komponen, di baris paling atas
+    // ════════════════════════════════════════════════════════
     const [currentSlide, setCurrentSlide] = useState(0);
     const [doctors, setDoctors] = useState([]);
     const [loggedInName, setLoggedInName] = useState('');
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [formData, setFormData] = useState({
         patient_phone: '',
         doctor_name: '',
         appointment_date: '',
         patient_address: '',
         patient_gender: '',
-        notes: '' // <--- TAMBAHKAN INI
+        notes: ''
     });
     const [status, setStatus] = useState({ type: '', msg: '' });
+
     const heroRef = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
     const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
@@ -57,40 +64,101 @@ export default function WelcomePage() {
         '/images/bg/dental-bg-3.png',
     ];
 
+    // ════════════════════════════════════════════════════════
+    // SEMUA useEffect — juga wajib di top-level komponen, TIDAK
+    // boleh ditaruh di dalam function lain (handleSubmit dll)
+    // ════════════════════════════════════════════════════════
+
+    // Slideshow background hero
     useEffect(() => {
         const t = setInterval(() => setCurrentSlide(p => (p + 1) % bgImages.length), 5000);
         return () => clearInterval(t);
     }, []);
-    
+
+    // Cek status login SEKALI saat halaman dibuka (tidak ada duplikat lain)
     useEffect(() => {
-        // Ambil data profil saya
+        const token = localStorage.getItem('token') || Cookies.get('token');
+        if (!token) {
+            setIsLoggedIn(false);
+            setLoggedInName('');
+            return;
+        }
         api.get('/auth/me')
             .then(res => {
                 setLoggedInName(res.data.full_name);
+                setIsLoggedIn(true);
             })
             .catch(() => {
-                setLoggedInName(localStorage.getItem('user_name') || 'Pasien');
+                setLoggedInName(localStorage.getItem('user_name') || '');
+                setIsLoggedIn(false);
             });
     }, []);
 
+    // Ambil daftar dokter untuk dropdown form
     useEffect(() => {
         api.get('/clinic/doctors').then(r => setDoctors(r.data)).catch(() => { });
     }, []);
 
+    // ════════════════════════════════════════════════════════
+    // HANDLER SUBMIT — tidak ada hook apapun di dalam sini
+    // ════════════════════════════════════════════════════════
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // ── 1. Guard login ──────────────────────────────────────────
+        const token = localStorage.getItem('token') || Cookies.get('token');
+        if (!token) {
+            sessionStorage.setItem('pending_appointment', JSON.stringify(formData));
+            setStatus({
+                type: 'error',
+                msg: '🔒 Silakan login terlebih dahulu untuk membuat reservasi. Mengalihkan...'
+            });
+            setTimeout(() => router.push('/login?redirect=/patient/dashboard#booking'), 1500);
+            return; // ← STOP di sini, tidak lanjut
+        }
+
+        // ── 2. Validasi jam operasional (HARUS sebelum api.post) ────
+        if (formData.appointment_date) {
+            const jam = new Date(formData.appointment_date).getHours();
+            if (jam < 10 || jam >= 20) {
+                setStatus({
+                    type: 'error',
+                    msg: '❌ Mohon pilih jam kunjungan antara 10:00 s/d 20:00 WIB.'
+                });
+                return; // ← STOP, jangan kirim ke API
+            }
+        }
+
+        // ── 3. Kirim ke API (hanya 1x, tidak duplikat) ──────────────
+        setStatus({ type: 'loading', msg: 'Memproses...' });
+        try {
+            await api.post('/clinic/appointments', formData);
+            setStatus({ type: 'success', msg: '✅ Berhasil! Jadwal tercatat. Mengalihkan...' });
+            setFormData({
+                patient_phone: '', doctor_name: '', appointment_date: '',
+                patient_address: '', patient_gender: '', notes: ''
+            });
+            setTimeout(() => {
+                setStatus({ type: '', msg: '' });
+                router.push('/patient/appointments');
+            }, 1500);
+        } catch {
+            setStatus({ type: 'error', msg: '❌ Gagal mendaftar. Pastikan data sudah benar.' });
+            setTimeout(() => setStatus({ type: '', msg: '' }), 3000);
+        }
+    };
+    
         // --- LOGIKA VALIDASI JAM ---
         if (formData.appointment_date) {
             const selectedDate = new Date(formData.appointment_date);
             const hours = selectedDate.getHours();
 
-            // Cek jika jam di bawah 10 atau jam 20:00 ke atas (Jam 8 malam lewat)
             if (hours < 10 || hours >= 20) {
                 setStatus({
                     type: 'error',
                     msg: '❌ Mohon pilih jam kunjungan antara 10:00 s/d 20:00 WIB.'
                 });
-                return; // Berhenti di sini, jangan lanjut kirim API
+                return;
             }
         }
 
@@ -98,7 +166,7 @@ export default function WelcomePage() {
         try {
             await api.post('/clinic/appointments', formData);
             setStatus({ type: 'success', msg: '✅ Berhasil! Jadwal tercatat. Mengalihkan...' });
-            setFormData({patient_phone: '', doctor_name: '', appointment_date: '',patient_address: '', patient_gender: '', notes: '' });
+            setFormData({ patient_phone: '', doctor_name: '', appointment_date: '', patient_address: '', patient_gender: '', notes: '' });
             setTimeout(() => { setStatus({ type: '', msg: '' }); router.push('/patient/appointments'); }, 1500);
         } catch {
             setStatus({ type: 'error', msg: '❌ Gagal mendaftar. Pastikan data sudah benar.' });
@@ -431,7 +499,7 @@ export default function WelcomePage() {
                                 </h2>
                                 <p className="text-slate-500 mt-3 leading-relaxed">
                                     Isi formulir di sebelah kanan dan kami akan mengkonfirmasi jadwal Anda
-                                    melalui WhatsApp dalam waktu singkat.Tanggal dan waktu reservasi
+                                    melalui WhatsApp dalam waktu singkat. Tanggal dan waktu reservasi
                                     menyesuaikan dengan jadwal dokter yang masih tersedia.
                                 </p>
                             </div>
@@ -498,34 +566,45 @@ export default function WelcomePage() {
 
                                 <form onSubmit={handleSubmit} className="p-8 space-y-4">
 
-                                    {/* ── Banner nama akun otomatis ── */}
+                                    {/* ── Banner status akun: guest vs login ── */}
                                     <div className="flex items-center gap-4 bg-emerald-50 border border-emerald-100
-                    p-4 rounded-2xl">
+                                        p-4 rounded-2xl">
                                         <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center
-                        shadow-sm shrink-0 border border-emerald-100">
+                                            shadow-sm shrink-0 border border-emerald-100">
                                             <BadgeCheck size={24} className="text-emerald-600" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-[10px] font-black text-emerald-600 uppercase
-                          tracking-widest leading-none mb-1.5">
-                                                Pendaftar Terverifikasi
+                                                tracking-widest leading-none mb-1.5">
+                                                {isLoggedIn ? 'Pendaftar Terverifikasi' : 'Belum Masuk'}
                                             </p>
                                             <h4 className="text-sm font-bold text-slate-800 truncate">
-                                                {loggedInName || (
-                                                    <span className="inline-block w-28 h-4 bg-emerald-100 rounded animate-pulse" />
-                                                )}
+                                                {isLoggedIn
+                                                    ? (loggedInName || <span className="inline-block w-28 h-4 bg-emerald-100 rounded animate-pulse" />)
+                                                    : 'Silakan login untuk membuat reservasi'}
                                             </h4>
                                         </div>
-                                        <span className="hidden sm:block px-3 py-1 bg-emerald-600 text-white
-                         text-[9px] font-black uppercase rounded-lg tracking-tighter shrink-0">
-                                            Sesuai Akun
-                                        </span>
+                                        {isLoggedIn ? (
+                                            <span className="hidden sm:block px-3 py-1 bg-emerald-600 text-white
+                                                text-[9px] font-black uppercase rounded-lg tracking-tighter shrink-0">
+                                                Sesuai Akun
+                                            </span>
+                                        ) : (
+                                            <Link
+                                                href="/login"
+                                                className="hidden sm:block px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700
+                                                    text-white text-[10px] font-black uppercase rounded-lg
+                                                    tracking-tighter shrink-0 transition-all"
+                                            >
+                                                Masuk Sekarang
+                                            </Link>
+                                        )}
                                     </div>
 
                                     {/* ── Telepon ── */}
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-black text-slate-500 uppercase
-                          tracking-widest flex items-center gap-1">
+                                            tracking-widest flex items-center gap-1">
                                             Telepon <span className="text-red-500">*</span>
                                         </label>
                                         <div className="relative">
@@ -545,13 +624,13 @@ export default function WelcomePage() {
                                                     }
                                                 }}
                                                 className="w-full pl-9 pr-12 py-3 bg-slate-50 border border-slate-200
-                           rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
-                           focus:border-emerald-400 outline-none transition-all"
+                                                    rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
+                                                    focus:border-emerald-400 outline-none transition-all"
                                             />
                                             {formData.patient_phone && (
                                                 <span className={`absolute right-3 top-1/2 -translate-y-1/2
-                                  text-[10px] font-bold pointer-events-none
-                                  ${formData.patient_phone.replace(/\D/g, '').length < 10
+                                                    text-[10px] font-bold pointer-events-none
+                                                    ${formData.patient_phone.replace(/\D/g, '').length < 10
                                                         ? 'text-red-400' : 'text-emerald-500'}`}>
                                                     {formData.patient_phone.replace(/\D/g, '').length}/
                                                     {formData.patient_phone.replace(/\D/g, '').startsWith('62') ? '13' : '12'}
@@ -564,7 +643,7 @@ export default function WelcomePage() {
                                     <div className="grid sm:grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-500 uppercase
-                              tracking-widest flex items-center gap-1">
+                                                tracking-widest flex items-center gap-1">
                                                 Alamat <span className="text-red-500">*</span>
                                             </label>
                                             <div className="relative">
@@ -582,15 +661,15 @@ export default function WelcomePage() {
                                                         }
                                                     }}
                                                     className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200
-                               rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
-                               focus:border-emerald-400 outline-none transition-all"
+                                                        rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
+                                                        focus:border-emerald-400 outline-none transition-all"
                                                 />
                                             </div>
                                         </div>
 
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-500 uppercase
-                              tracking-widest flex items-center gap-1">
+                                                tracking-widest flex items-center gap-1">
                                                 Jenis Kelamin <span className="text-red-500">*</span>
                                             </label>
                                             <div className="relative">
@@ -600,9 +679,9 @@ export default function WelcomePage() {
                                                     value={formData.patient_gender}
                                                     onChange={e => setFormData({ ...formData, patient_gender: e.target.value })}
                                                     className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200
-                               rounded-xl text-sm font-medium appearance-none
-                               focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400
-                               outline-none transition-all cursor-pointer"
+                                                        rounded-xl text-sm font-medium appearance-none
+                                                        focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400
+                                                        outline-none transition-all cursor-pointer"
                                                 >
                                                     <option value="">-- Pilih --</option>
                                                     <option value="Laki-laki">Laki-laki</option>
@@ -616,20 +695,20 @@ export default function WelcomePage() {
                                     <div className="grid sm:grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-500 uppercase
-                              tracking-widest flex items-center gap-1">
+                                                tracking-widest flex items-center gap-1">
                                                 Dokter <span className="text-red-500">*</span>
                                             </label>
                                             <div className="relative">
                                                 <Stethoscope size={13} className="absolute left-3.5 top-1/2
-                                                  -translate-y-1/2 text-slate-400 z-10" />
+                                                    -translate-y-1/2 text-slate-400 z-10" />
                                                 <select
                                                     required
                                                     value={formData.doctor_name}
                                                     onChange={e => setFormData({ ...formData, doctor_name: e.target.value })}
                                                     className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200
-                               rounded-xl text-sm font-medium appearance-none
-                               focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400
-                               outline-none transition-all cursor-pointer"
+                                                        rounded-xl text-sm font-medium appearance-none
+                                                        focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400
+                                                        outline-none transition-all cursor-pointer"
                                                 >
                                                     <option value="">-- Pilih Dokter --</option>
                                                     {doctors.map((d: any) => (
@@ -643,7 +722,7 @@ export default function WelcomePage() {
 
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-black text-slate-500 uppercase
-                              tracking-widest flex items-center gap-1">
+                                                tracking-widest flex items-center gap-1">
                                                 Tanggal Kunjungan <span className="text-red-500">*</span>
                                             </label>
                                             <div className="relative">
@@ -654,8 +733,8 @@ export default function WelcomePage() {
                                                     value={formData.appointment_date}
                                                     onChange={e => setFormData({ ...formData, appointment_date: e.target.value })}
                                                     className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200
-                               rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
-                               focus:border-emerald-400 outline-none transition-all"
+                                                        rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
+                                                        focus:border-emerald-400 outline-none transition-all"
                                                 />
                                             </div>
                                             <p className="text-[9px] text-slate-400 italic ml-1">
@@ -667,7 +746,7 @@ export default function WelcomePage() {
                                     {/* ── Keluhan / Catatan ── */}
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-black text-slate-500 uppercase
-                          tracking-widest flex items-center gap-1.5">
+                                            tracking-widest flex items-center gap-1.5">
                                             Keluhan / Catatan Medis
                                             <span className="text-slate-300 text-[9px] font-normal italic normal-case tracking-normal">
                                                 (Akan dibaca perawat)
@@ -681,8 +760,8 @@ export default function WelcomePage() {
                                                 value={formData.notes}
                                                 onChange={e => setFormData({ ...formData, notes: e.target.value })}
                                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200
-                           rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
-                           focus:border-emerald-400 outline-none transition-all resize-none"
+                                                    rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-400/30
+                                                    focus:border-emerald-400 outline-none transition-all resize-none"
                                             />
                                         </div>
                                     </div>
@@ -694,14 +773,14 @@ export default function WelcomePage() {
                                         whileTap={{ scale: 0.99 }}
                                         disabled={status.type === 'loading'}
                                         className="w-full bg-emerald-600 hover:bg-slate-900 text-white py-4 rounded-2xl
-                   font-black text-sm uppercase tracking-widest shadow-xl shadow-emerald-200
-                   transition-all mt-2 flex items-center justify-center gap-3
-                   disabled:opacity-60 disabled:cursor-not-allowed"
+                                            font-black text-sm uppercase tracking-widest shadow-xl shadow-emerald-200
+                                            transition-all mt-2 flex items-center justify-center gap-3
+                                            disabled:opacity-60 disabled:cursor-not-allowed"
                                     >
                                         {status.type === 'loading' ? (
                                             <>
                                                 <span className="w-4 h-4 border-2 border-white/40 border-t-white
-                                 rounded-full animate-spin" />
+                                                    rounded-full animate-spin" />
                                                 Memproses...
                                             </>
                                         ) : (
@@ -717,7 +796,7 @@ export default function WelcomePage() {
                                             initial={{ opacity: 0, y: -8 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             className={`text-center text-sm font-medium py-3 rounded-xl
-                ${status.type === 'success'
+                                                ${status.type === 'success'
                                                     ? 'text-emerald-600 bg-emerald-50 border border-emerald-200'
                                                     : 'text-red-600 bg-red-50 border border-red-200'}`}
                                         >

@@ -33,6 +33,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     const [logoError, setLogoError] = useState(false);
     const [isQuickOpen, setIsQuickOpen] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [loggedIn, setLoggedIn] = useState(false);
 
     // ── FIX 1: State notifikasi yang sebelumnya hilang ───────────────────────
     const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -46,27 +47,28 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         const token = localStorage.getItem('token') || Cookies.get('token');
         const role = localStorage.getItem('user_role') || Cookies.get('role');
 
+        // JIKA TIDAK ADA TOKEN: Jangan di-push ke login! 
+        // Biarkan masuk sebagai tamu.
         if (!token || role?.toLowerCase() !== 'patient') {
-            router.push('/login');
+            setIsAuthorized(true); // Izinkan render halaman
+            setUser({ name: 'Tamu', email: '' });
+            setLoggedIn(false); // State untuk kontrol UI (tombol masuk vs profile)
             return;
         }
 
-        // AMBIL DATA DARI DATABASE (DINAMIS TOTAL)
         const fetchUserData = async () => {
             try {
-                const res = await api.get('/auth/me'); // Memanggil endpoint yang Anda tunjukkan di Python
-                setUser({
-                    name: res.data.full_name,
-                    email: res.data.email
-                });
+                const res = await api.get('/auth/me');
+                setUser({ name: res.data.full_name, email: res.data.email });
                 setIsAuthorized(true);
-
-                // Update localStorage agar data terbaru tersimpan
-                localStorage.setItem('user_name', res.data.full_name);
-                localStorage.setItem('user_email', res.data.email);
+                setLoggedIn(true);
             } catch (err) {
-                console.error("Gagal mengambil data user:", err);
-                router.push('/login');
+                console.error("Token invalid, treating as guest");
+                localStorage.clear();
+                Cookies.remove('token');
+                setIsAuthorized(true);
+                setUser({ name: 'Tamu', email: '' });
+                setLoggedIn(false);
             }
         };
 
@@ -78,6 +80,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
             ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
             : 'U';
     };
+
 
     // 2. SCROLL EFFECT
     useEffect(() => {
@@ -154,6 +157,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     };
 
     useEffect(() => {
+        if (!loggedIn) return;
         checkLiveStatus(); // Langsung cek saat mount
         const timer = setInterval(checkLiveStatus, 10000);
         return () => clearInterval(timer);
@@ -436,74 +440,85 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
 
                             {/* ── Profile Button ───────────────────────── */}
                             <div className="relative">
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => {
-                                        setIsProfileOpen(prev => !prev);
-                                        setIsNotifOpen(false);
-                                        setIsQuickOpen(false);
-                                    }}
-                                    className="flex items-center gap-2 pl-2 pr-2 py-1 rounded-full transition-all duration-300 bg-white/10 border border-white/20 hover:bg-white/20"
-                                >
-                                    <div className="relative flex-shrink-0">
-                                        <div className="w-7 h-7 rounded-full ring-2 ring-emerald-400/50 flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold text-[10px]">
-                                            {getInitials(user.name)}
-                                        </div>
-                                        <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-white" />
-                                    </div>
-                                    <div className="hidden sm:block text-left pr-1">
-                                        <p className="text-[11px] font-semibold leading-tight text-white">{user.name}</p>
-                                        <p className="text-[9px] font-medium text-emerald-400">Patient Member</p>
-                                    </div>
-                                    <ChevronDown
-                                        size={12}
-                                        className={`text-white/60 transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''}`}
-                                    />
-                                </motion.button>
-
-                                <AnimatePresence>
-                                    {isProfileOpen && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                                            transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-                                            className="absolute right-0 mt-2 w-64 bg-[#1a1a1a]/95 backdrop-blur-md rounded-2xl shadow-2xl shadow-black/50 border border-white/8 overflow-hidden z-[110]"
+                                {loggedIn ? (
+                                    <>
+                                        <motion.button
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => {
+                                                setIsProfileOpen(prev => !prev);
+                                                setIsNotifOpen(false);
+                                                setIsQuickOpen(false);
+                                            }}
+                                            className="flex items-center gap-2 pl-2 pr-2 py-1 rounded-full transition-all duration-300 bg-white/10 border border-white/20 hover:bg-white/20"
                                         >
-                                            <div className="bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-3 text-white">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
-                                                        {getInitials(user.name)}
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-semibold text-sm leading-tight">{user.name}</p>
-                                                        <p className="text-[10px] text-emerald-100 mt-0.5">{user.email}</p>
-                                                    </div>
+                                            <div className="relative flex-shrink-0">
+                                                <div className="w-7 h-7 rounded-full ring-2 ring-emerald-400/50 flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-500 text-white font-bold text-[10px]">
+                                                    {getInitials(user.name)}
                                                 </div>
+                                                <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-white" />
                                             </div>
-                                            <div className="px-3 py-3 space-y-1">
-                                                <Link href="/patient/profile" onClick={() => setIsProfileOpen(false)}>
-                                                    <button className="w-full px-3 py-2 text-left text-sm font-medium text-slate-300 hover:bg-white/5 rounded-xl flex items-center gap-3 transition-all">
-                                                        <User size={14} className="text-emerald-500" /> Profil Saya
-                                                    </button>
-                                                </Link>
-                                                <Link href="/register" onClick={() => setIsProfileOpen(false)}>
-                                                    <button className="w-full px-3 py-2 text-left text-sm font-medium text-emerald-400 hover:bg-white/5 rounded-xl flex items-center gap-3 transition-all">
-                                                        <UserPlus size={14} /> Daftar Akun Baru
-                                                    </button>
-                                                </Link>
-                                                <div className="h-px bg-white/5 mx-2 my-1" />
-                                                <button
-                                                    onClick={() => { setIsProfileOpen(false); handleLogout(); }}
-                                                    className="w-full px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-500/10 rounded-xl flex items-center gap-3 transition-all"
+                                            <div className="hidden sm:block text-left pr-1">
+                                                <p className="text-[11px] font-semibold leading-tight text-white">{user.name}</p>
+                                                <p className="text-[9px] font-medium text-emerald-400">Patient Member</p>
+                                            </div>
+                                            <ChevronDown
+                                                size={12}
+                                                className={`text-white/60 transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''}`}
+                                            />
+                                        </motion.button>
+
+                                        <AnimatePresence>
+                                            {isProfileOpen && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                                                    transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+                                                    className="absolute right-0 mt-2 w-64 bg-[#1a1a1a]/95 backdrop-blur-md rounded-2xl shadow-2xl shadow-black/50 border border-white/8 overflow-hidden z-[110]"
                                                 >
-                                                    <LogOut size={14} /> Keluar Portal
-                                                </button>
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                                    <div className="bg-gradient-to-br from-emerald-600 to-teal-600 px-4 py-3 text-white">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
+                                                                {getInitials(user.name)}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-semibold text-sm leading-tight">{user.name}</p>
+                                                                <p className="text-[10px] text-emerald-100 mt-0.5">{user.email}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="px-3 py-3 space-y-1">
+                                                        <Link href="/patient/profile" onClick={() => setIsProfileOpen(false)}>
+                                                            <button className="w-full px-3 py-2 text-left text-sm font-medium text-slate-300 hover:bg-white/5 rounded-xl flex items-center gap-3 transition-all">
+                                                                <User size={14} className="text-emerald-500" /> Profil Saya
+                                                            </button>
+                                                        </Link>
+                                                        <Link href="/register" onClick={() => setIsProfileOpen(false)}>
+                                                            <button className="w-full px-3 py-2 text-left text-sm font-medium text-emerald-400 hover:bg-white/5 rounded-xl flex items-center gap-3 transition-all">
+                                                                <UserPlus size={14} /> Daftar Akun Baru
+                                                            </button>
+                                                        </Link>
+                                                        <div className="h-px bg-white/5 mx-2 my-1" />
+                                                        <button
+                                                            onClick={() => { setIsProfileOpen(false); handleLogout(); }}
+                                                            className="w-full px-3 py-2 text-left text-sm font-semibold text-red-500 hover:bg-red-500/10 rounded-xl flex items-center gap-3 transition-all"
+                                                        >
+                                                            <LogOut size={14} /> Keluar Portal
+                                                        </button>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </>
+                                ) : (
+                                    // ── Tampilan untuk guest (belum login) ──
+                                    <Link href="/login">
+                                        <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-[12px] font-bold transition-all">
+                                            Masuk
+                                        </button>
+                                    </Link>
+                                )}
                             </div>
 
                             {/* Mobile hamburger */}

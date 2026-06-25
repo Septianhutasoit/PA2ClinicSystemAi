@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, Clock, Activity } from 'lucide-react';
+import { ShieldCheck, Clock, Activity, ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 /* ─── Data (tidak diubah) ───────────────────────────────────────────────── */
@@ -405,6 +405,23 @@ export default function WelcomePage() {
                   </motion.div>
                 </Link>
               </motion.div>
+              {/* Cari bagian ini di file Welcome/Landing Page kamu */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="flex justify-center pt-1"
+              >
+                <Link
+                  href="/patient/dashboard"
+                  className="group flex items-center gap-2 text-[12px] font-semibold text-white/45 hover:text-emerald-300 transition-all"
+                >
+                  <span className="w-1 h-1 rounded-full bg-emerald-400/60" />
+                  Jelajahi tanpa akun
+                  <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </motion.div>
+            
             </div>
 
             {/* Trust bar */}
