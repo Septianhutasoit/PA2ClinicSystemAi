@@ -278,15 +278,23 @@ export default function AdminAppointments() {
                                                 <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md w-fit">
                                                     <Clock size={9} className="text-slate-400" />
                                                     <span className="text-[9px] font-medium text-slate-400">
-                                                        Req: {(app.created_at || app.createdAt) ?
-                                                            new Date(app.created_at || app.createdAt).toLocaleString('id-ID', {
+                                                        Req: {(() => {
+                                                            const rawDate = app.created_at || app.createdAt;
+                                                            if (!rawDate) return 'Tanggal tidak tersedia';
+
+                                                            // Jika data dari BE tidak punya 'Z', kita tambahkan agar dianggap UTC
+                                                            const dateStr = rawDate.endsWith('Z') ? rawDate : `${rawDate}Z`;
+                                                            const dateObj = new Date(dateStr);
+
+                                                            return dateObj.toLocaleString('id-ID', {
                                                                 day: '2-digit',
                                                                 month: '2-digit',
                                                                 year: '2-digit',
                                                                 hour: '2-digit',
-                                                                minute: '2-digit'
-                                                            }) : 'Tanggal tidak tersedia'
-                                                        }
+                                                                minute: '2-digit',
+                                                                hour12: false // Agar formatnya 24 jam (00:00 - 23:59)
+                                                            }).replace(/\//g, '-'); // Mengubah / menjadi - agar rapi
+                                                        })()}
                                                     </span>
                                                 </div>
 

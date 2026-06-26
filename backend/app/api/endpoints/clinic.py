@@ -520,8 +520,10 @@ def get_all_appointments(
             "appointment_date": app.appointment_date,
             "status": app.status,
             "patient_phone": app.patient_phone,
+            "patient_address": app.patient_address,
+            "patient_gender": app.patient_gender, 
             "notes": app.notes, # Catatan pendaftaran
-            "created_at": app.created_at,
+            "created_at": app.created_at.isoformat() + "Z" if app.created_at else None,
             # TAMBAHKAN DUA FIELD INI (HASIL DOKTER)
             "doctor_diagnosis": record.diagnosis if record else None,
             "treatment": record.treatment if record else None

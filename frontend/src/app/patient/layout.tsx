@@ -513,11 +513,11 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                                     </>
                                 ) : (
                                     // ── Tampilan untuk guest (belum login) ──
-                                    <Link href="/login">
-                                        <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-[12px] font-bold transition-all">
-                                            Masuk
-                                        </button>
-                                    </Link>
+                                        <Link href="/login">
+                                            <button className="flex items-center gap-2 px-5 py-2 rounded-full border border-white/30 bg-transparent hover:bg-white/10 hover:border-white/50 text-white text-[12px] font-bold transition-all backdrop-blur-md">
+                                                Masuk
+                                            </button>
+                                        </Link>
                                 )}
                             </div>
 

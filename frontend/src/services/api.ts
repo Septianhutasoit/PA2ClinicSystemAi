@@ -11,7 +11,7 @@ const api = axios.create({
     },
 });
 
-// INTERCEPTOR REQUEST: Tambahkan token ke setiap request
+// INTERCEPTOR REQUEST
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token') || Cookies.get('token');
@@ -23,16 +23,41 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// INTERCEPTOR RESPONSE: Handle 401 otomatis
+// INTERCEPTOR RESPONSE
 api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // Token expired — bersihkan dan arahkan ke login
+            const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+
+            // DAFTAR HALAMAN YANG TIDAK BOLEH DI-REDIRECT KE LOGIN
+            const bypassPages = [
+                '/',
+                '/login',
+                '/register',
+                '/patient/dashboard',
+                '/patient/services',
+                '/patient/about',
+                '/patient/doctors',
+                '/patient/visiMisi'
+            ];
+
+            // Jika user sedang di halaman login/register, JANGAN hapus token & jangan redirect
+            // Biarkan halaman login menangani error-nya sendiri (misal: tampilkan pesan 'Password Salah')
+            if (currentPath === '/login' || currentPath === '/register') {
+                return Promise.reject(error);
+            }
+
+            // Jika di halaman publik lainnya, bersihkan token tapi JANGAN redirect
+            if (bypassPages.includes(currentPath)) {
+                localStorage.removeItem('token');
+                Cookies.remove('token');
+                return Promise.reject(error);
+            }
+
+            // Jika di halaman rahasia (seperti /admin atau /patient/profile), baru paksa ke login
             localStorage.removeItem('token');
-            localStorage.removeItem('user_role');
             Cookies.remove('token');
-            Cookies.remove('role');
             if (typeof window !== 'undefined') {
                 window.location.href = '/login';
             }

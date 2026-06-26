@@ -105,7 +105,7 @@ export default function WelcomePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // ── 1. Guard login ──────────────────────────────────────────
+        // ── 1. Guard login ─────────────────────────────────────────
         const token = localStorage.getItem('token') || Cookies.get('token');
         if (!token) {
             sessionStorage.setItem('pending_appointment', JSON.stringify(formData));
@@ -114,10 +114,10 @@ export default function WelcomePage() {
                 msg: '🔒 Silakan login terlebih dahulu untuk membuat reservasi. Mengalihkan...'
             });
             setTimeout(() => router.push('/login?redirect=/patient/dashboard#booking'), 1500);
-            return; // ← STOP di sini, tidak lanjut
+            return;
         }
 
-        // ── 2. Validasi jam operasional (HARUS sebelum api.post) ────
+        // ── 2. Validasi jam operasional ────────────────────────────
         if (formData.appointment_date) {
             const jam = new Date(formData.appointment_date).getHours();
             if (jam < 10 || jam >= 20) {
@@ -125,11 +125,11 @@ export default function WelcomePage() {
                     type: 'error',
                     msg: '❌ Mohon pilih jam kunjungan antara 10:00 s/d 20:00 WIB.'
                 });
-                return; // ← STOP, jangan kirim ke API
+                return;
             }
         }
 
-        // ── 3. Kirim ke API (hanya 1x, tidak duplikat) ──────────────
+        // ── 3. Kirim ke API ────────────────────────────────────────
         setStatus({ type: 'loading', msg: 'Memproses...' });
         try {
             await api.post('/clinic/appointments', formData);
@@ -142,18 +142,6 @@ export default function WelcomePage() {
                 setStatus({ type: '', msg: '' });
                 router.push('/patient/appointments');
             }, 1500);
-        } catch {
-            setStatus({ type: 'error', msg: '❌ Gagal mendaftar. Pastikan data sudah benar.' });
-            setTimeout(() => setStatus({ type: '', msg: '' }), 3000);
-        }
-    
-
-        setStatus({ type: 'loading', msg: 'Memproses...' });
-        try {
-            await api.post('/clinic/appointments', formData);
-            setStatus({ type: 'success', msg: '✅ Berhasil! Jadwal tercatat. Mengalihkan...' });
-            setFormData({ patient_phone: '', doctor_name: '', appointment_date: '', patient_address: '', patient_gender: '', notes: '' });
-            setTimeout(() => { setStatus({ type: '', msg: '' }); router.push('/patient/appointments'); }, 1500);
         } catch {
             setStatus({ type: 'error', msg: '❌ Gagal mendaftar. Pastikan data sudah benar.' });
             setTimeout(() => setStatus({ type: '', msg: '' }), 3000);
