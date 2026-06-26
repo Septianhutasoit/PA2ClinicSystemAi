@@ -327,7 +327,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                                         {/* Label — muncul hanya saat sidebar terbuka */}
                                         <AnimatePresence>
-                                            {isSidebarOpen && (
+                                            {isSidebarOpen && ( 
                                                 <motion.span
                                                     initial={{ opacity: 0 }}
                                                     animate={{ opacity: 1 }}
