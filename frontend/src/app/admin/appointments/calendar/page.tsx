@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/services/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import {
     ChevronLeft, ChevronRight, ArrowLeft, Clock,
     X, User, Phone, MapPin, Stethoscope,
@@ -14,6 +15,9 @@ export default function AppointmentCalendar() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedApp, setSelectedApp] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedDayApps, setSelectedDayApps] = useState<any[]>([]);
+    const [selectedDayLabel, setSelectedDayLabel] = useState('');
+    const [isDayModalOpen, setIsDayModalOpen] = useState(false);
 
     useEffect(() => {
         api.get('/clinic/appointments').then(res => setAppointments(res.data));
@@ -33,6 +37,13 @@ export default function AppointmentCalendar() {
     const openDetail = (app: any) => {
         setSelectedApp(app);
         setIsModalOpen(true);
+    };
+    const openDayList = (apps: any[], day: number) => {
+        setSelectedDayApps(apps);
+        setSelectedDayLabel(
+            `${day} ${currentDate.toLocaleString('id-ID', { month: 'long', year: 'numeric' })}`
+        );
+        setIsDayModalOpen(true);
     };
 
     return (
@@ -61,7 +72,7 @@ export default function AppointmentCalendar() {
                 </div>
             </div>
 
-            {/* ── GRID KALENDER (Tanpa Container Putih Besar) ────────────── */}
+            {/* ── GRID KALENDER ────────────── */}
             <div className="grid grid-cols-7 gap-3 sm:gap-4">
                 {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map((d, i) => (
                     <div key={d} className={`text-center text-[10px] font-black uppercase tracking-[0.2em] pb-2 
@@ -74,7 +85,7 @@ export default function AppointmentCalendar() {
                     if (!day) return <div key={`empty-${idx}`} className="opacity-0" />;
 
                     const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const dayApps = appointments.filter(a => a.appointment_date.startsWith(dateString));
+                    const dayApps = appointments.filter((a: any) => a.appointment_date.startsWith(dateString));
                     const isToday = new Date().toDateString() === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toDateString();
 
                     return (
@@ -82,31 +93,35 @@ export default function AppointmentCalendar() {
                             key={idx}
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className={`min-h-[140px] p-3 rounded-[24px] border transition-all relative group
-                                ${dayApps.length > 0 ? 'bg-white border-emerald-100' : 'bg-white/40 border-slate-100 hover:bg-white'}
-                                ${isToday ? 'ring-2 ring-emerald-500 border-transparent shadow-emerald-100 shadow-lg' : 'shadow-sm'}`}
+                            className={`min-h-[100px] p-2 rounded-xl border transition-all relative group
+        ${dayApps.length > 0 ? 'bg-white border-emerald-100 shadow-sm' : 'bg-white/40 border-slate-100 hover:bg-white'}
+        ${isToday ? 'ring-2 ring-emerald-500 border-transparent shadow-md' : ''}`}
                         >
                             <span className={`text-sm font-black ${isToday ? 'text-emerald-600' : dayApps.length > 0 ? 'text-slate-900' : 'text-slate-400'}`}>
                                 {day}
-                                {isToday && <span className="ml-1.5 text-[8px] bg-emerald-500 text-white px-1.5 py-0.5 rounded-full uppercase">Hari ini</span>}
                             </span>
 
                             <div className="mt-3 space-y-1.5">
-                                {dayApps.slice(0, 3).map(app => (
+                                {dayApps.slice(0, 3).map((app: any) => (
                                     <button
                                         key={app.id}
                                         onClick={() => openDetail(app)}
-                                        className="w-full text-left p-2 rounded-xl border border-slate-50 bg-slate-50/50 hover:bg-emerald-600 hover:text-white transition-all group/item"
+                                        className="w-full text-left p-1.5 rounded-lg border border-slate-50 bg-slate-50/50 hover:bg-emerald-600 hover:text-white transition-all"
                                     >
-                                        <p className="text-[10px] font-black truncate leading-tight uppercase tracking-tighter">{app.patient_name}</p>
-                                        <div className="flex items-center gap-1 mt-1 opacity-60 text-[8px] font-bold">
-                                            <Clock size={8} />
+                                        <p className="text-[9px] font-black truncate leading-tight uppercase">{app.patient_name}</p>
+                                        <div className="flex items-center gap-1 mt-0.5 opacity-60 text-[7px] font-bold">
+                                            <Clock size={7} />
                                             <span>{new Date(app.appointment_date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
                                     </button>
                                 ))}
                                 {dayApps.length > 3 && (
-                                    <p className="text-[9px] font-black text-emerald-600 text-center py-1">+{dayApps.length - 3} Lainnya</p>
+                                    <button
+                                        onClick={() => openDayList(dayApps, day)}
+                                        className="w-full text-[9px] font-black text-emerald-600 hover:text-white text-center py-1.5 rounded-lg hover:bg-emerald-600 transition-all uppercase tracking-wide"
+                                    >
+                                        +{dayApps.length - 3} Lainnya
+                                    </button>
                                 )}
                             </div>
                         </motion.div>
@@ -115,150 +130,158 @@ export default function AppointmentCalendar() {
             </div>
 
             {/* ── MODAL RINCIAN JADWAL ────────────────────────────────────── */}
-            <AnimatePresence>
-                {isModalOpen && selectedApp && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        {/* 1. Backdrop Gelap & Blur (Sesuai Inspector) */}
-                        <motion.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            {typeof window !== 'undefined' && createPortal(
+                <AnimatePresence>
+                    {isModalOpen && selectedApp && (
+                        <div
+                            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/10 backdrop-blur-[2px]"
                             onClick={() => setIsModalOpen(false)}
-                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-                        />
-
-                        {/* 2. Main Modal Card (Ukuran dikecilkan ke max-w-sm agar proporsional) */}
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="relative bg-white w-full max-w-sm rounded-[32px] shadow-2xl overflow-hidden border border-white"
                         >
-                            {/* ── HEADER IMAGE ── */}
-                            <div className="relative h-52 w-full">
-                                <img
-                                    src="/images/bg/dental-bg-1.png"
-                                    alt="Background"
-                                    className="w-full h-full object-cover"
-                                />
-                                {/* Overlay Gradient agar tombol X terlihat jelas */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-200"
+                            >
+                                {/* Header */}
+                                <div className="px-6 py-4 flex justify-between items-center border-b border-slate-100 bg-slate-50/50">
+                                    <div>
+                                        <h2 className="text-base font-black text-slate-800 tracking-tight">Rincian Jadwal</h2>
+                                        <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-0.5">Nauli Dental System</p>
+                                    </div>
+                                    <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 hover:bg-white text-slate-400 rounded-lg flex items-center justify-center border border-slate-200 transition-colors">
+                                        <X size={16} />
+                                    </button>
+                                </div>
 
-                                {/* Tombol Close (X) - Posisi Absolut di atas gambar */}
-                                <button
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="absolute top-4 right-4 w-9 h-9 bg-black/30 hover:bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all z-10"
-                                >
-                                    <X size={18} />
-                                </button>
+                                {/* Content */}
+                                <div className="p-2">
+                                    <div className="divide-y divide-slate-50 bg-slate-50/50 rounded-lg overflow-hidden border border-slate-100">
+                                        <DetailRow label="Pasien" value={selectedApp.patient_name} />
+                                        <DetailRow label="Dokter" value={selectedApp.doctor_name} isHighlight />
+                                        <DetailRow label="Waktu" value={new Date(selectedApp.appointment_date).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })} />
+                                        <DetailRow label="Kontak" value={selectedApp.patient_phone || '-'} isLast />
+                                    </div>
+                                </div>
 
-                                {/* Badge Status Melayang */}
-                                <div className="absolute bottom-4 left-5">
-                                    <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                        <span className="text-[10px] font-black text-slate-800 uppercase tracking-wider">
-                                            {selectedApp.status === 'confirmed' ? 'Janji Terverifikasi' : 'Menunggu Admin'}
+                                {/* Footer */}
+                                <div className="px-6 py-3.5 flex items-center justify-between bg-white border-t border-slate-50">
+                                    <div className="flex flex-col">
+                                        <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1">
+                                            Waktu Pendaftaran (Req)
+                                        </p>
+                                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tight">
+                                            {selectedApp.created_at ? new Date(selectedApp.created_at).toLocaleString('id-ID', {
+                                                day: '2-digit',
+                                                month: 'short',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) : '—'} WIB
                                         </span>
                                     </div>
-                                </div>
-                            </div>
 
-                            {/* ── BODY CONTENT ── */}
-                            <div className="p-7 space-y-6">
-                                {/* Pasien Info */}
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-tighter">Pasien Portal</span>
-                                        <span className="text-[9px] text-slate-300 font-bold tracking-widest uppercase">ID: #{selectedApp.id}</span>
-                                    </div>
-                                    <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none">
-                                        {selectedApp.patient_name}
-                                    </h2>
-                                    <p className="text-slate-400 font-bold text-[11px] mt-1.5 uppercase tracking-[0.1em]">
-                                        Jenis Kelamin: {selectedApp.patient_gender || 'Umum'}
-                                    </p>
-                                </div>
-
-                                {/* List Detail dengan Ikon (Sesuai Gaya Profil) */}
-                                <div className="space-y-3.5">
-                                    <div className="flex items-center gap-3.5 group">
-                                        <div className="w-9 h-9 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
-                                            <Stethoscope size={16} />
-                                        </div>
-                                        <div>
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Dokter Spesialis</p>
-                                            <p className="text-sm font-bold text-slate-700">{selectedApp.doctor_name}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3.5 group">
-                                        <div className="w-9 h-9 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
-                                            <Phone size={16} />
-                                        </div>
-                                        <div>
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">WhatsApp</p>
-                                            <p className="text-sm font-bold text-slate-700">{selectedApp.patient_phone || '-'}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3.5 group">
-                                        <div className="w-9 h-9 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
-                                            <MapPin size={16} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Alamat Tinggal</p>
-                                            <p className="text-sm font-bold text-slate-700 truncate">{selectedApp.patient_address || '-'}</p>
-                                        </div>
+                                    <div className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border 
+${selectedApp.status === 'confirmed'
+                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                            : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                                        {selectedApp.status === 'confirmed' ? 'Terkonfirmasi' : 'Menunggu'}
                                     </div>
                                 </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
 
-                                {/* Green Info Box (Waktu Request) */}
-                                <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-[20px] flex items-start gap-3">
-                                    <BadgeCheck size={18} className="text-emerald-600 shrink-0 mt-0.5" />
+            {/* ── MODAL DAFTAR LENGKAP PER HARI ──────────────────────────── */}
+            {typeof window !== 'undefined' && createPortal(
+                <AnimatePresence>
+                    {isDayModalOpen && (
+                        <div
+                            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/30 backdrop-blur-sm"
+                            onClick={() => setIsDayModalOpen(false)}
+                        >
+                            <motion.div
+                                initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-200 max-h-[80vh] flex flex-col"
+                            >
+                                {/* Header */}
+                                <div className="px-6 py-4 flex justify-between items-center border-b border-slate-100 bg-slate-50/50 shrink-0">
                                     <div>
-                                        <p className="text-[11px] font-bold text-emerald-900 leading-tight">Data Reservasi Sah</p>
-                                        <p className="text-[10px] text-emerald-600/80 font-medium mt-0.5">Didaftarkan pada {new Date(selectedApp.created_at).toLocaleString('id-ID', { dateStyle: 'medium' })}</p>
+                                        <h2 className="text-base font-black text-slate-800 tracking-tight">Semua Jadwal</h2>
+                                        <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-0.5">
+                                            {selectedDayLabel} · {selectedDayApps.length} Pasien
+                                        </p>
                                     </div>
+                                    <button
+                                        onClick={() => setIsDayModalOpen(false)}
+                                        className="w-8 h-8 hover:bg-white text-slate-400 rounded-lg flex items-center justify-center border border-slate-200 transition-colors"
+                                    >
+                                        <X size={16} />
+                                    </button>
                                 </div>
 
-                                {/* Highlight Waktu Konsultasi (Card Terpisah) */}
-                                <div className="pt-2">
-                                    <div className="bg-slate-900 rounded-2xl p-4 flex items-center justify-between shadow-lg shadow-slate-200">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-emerald-400">
-                                                <Clock size={20} />
+                                {/* List — scrollable */}
+                                <div className="p-3 space-y-2 overflow-y-auto flex-1">
+                                    {selectedDayApps.map((app: any) => (
+                                        <button
+                                            key={app.id}
+                                            onClick={() => {
+                                                setIsDayModalOpen(false);
+                                                openDetail(app);
+                                            }}
+                                            className="w-full text-left p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50 hover:border-emerald-200 transition-all flex items-center justify-between gap-3 group"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-black text-white text-sm shrink-0">
+                                                    {app.patient_name?.charAt(0)?.toUpperCase() || 'P'}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-black text-slate-800 truncate uppercase tracking-tight">
+                                                        {app.patient_name}
+                                                    </p>
+                                                    <p className="text-[10px] text-slate-400 font-bold truncate mt-0.5">
+                                                        {app.doctor_name}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">Waktu Janji</p>
-                                                <p className="text-sm font-black text-white leading-none">
-                                                    {new Date(selectedApp.appointment_date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
-                                                </p>
+                                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 shrink-0">
+                                                <Clock size={11} />
+                                                {new Date(app.appointment_date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                             </div>
-                                        </div>
-                                        <div className="text-right border-l border-white/10 pl-4">
-                                            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">Hari</p>
-                                            <p className="text-sm font-black text-emerald-400 leading-none">
-                                                {new Date(selectedApp.appointment_date).toLocaleDateString('id-ID', { weekday: 'short' })}
-                                            </p>
-                                        </div>
-                                    </div>
+                                        </button>
+                                    ))}
                                 </div>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 }
 
-// Komponen Pembantu Detail
-function DetailItem({ icon: Icon, label, value }: { icon: any, label: string, value: string }) {
+function DetailRow({ label, value, isHighlight = false, isLast = false }: any) {
     return (
-        <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-slate-400">
-                <Icon size={12} />
-                <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+        <div className={`flex items-center px-5 py-3 transition-colors hover:bg-white
+            ${isLast ? '' : 'border-b border-slate-100/50'}`}>
+            <div className="w-1/3 shrink-0">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                    {label}
+                </p>
             </div>
-            <p className="text-sm font-bold text-slate-700 pl-5">{value}</p>
+            <div className="flex-1">
+                <p className={`text-xs font-bold ${isHighlight ? 'text-emerald-600' : 'text-slate-700'}`}>
+                    {value}
+                </p>
+            </div>
         </div>
     );
 }

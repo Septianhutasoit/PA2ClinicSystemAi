@@ -340,6 +340,31 @@ export default function WelcomePage() {
 
             {/* ── Action cards ─────────────────────────────── */}
             <div className="flex flex-col gap-3 mt-8">
+              {/* Cari bagian ini di file Welcome/Landing Page kamu */}
+              {/* Jelajahi Tanpa Akun — pill button, jelas terlihat, konsisten dgn 2 card di atas */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="flex justify-center pt-2"
+              >
+                <motion.div whileHover={{ y: -2, scale: 1.01 }} whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+                  <Link
+                    href="/patient/dashboard"
+                    className="group flex items-center gap-2.5 rounded-full px-6 py-3
+          text-[12px] font-bold uppercase tracking-[0.1em]
+          text-emerald-300 border border-emerald-400/40
+          bg-emerald-500/10 backdrop-blur-md
+          hover:bg-emerald-500/20 hover:border-emerald-400/60 hover:text-emerald-200
+          transition-all shadow-lg shadow-emerald-900/20"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
+                    Masuk Tanpa Akun
+                    <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </motion.div>
+              </motion.div>
 
               {/* Daftar Pasien Baru */}
               <motion.div whileHover={{ y: -4, scale: 1.01 }} whileTap={{ scale: 0.98 }}
@@ -405,23 +430,6 @@ export default function WelcomePage() {
                   </motion.div>
                 </Link>
               </motion.div>
-              {/* Cari bagian ini di file Welcome/Landing Page kamu */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="flex justify-center pt-1"
-              >
-                <Link
-                  href="/patient/dashboard"
-                  className="group flex items-center gap-2 text-[12px] font-semibold text-white/45 hover:text-emerald-300 transition-all"
-                >
-                  <span className="w-1 h-1 rounded-full bg-emerald-400/60" />
-                  Jelajahi tanpa akun
-                  <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </motion.div>
-            
             </div>
 
             {/* Trust bar */}
