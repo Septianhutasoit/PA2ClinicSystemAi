@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import api from '@/services/api';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import {
@@ -105,6 +106,17 @@ export default function AdminAppointments() {
 
                     {/* Filter & Search */}
                     <div className="flex items-center gap-3 shrink-0">
+
+                        {/* Tombol Tampilan Kalender (PINDAH KE SINI) */}
+                        <Link href="/admin/appointments/calendar">
+                            <button className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 
+                           text-white rounded-xl text-[11px] font-black uppercase tracking-widest 
+                           transition-all shadow-md shadow-emerald-200 active:scale-95">
+                                <Calendar size={14} />
+                                Tampilan Kalender
+                            </button>
+                        </Link>
+
                         {/* Dropdown Filter Status */}
                         <select
                             value={filterStatus}

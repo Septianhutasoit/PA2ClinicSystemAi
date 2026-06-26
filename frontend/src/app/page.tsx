@@ -361,7 +361,7 @@ export default function WelcomePage() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[17px] font-black text-white tracking-tight">Daftar Pasien Baru</div>
+                    <div className="text-[17px] font-black text-white tracking-tight">Daftar Akun Baru</div>
                     <div className="text-[12px] text-white/75 mt-0.5">Registrasi dan nikmati layanan kesehatan gigi terbaik</div>
                   </div>
                   <motion.div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center flex-shrink-0"
@@ -394,7 +394,7 @@ export default function WelcomePage() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[17px] font-black text-white tracking-tight">Masuk ke Sistem</div>
+                    <div className="text-[17px] font-black text-white tracking-tight">Login</div>
                     <div className="text-[12px] text-white/50 mt-0.5">Akses jadwal, rekam medis & kelola akun Anda</div>
                   </div>
                   <motion.div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0"
