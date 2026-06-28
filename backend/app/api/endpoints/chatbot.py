@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List, Dict, Optional
 from pathlib import Path
 from datetime import datetime
+from sqlalchemy import func
 
 from app.services.rag_service import ChatbotService
 from app.database.session import get_db
@@ -80,92 +81,102 @@ def find_doctor_by_name(message: str, db: Session) -> Optional[Doctor]:
 # HELPER 2 — Bangun konteks personal pasien dari PostgreSQL (real-time)
 # ══════════════════════════════════════════════════════════════════════════════
 
-def build_personal_context(db: Session, current_user: dict) -> str:
+def build_personal_context(db: Session, current_user: dict) -> dict:
     """
-    Ambil riwayat pasien dari Neon PostgreSQL secara real-time:
-      - pasien baru atau lama
-      - jumlah kunjungan
-      - diagnosa & perawatan terakhir (jika ada medical_record)
-
-    Return: string yang dikirim ke AI sebagai konteks personal.
+    Kenali pasien lama/baru via user_id (FK) — bukan string nama.
+    Return dict agar bisa dipakai untuk prompt AI DAN pembuatan lead booking.
     """
     try:
-        user = db.query(User).filter(User.email == current_user["email"]).first()
+        user = db.query(User).filter(
+            func.lower(User.email) == current_user["email"].lower()
+        ).first()
+
         if not user:
-            return "Pasien belum teridentifikasi di sistem. Layani sebagai pengunjung umum."
+            return {
+                "text": "Pasien belum teridentifikasi di sistem. Layani sebagai pengunjung umum.",
+                "is_returning": False, "full_name": "User Chatbot",
+                "phone": None, "last_doctor": None,
+            }
 
         full_name = user.full_name
 
-        # Hitung total kunjungan (exclude chatbot lead)
-        total_visits = db.query(Appointment).filter(
-            Appointment.patient_name == full_name,
-            Appointment.patient_phone != "Chatbot Lead",  # exclude auto-lead
+        # ── HANYA hitung kunjungan NYATA via user_id (bukan nama/string) ────
+        real_visits = db.query(Appointment).filter(
+            Appointment.user_id == user.id,
+            Appointment.status.in_(["confirmed", "completed"]),   # ← bukan pending
         ).count()
 
-        if total_visits == 0:
-            ctx = (
-                f"Nama pasien: {full_name}. "
-                f"Ini adalah PASIEN BARU yang belum pernah melakukan janji temu "
-                f"atau konsultasi sebelumnya di klinik ini. "
-                f"Sambut dengan hangat dan tawarkan pendaftaran konsultasi pertama."
-            )
-            print(f"[CHAT] Personal context → PASIEN BARU: {full_name}")
-            return ctx
+        print(f"[PERSONAL] {full_name} (user_id={user.id}) → {real_visits} kunjungan nyata")
 
-        # Ambil kunjungan terakhir
+        from app.models.patient import Patient
+        patient_row = db.query(Patient).filter(
+            func.lower(Patient.email) == user.email.lower()
+        ).first()
+        phone = patient_row.phone_number if patient_row else None
+
+        if real_visits == 0:
+            return {
+                "text": (
+                    f"Nama pasien: {full_name}. Ini adalah PASIEN BARU yang belum "
+                    f"pernah melakukan kunjungan terkonfirmasi sebelumnya. "
+                    f"Sambut dengan hangat dan tawarkan pendaftaran konsultasi pertama."
+                ),
+                "is_returning": False, "full_name": full_name,
+                "phone": phone, "last_doctor": None,
+            }
+
+        # ── Kunjungan terakhir — via user_id ─────────────────────────────────
         last_appo = (
             db.query(Appointment)
-            .filter(
-                Appointment.patient_name == full_name,
-                Appointment.patient_phone != "Chatbot Lead",
-            )
+            .filter(Appointment.user_id == user.id,
+                    Appointment.status.in_(["confirmed", "completed"]))
             .order_by(Appointment.appointment_date.desc())
             .first()
         )
 
-        # Ambil rekam medis terakhir
         last_record = (
             db.query(MedicalRecord)
             .join(Appointment, MedicalRecord.appointment_id == Appointment.id)
-            .filter(Appointment.patient_name == full_name)
+            .filter(Appointment.user_id == user.id)
             .order_by(MedicalRecord.created_at.desc())
             .first()
         )
 
         parts = [
             f"Nama pasien: {full_name}.",
-            f"Ini adalah PASIEN LAMA dengan total {total_visits} kali kunjungan/janji temu.",
+            f"Ini adalah PASIEN LAMA dengan total {real_visits} kali kunjungan terkonfirmasi.",
         ]
 
+        last_doctor = None
         if last_appo:
-            tgl = (
-                last_appo.appointment_date.strftime("%d %B %Y")
-                if last_appo.appointment_date else "-"
-            )
-            parts.append(
-                f"Kunjungan terakhir: {tgl} dengan dokter {last_appo.doctor_name}, "
-                f"status: {last_appo.status}."
-            )
+            last_doctor = last_appo.doctor_name
+            tgl = last_appo.appointment_date.strftime("%d %B %Y") if last_appo.appointment_date else "-"
+            parts.append(f"Kunjungan terakhir: {tgl} dengan dokter {last_doctor}, status: {last_appo.status}.")
+            phone = phone or last_appo.patient_phone   # ← fallback nomor asli
 
         if last_record:
             parts.append(
                 f"Diagnosa terakhir: {last_record.diagnosis or '-'}. "
-                f"Perawatan yang diberikan: {last_record.treatment or '-'}. "
+                f"Perawatan: {last_record.treatment or '-'}. "
                 f"Catatan dokter: {last_record.notes or '-'}."
             )
         else:
-            parts.append(
-                "Belum ada rekam medis tercatat. "
-                "Tanyakan jika pasien ingin mendapatkan pemeriksaan."
-            )
+            parts.append("Belum ada rekam medis tercatat dari kunjungan sebelumnya.")
 
-        ctx = " ".join(parts)
-        print(f"[CHAT] Personal context → PASIEN LAMA: {full_name} ({total_visits} kunjungan)")
-        return ctx
+        print(f"[PERSONAL] PASIEN LAMA: {full_name}, dokter terakhir: {last_doctor}")
+
+        return {
+            "text": " ".join(parts), "is_returning": True,
+            "full_name": full_name, "phone": phone, "last_doctor": last_doctor,
+        }
 
     except Exception as e:
         print(f"[WARN] build_personal_context gagal: {e}")
-        return "Tidak dapat mengambil data pasien. Layani sebagai pengunjung umum."
+        return {
+            "text": "Tidak dapat mengambil data pasien. Layani sebagai pengunjung umum.",
+            "is_returning": False, "full_name": "User Chatbot",
+            "phone": None, "last_doctor": None,
+        }
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -187,48 +198,55 @@ async def chat_with_bot(
     current_user: dict = Depends(get_current_user),
 ):
     try:
-        # 1. Bangun konteks personal pasien dari PostgreSQL (real-time)
-        personal_context = build_personal_context(db, current_user)
+        patient_info = build_personal_context(db, current_user)   # ← dict, bukan string
 
-        # 2. Kirim ke AI bersama konteks personal
         answer = chatbot_service.get_response(
             request.message,
             request.history,
-            personal_context,
+            patient_info["text"],   # ← ambil key "text" untuk prompt AI
         )
 
-        # 3. Deteksi niat booking
         user_msg_lower     = request.message.lower()
         has_booking_intent = any(kw in user_msg_lower for kw in BOOKING_KEYWORDS)
 
         if has_booking_intent:
             matched_doctor = find_doctor_by_name(request.message, db)
-            doctor_name    = matched_doctor.name if matched_doctor else "Belum Ditentukan"
 
-            # Nama asli pasien dari DB (bukan hardcode "User Chatbot")
-            user_db      = db.query(User).filter(User.email == current_user["email"]).first()
-            patient_name = user_db.full_name if user_db else "User Chatbot"
+            # ── FIX BUG 4: fallback ke dokter terakhir pasien lama ──────────
+            if matched_doctor:
+                doctor_name = matched_doctor.name
+            elif patient_info["is_returning"] and patient_info["last_doctor"]:
+                doctor_name = patient_info["last_doctor"]
+            else:
+                doctor_name = "Belum Ditentukan"
+
+            user_db = db.query(User).filter(
+                func.lower(User.email) == current_user["email"].lower()
+            ).first()
 
             new_lead = Appointment(
-                patient_name     = patient_name,
-                patient_phone    = "Chatbot Lead",
+                patient_name     = patient_info["full_name"],
+                patient_phone    = patient_info["phone"] or "Belum ada nomor",  # ← FIX BUG 3
                 doctor_name      = doctor_name,
                 appointment_date = datetime.now(),
                 status           = "pending",
-                notes            = f"[CHATBOT LEAD] Pasien bertanya: '{request.message[:200]}'",
+                user_id          = user_db.id if user_db else None,            # ← FIX BUG 2
+                notes            = (
+                    f"[CHATBOT LEAD] "
+                    f"{'Pasien LAMA' if patient_info['is_returning'] else 'Pasien BARU'} "
+                    f"ingin konsultasi. Pesan: '{request.message[:150]}'"
+                ),
             )
             db.add(new_lead)
             db.commit()
-            print(f"[SYSTEM] Lead baru → pasien: {patient_name}, dokter: {doctor_name}")
+            print(f"[SYSTEM] Lead → {patient_info['full_name']} "
+                  f"({'lama' if patient_info['is_returning'] else 'baru'}) → {doctor_name}")
 
         return {"reply": answer}
 
     except Exception as e:
         print(f"[ERROR] /chat: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="AI sedang sibuk. Coba lagi dalam beberapa detik."
-        )
+        raise HTTPException(status_code=500, detail="AI sedang sibuk. Coba lagi.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
