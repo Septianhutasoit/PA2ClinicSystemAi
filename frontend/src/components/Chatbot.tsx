@@ -41,7 +41,7 @@ const SUGGESTIONS = [
     'Langkah Pendaftaran Nauli Dental Care?',
 ];
 
-function ClinicLogo({ size = 32, className = '' }: { size?: number; className?: string }) {
+function ClinicLogo({ size = 32, className = '', style }: { size?: number; className?: string; style?: React.CSSProperties }) {
     return (
         <img
             src="/images/icon.png"
@@ -49,7 +49,7 @@ function ClinicLogo({ size = 32, className = '' }: { size?: number; className?: 
             width={size}
             height={size}
             className={`object-contain block ${className}`}
-            style={{ width: size, height: size, flexShrink: 0 }}
+            style={{ width: size, height: size, flexShrink: 0, ...style }} // <-- Spread style di sini
         />
     );
 }
@@ -623,13 +623,24 @@ const [isAiHovered, setIsAiHovered] = useState(false); // State pendukung tombol
                                             key={text}
                                             onClick={() => handleSendMessage(text)}
                                             style={{
-                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                padding: '0 16px', backgroundColor: '#fff',
-                                                border: '1px solid #e2e8f0', borderRadius: 10,
-                                                fontSize: 13, fontWeight: 500, color: '#334155',
-                                                cursor: 'pointer', transition: 'all 0.15s',
-                                                minHeight: 52, width: '100%', height: 'auto',
-                                                alignItems: 'flex-start', paddingTop: 14, paddingBottom: 14, paddingLeft: 16, paddingRight: 12,
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                backgroundColor: '#fff',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: 10,
+                                                fontSize: 13,
+                                                fontWeight: 500,
+                                                color: '#334155',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.15s',
+                                                minHeight: 52,
+                                                width: '100%',
+                                                height: 'auto',
+                                                alignItems: 'flex-start',
+                                                paddingTop: 14,
+                                                paddingBottom: 14,
+                                                paddingLeft: 16,
+                                                paddingRight: 12,
                                             }}
                                             onMouseEnter={e => {
                                                 (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#f0fdfa';
