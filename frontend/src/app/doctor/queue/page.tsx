@@ -157,7 +157,7 @@ export default function DoctorQueuePage() {
                                     <p className="text-slate-400 text-sm font-bold">Tidak ada data pasien</p>
                                 </td></tr>
                             ) : filtered.map((app, idx) => {
-                                const st = STATUS_CONFIG[app.status] || STATUS_CONFIG.pending;
+                                const st = STATUS_CONFIG[app.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending;
                                 return (
                                     <motion.tr key={app.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="px-6 py-4"><span className="w-8 h-8 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center text-xs font-black text-black">{idx + 1}</span></td>
