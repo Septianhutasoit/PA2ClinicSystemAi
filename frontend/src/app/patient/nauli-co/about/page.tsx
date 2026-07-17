@@ -13,21 +13,21 @@ const fadeUp = (delay = 0) => ({
     initial: { opacity: 0, y: 30 },
     whileInView: { opacity: 1, y: 0 },
     viewport: { once: true, margin: "-100px" },
-    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1], delay },
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const, delay },
 });
 
 const slideInLeft = (delay = 0) => ({
     initial: { opacity: 0, x: -60 },
     whileInView: { opacity: 1, x: 0 },
     viewport: { once: true, margin: "-100px" },
-    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1], delay },
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const, delay },
 });
 
 const slideInRight = (delay = 0) => ({
     initial: { opacity: 0, x: 60 },
     whileInView: { opacity: 1, x: 0 },
     viewport: { once: true, margin: "-100px" },
-    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1], delay },
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const, delay },
 });
 
 export default function NauliCoAboutPage() {
