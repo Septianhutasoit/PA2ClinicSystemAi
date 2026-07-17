@@ -6,7 +6,7 @@ import {
     Clock, Mail, Sparkles, ArrowRight,
     Play, ShieldCheck, Users, Star, Zap,
     CheckCircle2, Building2, CalendarDays, TrendingUp,
-    ChevronRight, Activity, Quote, Tooth
+    ChevronRight, Activity, Quote
 } from 'lucide-react';
 import Link from 'next/link';
 
