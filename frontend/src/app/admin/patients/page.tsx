@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 export default function PatientsPage() {
-    const [patients, setPatients] = useState([]);
+    const [patients, setPatients] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
