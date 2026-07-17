@@ -21,7 +21,7 @@ export default function AdminDashboard() {
     const [statsData, setStatsData] = useState({
         total_patients: 0, total_appointments: 0, total_doctors: 0, today_bookings: 0
     });
-    const [analytics, setAnalytics] = useState([]);
+    const [analytics, setAnalytics] = useState<any[]>([]);
     const [recentBookings, setRecentBookings] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
