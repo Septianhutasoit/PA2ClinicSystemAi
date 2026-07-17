@@ -245,7 +245,7 @@ export default function AdminDashboard() {
                         {!isLoading && analytics.length === 0 && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
                                 <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
-                                    <BarChart size={22} className="text-emerald-300" />
+                                    <BarChart3 size={22} className="text-emerald-300" />
                                 </div>
                                 <p className="text-sm font-bold text-slate-400">Belum ada data reservasi</p>
                                 <p className="text-xs text-slate-300">
